@@ -21,7 +21,7 @@ namespace PlayMe.Api.Hubs;
 /// the (roomCode, playerId, role) triple — the client never claims its
 /// own identity.
 /// </summary>
-public sealed partial class RoomHub : Hub
+public sealed class RoomHub : Hub
 {
     internal const string SessionContextKey = "playme.session";
 
@@ -29,42 +29,37 @@ public sealed partial class RoomHub : Hub
     private readonly RegisterPresenceHandler _registerPresence;
     private readonly ReleasePresenceHandler _releasePresence;
     private readonly SubmitMoveHandler _submitMove;
-    private readonly ILogger<RoomHub> _logger;
 
     public RoomHub(
         SessionCookieReader sessionReader,
         RegisterPresenceHandler registerPresence,
         ReleasePresenceHandler releasePresence,
-        SubmitMoveHandler submitMove,
-        ILogger<RoomHub> logger)
+        SubmitMoveHandler submitMove)
     {
         _sessionReader = sessionReader;
         _registerPresence = registerPresence;
         _releasePresence = releasePresence;
         _submitMove = submitMove;
-        _logger = logger;
     }
 
     public override async Task OnConnectedAsync()
     {
+        // Don't reject unauthenticated connections — the room page mounts
+        // SignalR before it knows whether the visitor has a session cookie
+        // for this room. Aborting here surfaces as "connection stopped
+        // during negotiation" in the browser console, which is noise for
+        // what's an expected probe. Instead, every Hub method gates on
+        // RequireSession() so unauthenticated callers get a clean
+        // HubException("errors.session.unauthorized") at method-call time.
         var http = Context.GetHttpContext();
-        if (http is null)
+        var session = http is null ? null : _sessionReader.Read(http.Request);
+
+        if (session is not null)
         {
-            LogConnectionRejected(_logger, Context.ConnectionId, "no HttpContext");
-            Context.Abort();
-            return;
+            Context.Items[SessionContextKey] = session;
+            await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(session.RoomCode.Value));
         }
 
-        var session = _sessionReader.Read(http.Request);
-        if (session is null)
-        {
-            LogConnectionRejected(_logger, Context.ConnectionId, "invalid or missing session cookie");
-            Context.Abort();
-            return;
-        }
-
-        Context.Items[SessionContextKey] = session;
-        await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(session.RoomCode.Value));
         await base.OnConnectedAsync();
     }
 
@@ -174,11 +169,4 @@ public sealed partial class RoomHub : Hub
         }
         throw new HubException(ErrorCode.SessionUnauthorized.ToI18nKey());
     }
-
-    [LoggerMessage(
-        EventId = 2000,
-        Level = LogLevel.Information,
-        Message = "Rejected SignalR connection {ConnectionId}: {Reason}")]
-    private static partial void LogConnectionRejected(
-        ILogger logger, string connectionId, string reason);
 }

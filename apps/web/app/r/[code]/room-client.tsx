@@ -80,16 +80,19 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       setRole(inferredRole);
       setAuthStatus('authed');
     } catch (e) {
-      // 401 / unauthorized → no session for this room. Surface the join
-      // form. Any other failure is treated as transient; the SignalR
-      // automatic reconnect handles the rest.
-      const message = e instanceof Error ? e.message : 'errors.unknown';
-      if (message === 'errors.session.unauthorized') {
-        setAuthStatus('needsJoin');
-      } else {
-        setError(t(message as I18nKey));
-        setAuthStatus('needsJoin');
+      // The probe failed — either the visitor has no session yet (the
+      // common case: just opened the share link) or the JoinRoom call
+      // surfaced an i18n error. Either way the join form is the right
+      // next step; the form's own onSubmit shows any submit-time error.
+      const message = e instanceof Error ? e.message : '';
+      if (message && message !== 'errors.session.unauthorized') {
+        // Surface only known i18n keys (HubException carries them as the
+        // message); skip SignalR's own framework strings.
+        if (message.startsWith('errors.')) {
+          setError(t(message as I18nKey));
+        }
       }
+      setAuthStatus('needsJoin');
       await hub.stop().catch(() => {});
       hubRef.current = null;
     }
