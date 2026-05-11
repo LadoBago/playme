@@ -4,7 +4,7 @@ namespace PlayMe.Application.Errors;
 
 public static class ErrorCodeExtensions
 {
-    private static readonly Dictionary<ErrorCode, string> _i18nKeys = BuildMap();
+    private static readonly Dictionary<ErrorCode, string> I18nKeys = BuildMap();
 
     /// <summary>
     /// The canonical i18n key for this code (CLAUDE.md §3). Throws if the
@@ -12,7 +12,7 @@ public static class ErrorCodeExtensions
     /// time programmer error.
     /// </summary>
     public static string ToI18nKey(this ErrorCode code) =>
-        _i18nKeys.TryGetValue(code, out var key)
+        I18nKeys.TryGetValue(code, out var key)
             ? key
             : throw new InvalidOperationException(
                 $"ErrorCode.{code} is missing an [I18nKey] attribute.");

@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
+using PlayMe.Infrastructure.Games;
+using PlayMe.Infrastructure.Random;
+using PlayMe.Infrastructure.Redis;
+using PlayMe.Infrastructure.Security;
 using PlayMe.Infrastructure.Time;
 using StackExchange.Redis;
 
@@ -9,9 +13,9 @@ namespace PlayMe.Api.DependencyInjection;
 public static class InfrastructureServiceCollectionExtensions
 {
     /// <summary>
-    /// Wires Infrastructure adapters: Redis multiplexer, system clock, telemetry.
-    /// Redis powers both the state store and the SignalR backplane
-    /// (CLAUDE.md §2.1, §6).
+    /// Wires Infrastructure adapters: Redis (state store + SignalR backplane
+    /// per CLAUDE.md §2.1, §6), the system clock, cryptographic RNGs for
+    /// room codes and player IDs (§5.4), and the game-module registry.
     /// </summary>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
@@ -31,6 +35,12 @@ public static class InfrastructureServiceCollectionExtensions
             options.AbortOnConnectFail = false;
             return ConnectionMultiplexer.Connect(options);
         });
+
+        services.AddSingleton<IRoomRepository, RedisRoomRepository>();
+        services.AddSingleton<IRoomCodeGenerator, RoomCodeGenerator>();
+        services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
+        services.AddSingleton<IRandom, SystemRandom>();
+        services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
 
         return services;
     }

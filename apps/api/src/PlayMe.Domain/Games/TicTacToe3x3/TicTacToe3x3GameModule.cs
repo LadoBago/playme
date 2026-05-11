@@ -11,14 +11,14 @@ public sealed class TicTacToe3x3GameModule : IGameModule
 {
     public static readonly GameId GameId = new("tictactoe-3x3");
 
-    private static readonly string[] _validSides = { TicTacToeSides.X, TicTacToeSides.O };
+    private static readonly string[] ValidSidesArray = { TicTacToeSides.X, TicTacToeSides.O };
 
     /// <summary>
     /// All 8 winning lines on a 3×3 board: 3 rows, 3 cols, 2 diagonals.
     /// Stored as (cellIndex0..8) for direct lookup against the row-major
     /// state array.
     /// </summary>
-    private static readonly int[][] _winningLines =
+    private static readonly int[][] WinningLines =
     {
         new[] { 0, 1, 2 }, new[] { 3, 4, 5 }, new[] { 6, 7, 8 }, // rows
         new[] { 0, 3, 6 }, new[] { 1, 4, 7 }, new[] { 2, 5, 8 }, // cols
@@ -27,7 +27,7 @@ public sealed class TicTacToe3x3GameModule : IGameModule
 
     public GameId Id => GameId;
 
-    public IReadOnlyList<string> ValidSides => _validSides;
+    public IReadOnlyList<string> ValidSides => ValidSidesArray;
 
     public string FirstMoveSide => TicTacToeSides.X;
 
@@ -91,7 +91,7 @@ public sealed class TicTacToe3x3GameModule : IGameModule
     private static BoardCoordinate[]? FindWinningLine(
         TicTacToe3x3State board, string side)
     {
-        foreach (var line in _winningLines)
+        foreach (var line in WinningLines)
         {
             if (board.CellAt(line[0]) == side &&
                 board.CellAt(line[1]) == side &&

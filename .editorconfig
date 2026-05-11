@@ -50,4 +50,14 @@ dotnet_naming_rule.const_fields_pascal.severity = warning
 dotnet_naming_symbols.const_fields.applicable_kinds = field
 dotnet_naming_symbols.const_fields.applicable_accessibilities = *
 dotnet_naming_symbols.const_fields.required_modifiers = const
+
+# Static readonly fields (effectively constants for ref types like TimeSpan
+# that can't be 'const') are also PascalCase, same reason as above.
+dotnet_naming_rule.static_readonly_fields_pascal.symbols  = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_pascal.style    = pascal
+dotnet_naming_rule.static_readonly_fields_pascal.severity = warning
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
 dotnet_naming_style.pascal.capitalization = pascal_case
