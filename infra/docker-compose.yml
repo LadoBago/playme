@@ -1,0 +1,24 @@
+# Local-dev Redis. The API connects via ConnectionStrings:Redis (default
+# localhost:6379). CLAUDE.md §6: one Redis instance, two roles — state store
+# + SignalR backplane.
+#
+# Run: docker compose -f infra/docker-compose.yml up -d redis
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: playme-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:

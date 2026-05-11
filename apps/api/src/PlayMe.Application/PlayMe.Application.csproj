@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>PlayMe.Application</RootNamespace>
+    <AssemblyName>PlayMe.Application</AssemblyName>
+    <!--
+      CLAUDE.md §2.4: Application references only Domain. No infrastructure
+      or framework references. Third-party SDKs forbidden (FluentValidation
+      OK — it's a library, not a service adapter, per common practice; the
+      rule is no service-adapter SDKs).
+    -->
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PlayMe.Domain\PlayMe.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+</Project>

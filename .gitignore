@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+dist/
+build/
+out/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.idea/
+
+# Coverage
+coverage/
+*.lcov
+
+# Generated API client (regenerated via `pnpm gen:api`)
+packages/shared/src/api/generated/
+
+# Sentry
+.sentryclirc

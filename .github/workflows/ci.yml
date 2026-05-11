@@ -1,0 +1,74 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  web:
+    name: web (lint / typecheck / build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: pnpm audit (prod, high+)
+        run: pnpm audit --prod --audit-level high
+        continue-on-error: false
+
+  api:
+    name: api (build / format / vuln-audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore PlayMe.slnx
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build PlayMe.slnx -c Release --no-restore
+
+      - name: Format check
+        run: dotnet format PlayMe.slnx --verify-no-changes --no-restore
+
+      - name: Vulnerable packages (transitive)
+        run: |
+          OUT=$(dotnet list package --vulnerable --include-transitive 2>&1)
+          echo "$OUT"
+          # Fail the build on any High or Critical finding (CLAUDE.md §5.9).
+          if echo "$OUT" | grep -E '>\s*(High|Critical)' ; then
+            echo "::error::High or Critical vulnerable package detected"
+            exit 1
+          fi

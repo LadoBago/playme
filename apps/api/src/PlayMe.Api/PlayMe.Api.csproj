@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>PlayMe.Api</RootNamespace>
+    <AssemblyName>PlayMe.Api</AssemblyName>
+    <UserSecretsId>playme-api-dev</UserSecretsId>
+    <!--
+      CLAUDE.md §2.4: Api references Application + Infrastructure.
+      Composition root lives here.
+    -->
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PlayMe.Application\PlayMe.Application.csproj" />
+    <ProjectReference Include="..\PlayMe.Infrastructure\PlayMe.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" />
+    <PackageReference Include="FluentValidation.AspNetCore" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PlayMe.Api/PlayMe.Api.csproj" />
+    <Project Path="src/PlayMe.Application/PlayMe.Application.csproj" />
+    <Project Path="src/PlayMe.Domain/PlayMe.Domain.csproj" />
+    <Project Path="src/PlayMe.Infrastructure/PlayMe.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>PlayMe.Domain</RootNamespace>
+    <AssemblyName>PlayMe.Domain</AssemblyName>
+    <!--
+      CLAUDE.md §2.4: Domain has ZERO references. No ProjectReference, no
+      third-party PackageReference outside the BCL.
+    -->
+  </PropertyGroup>
+</Project>

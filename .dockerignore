@@ -1,0 +1,16 @@
+**/bin
+**/obj
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+**/.git
+**/.github
+**/.vscode
+**/logs
+**/*.log
+**/.DS_Store
+**/.env
+**/.env.*
+**/appsettings.*.local.json

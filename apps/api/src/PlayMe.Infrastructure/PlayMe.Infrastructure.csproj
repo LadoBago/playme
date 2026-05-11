@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>PlayMe.Infrastructure</RootNamespace>
+    <AssemblyName>PlayMe.Infrastructure</AssemblyName>
+    <!--
+      CLAUDE.md §2.4: Infrastructure references Application (to implement
+      its ports) and is allowed to depend on third-party libraries.
+    -->
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PlayMe.Application\PlayMe.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+</Project>
