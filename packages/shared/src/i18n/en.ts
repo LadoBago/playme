@@ -1,0 +1,88 @@
+// English (en) catalog for PlayMe. Sprint 1 covers the minimum keys needed
+// for landing, configure, and room flows. Sprint 6 wires the full
+// i18next + ka pipeline; for now both en and ka are flat key → string maps
+// and the web defaults to en.
+
+export const en = {
+  // --- Site chrome ---
+  'site.tagline': 'Play casual games with a friend, no signup.',
+  'site.howItWorks.title': 'How PlayMe works',
+  'site.howItWorks.step1.title': 'Pick a game',
+  'site.howItWorks.step1.body':
+    'Choose a game and configure your side. No account needed.',
+  'site.howItWorks.step2.title': 'Share the link',
+  'site.howItWorks.step2.body':
+    'You get a private room link. Send it to whoever you want to play with.',
+  'site.howItWorks.step3.title': 'Play live',
+  'site.howItWorks.step3.body':
+    'The first friend who opens your link joins. Take turns in real time.',
+  'site.catalog.title': 'Choose a game',
+
+  // --- Game names + rules ---
+  'games.tictactoe-3x3.name': 'Tic-Tac-Toe 3×3',
+  'games.tictactoe-3x3.shortDescription':
+    'The classic. First to align three Xs or Os in a row, column, or diagonal wins.',
+  'games.tictactoe-3x3.rules':
+    'Players alternate placing X and O on a 3×3 grid. The first to align three of their marks horizontally, vertically, or diagonally wins. If the board fills with no line, the game is a draw. X always moves first.',
+  'games.tictactoe.sideX': 'X (moves first)',
+  'games.tictactoe.sideO': 'O',
+
+  // --- Configure page ---
+  'configure.title': 'Configure room',
+  'configure.displayName.label': 'Your name',
+  'configure.displayName.placeholder': 'How should we call you?',
+  'configure.sideMode.label': 'How to assign sides',
+  'configure.sideMode.hostPicksSpecific': "I'll pick my side",
+  'configure.sideMode.random': 'Random',
+  'configure.sideMode.challengerPicks': 'Let my friend pick',
+  'configure.hostSide.label': 'Your side',
+  'configure.submit': 'Create room',
+  'configure.submitting': 'Creating…',
+  'configure.rules.title': 'How to play',
+
+  // --- Room / join ---
+  'join.title': 'Join the room',
+  'join.displayName.label': 'Your name',
+  'join.displayName.placeholder': 'How should we call you?',
+  'join.side.label': 'Pick your side',
+  'join.submit': 'Join',
+  'join.submitting': 'Joining…',
+  'join.waiting': 'Waiting for your friend to open the link…',
+  'join.shareLink.label': 'Share this link with your friend',
+  'join.shareLink.copy': 'Copy link',
+  'join.shareLink.copied': 'Copied!',
+
+  // --- Match UI ---
+  'match.yourTurn': 'Your turn',
+  'match.opponentTurn': "Opponent's turn",
+  'match.you': 'You',
+  'match.opponent': 'Opponent',
+  'match.opponentDisconnected': 'Opponent disconnected.',
+  'match.result.youWin': 'You win!',
+  'match.result.youLose': 'You lose.',
+  'match.result.draw': 'Draw.',
+  'match.rules.button': 'Rules',
+  'match.rules.close': 'Close',
+
+  // --- Errors (mirror ErrorCode i18n keys from CLAUDE.md §3) ---
+  'errors.unknown': 'Something went wrong. Please try again.',
+  'errors.validation.displayName': 'That name isn’t valid.',
+  'errors.validation.move': 'That move isn’t valid.',
+  'errors.config.invalidGameId': 'Unknown game.',
+  'errors.config.invalidSideSelectionMode': 'Pick a way to assign sides.',
+  'errors.config.invalidHostSide': "That side can't be picked here.",
+  'errors.join.sideNotAllowed': "The host already chose sides — you can't pick.",
+  'errors.join.sidePickRequired': 'Pick a side to continue.',
+  'errors.join.invalidSide': "That side doesn't exist for this game.",
+  'errors.room.notFound': 'This room link is dead or has expired.',
+  'errors.room.alreadyJoined': 'Someone already joined this room.',
+  'errors.room.notJoinable': 'This room is no longer accepting players.',
+  'errors.room.busy': 'Server is busy. Try again in a moment.',
+  'errors.move.illegalCell': "You can't play there.",
+  'errors.move.cellOccupied': 'That cell is already taken.',
+  'errors.move.notYourTurn': "It's not your turn.",
+  'errors.move.matchNotInProgress': 'The match has already ended.',
+  'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',
+} as const;
+
+export type EnKey = keyof typeof en;
