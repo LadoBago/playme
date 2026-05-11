@@ -41,3 +41,13 @@ dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+# Constants are PascalCase — the underscore-camel rule above would
+# otherwise force "_someConst" which contradicts standard C# convention.
+dotnet_naming_rule.const_fields_pascal.symbols  = const_fields
+dotnet_naming_rule.const_fields_pascal.style    = pascal
+dotnet_naming_rule.const_fields_pascal.severity = warning
+dotnet_naming_symbols.const_fields.applicable_kinds = field
+dotnet_naming_symbols.const_fields.applicable_accessibilities = *
+dotnet_naming_symbols.const_fields.required_modifiers = const
+dotnet_naming_style.pascal.capitalization = pascal_case
