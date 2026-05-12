@@ -1,0 +1,40 @@
+namespace PlayMe.Domain.Platform;
+
+/// <summary>
+/// Minimal hook for a self-contained game module (CLAUDE.md §2.3, SOLID
+/// open/closed in §8). Each game implements this; the platform's move
+/// pipeline dispatches by <see cref="Id"/> and otherwise treats the module
+/// as opaque rules. **No shared rules engine across modules.**
+/// </summary>
+public interface IGameModule
+{
+    GameId Id { get; }
+
+    /// <summary>
+    /// The two side identifiers this game uses. Exactly two entries; lower-
+    /// case ("x"/"o" for Tic-Tac-Toe, "red"/"yellow" for Connect 4 — §2.3 #14).
+    /// </summary>
+    IReadOnlyList<string> ValidSides { get; }
+
+    /// <summary>
+    /// Side that moves first by canonical rule (CLAUDE.md §2.3 #11):
+    /// "x" for every Tic-Tac-Toe variant, "red" for Connect 4. Must be one
+    /// of <see cref="ValidSides"/>.
+    /// </summary>
+    string FirstMoveSide { get; }
+
+    /// <summary>Initial state for a new match (empty board).</summary>
+    IGameState NewMatch();
+
+    /// <summary>
+    /// Validate and apply a move on behalf of <paramref name="side"/>. The
+    /// caller (<c>SubmitMoveHandler</c>) has already verified that the room
+    /// is in progress and that <paramref name="side"/> is the side-to-move;
+    /// this method only judges the move's legality against the rules and
+    /// detects win/draw post-application.
+    /// </summary>
+    MoveResult ApplyMove(IGameState state, string side, GameMove move);
+
+    /// <summary>Side opposite to <paramref name="side"/>.</summary>
+    string OtherSide(string side);
+}

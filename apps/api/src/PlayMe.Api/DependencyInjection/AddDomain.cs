@@ -1,13 +1,19 @@
 using Microsoft.Extensions.DependencyInjection;
+using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Platform;
 
 namespace PlayMe.Api.DependencyInjection;
 
 public static class DomainServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Domain-layer services. Sprint 0 placeholder — Domain is pure
-    /// C# and has nothing to register yet; rules engines (per-game) and
-    /// platform invariants land in later sprints.
+    /// Registers Domain-layer game modules as <see cref="IGameModule"/>.
+    /// Adding a new game (Sprints 3–4) is purely additive here per
+    /// CLAUDE.md §2.3 / §8 SOLID open-closed.
     /// </summary>
-    public static IServiceCollection AddDomain(this IServiceCollection services) => services;
+    public static IServiceCollection AddDomain(this IServiceCollection services)
+    {
+        services.AddSingleton<IGameModule, TicTacToe3x3GameModule>();
+        return services;
+    }
 }

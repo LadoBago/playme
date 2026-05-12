@@ -16,6 +16,9 @@
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@microsoft/signalr": "^8.0.7"
+  },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@playme/config": "workspace:*",

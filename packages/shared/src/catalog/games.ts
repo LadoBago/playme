@@ -1,0 +1,39 @@
+// Catalog of game modules. Slug equals the GameId from the API
+// (CLAUDE.md §2.3, §2.5) — same identifier across URLs, room state,
+// analytics, and the rules catalog.
+//
+// Sprint 1 ships with one entry; later sprints add the rest.
+
+export interface GameCatalogEntry {
+  readonly id: string;
+  readonly slug: string;
+  readonly nameKey: string;
+  readonly shortDescriptionKey: string;
+  readonly rulesKey: string;
+  readonly sides: readonly { readonly id: string; readonly labelKey: string }[];
+  readonly defaultHostSide: string;
+  /** Board dimensions for the configure-page preview / room renderer. */
+  readonly rows: number;
+  readonly cols: number;
+}
+
+export const GAME_CATALOG: readonly GameCatalogEntry[] = [
+  {
+    id: 'tictactoe-3x3',
+    slug: 'tictactoe-3x3',
+    nameKey: 'games.tictactoe-3x3.name',
+    shortDescriptionKey: 'games.tictactoe-3x3.shortDescription',
+    rulesKey: 'games.tictactoe-3x3.rules',
+    sides: [
+      { id: 'x', labelKey: 'games.tictactoe.sideX' },
+      { id: 'o', labelKey: 'games.tictactoe.sideO' },
+    ],
+    defaultHostSide: 'x',
+    rows: 3,
+    cols: 3,
+  },
+];
+
+export function findGame(slugOrId: string): GameCatalogEntry | undefined {
+  return GAME_CATALOG.find((g) => g.slug === slugOrId || g.id === slugOrId);
+}

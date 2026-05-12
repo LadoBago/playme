@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "@playme/shared": "workspace:*",
-    "next": "^15.0.3",
+    "@sentry/nextjs": "^10.52.0",
+    "next": "^16.2.6",
+    "posthog-js": "^1.373.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

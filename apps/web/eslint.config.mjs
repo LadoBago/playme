@@ -7,7 +7,13 @@ export default [
   },
   // Type-aware linting for app source.
   {
-    files: ['app/**/*.{ts,tsx}', 'features/**/*.{ts,tsx}'],
+    files: [
+      'app/**/*.{ts,tsx}',
+      'features/**/*.{ts,tsx}',
+      'lib/**/*.{ts,tsx}',
+      'instrumentation.ts',
+      'instrumentation-client.ts',
+    ],
     languageOptions: {
       parserOptions: {
         projectService: true,
