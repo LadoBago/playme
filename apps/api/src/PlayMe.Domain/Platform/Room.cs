@@ -148,21 +148,31 @@ public sealed class Room
     /// Transition WaitingForOpponent → InProgress and create the first match
     /// when both players are registered AND both currently connected via
     /// SignalR (CLAUDE.md §2.9). Idempotent — calls when the room isn't
-    /// ready, or is already in progress, do nothing.
+    /// ready, or is already in progress, do nothing. Returns true if this
+    /// call performed the transition (so the caller can schedule the first
+    /// timeout check).
     /// </summary>
-    public void TryStartMatch(IGameModule module)
+    public bool TryStartMatch(IGameModule module, TimeSpan clockBudget, DateTimeOffset now)
     {
-        if (Status is not RoomStatus.WaitingForOpponent) return;
-        if (Challenger is null) return;
-        if (!(HostConnected && ChallengerConnected)) return;
+        if (Status is not RoomStatus.WaitingForOpponent) return false;
+        if (Challenger is null) return false;
+        if (!(HostConnected && ChallengerConnected)) return false;
 
         if (Host.Side is null || Challenger.Side is null)
         {
             throw new DomainException("Both sides must be resolved before a match starts.");
         }
 
-        CurrentMatch = Match.Start(GameId, module.NewMatch(), module.FirstMoveSide);
+        var firstMover = RoleForSide(module.FirstMoveSide);
+        CurrentMatch = Match.Start(
+            GameId,
+            module.NewMatch(),
+            module.FirstMoveSide,
+            firstMover,
+            clockBudget,
+            now);
         Status = RoomStatus.InProgress;
+        return true;
     }
 
     public Player? PlayerFor(Role role) => role switch

@@ -52,6 +52,10 @@ internal static class RoomMapping
             StateRows: rows,
             StateCols: cols,
             StateCells: cells,
+            HostClockMs: (long)match.Clock.HostRemaining.TotalMilliseconds,
+            ChallengerClockMs: (long)match.Clock.ChallengerRemaining.TotalMilliseconds,
+            ActivePlayer: match.Clock.ActivePlayer,
+            LastTickAt: match.Clock.LastTickAt,
             Outcome: match.Outcome is null ? null : ToOutcomeRecord(match.Outcome));
     }
 
@@ -60,13 +64,19 @@ internal static class RoomMapping
         state: DecodeState(record.GameId, record.StateRows, record.StateCols, record.StateCells),
         sideToMove: record.SideToMove,
         moveCount: record.MoveCount,
+        clock: new MatchClock(
+            HostRemaining: TimeSpan.FromMilliseconds(record.HostClockMs),
+            ChallengerRemaining: TimeSpan.FromMilliseconds(record.ChallengerClockMs),
+            ActivePlayer: record.ActivePlayer,
+            LastTickAt: record.LastTickAt),
         outcome: record.Outcome is null ? null : FromOutcomeRecord(record.Outcome));
 
     private static OutcomeRecord ToOutcomeRecord(Outcome outcome) => outcome switch
     {
-        Win w => new OutcomeRecord("win", w.WinningSide, ResigningSide: null, WinningLine: w.WinningLine),
-        Draw => new OutcomeRecord("draw", WinningSide: null, ResigningSide: null, WinningLine: null),
-        Resign r => new OutcomeRecord("resign", WinningSide: null, ResigningSide: r.ResigningSide, WinningLine: null),
+        Win w => new OutcomeRecord("win", w.WinningSide, ResigningSide: null, TimedOutSide: null, WinningLine: w.WinningLine),
+        Draw => new OutcomeRecord("draw", WinningSide: null, ResigningSide: null, TimedOutSide: null, WinningLine: null),
+        Resign r => new OutcomeRecord("resign", WinningSide: null, ResigningSide: r.ResigningSide, TimedOutSide: null, WinningLine: null),
+        Domain.Platform.Timeout t => new OutcomeRecord("timeout", WinningSide: null, ResigningSide: null, TimedOutSide: t.TimedOutSide, WinningLine: null),
         _ => throw new InvalidOperationException($"Unsupported outcome '{outcome.GetType().Name}'."),
     };
 
@@ -78,6 +88,8 @@ internal static class RoomMapping
         "draw" => new Draw(),
         "resign" => new Resign(
             record.ResigningSide ?? throw new InvalidOperationException("Resign outcome missing resigningSide.")),
+        "timeout" => new Domain.Platform.Timeout(
+            record.TimedOutSide ?? throw new InvalidOperationException("Timeout outcome missing timedOutSide.")),
         _ => throw new InvalidOperationException($"Unknown outcome kind '{record.Kind}'."),
     };
 

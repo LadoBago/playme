@@ -13,10 +13,14 @@ namespace PlayMe.Application.Mapping;
 /// Per-game state shape is encoded in <see cref="MapState"/>: each game
 /// flattens its <c>IGameState</c> into a row-major <c>cells</c> array with
 /// the right dimensions. New games extend the switch.
+///
+/// Mapping a <see cref="Room"/> requires a <see cref="DateTimeOffset"/>
+/// "now" so the <see cref="ClockSnapshotDto"/> can stamp <c>serverNowAt</c>
+/// — handlers pass <c>IClock.UtcNow</c>.
 /// </summary>
 public static class RoomMapper
 {
-    public static RoomDto ToDto(Room room) => new(
+    public static RoomDto ToDto(Room room, DateTimeOffset now) => new(
         Code: room.Code,
         GameId: room.GameId,
         SideSelectionMode: room.SideSelectionMode,
@@ -25,13 +29,13 @@ public static class RoomMapper
         Challenger: room.Challenger is null ? null : ToPlayerDto(room.Challenger),
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected,
-        CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch),
+        CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch, now),
         CreatedAt: room.CreatedAt);
 
     public static PlayerDto ToPlayerDto(Player player) =>
         new(player.DisplayName.Value, player.Side);
 
-    public static MatchDto ToMatchDto(Match match)
+    public static MatchDto ToMatchDto(Match match, DateTimeOffset now)
     {
         var (rows, cols, cells) = MapState(match.GameId, match.State);
         return new MatchDto(
@@ -41,8 +45,17 @@ public static class RoomMapper
             Rows: rows,
             Cols: cols,
             Cells: cells,
+            Clock: ToClockSnapshotDto(match.Clock, now),
             Outcome: match.Outcome is null ? null : ToOutcomeDto(match.Outcome));
     }
+
+    public static ClockSnapshotDto ToClockSnapshotDto(MatchClock clock, DateTimeOffset now) =>
+        new(
+            HostMs: (long)clock.HostRemaining.TotalMilliseconds,
+            ChallengerMs: (long)clock.ChallengerRemaining.TotalMilliseconds,
+            ActivePlayer: clock.ActivePlayer.ToString().ToLowerInvariant(),
+            LastTickAt: clock.LastTickAt,
+            ServerNowAt: now);
 
     public static OutcomeDto ToOutcomeDto(Outcome outcome) => outcome switch
     {
@@ -50,18 +63,28 @@ public static class RoomMapper
             Kind: "win",
             WinningSide: w.WinningSide,
             ResigningSide: null,
+            TimedOutSide: null,
             WinningLine: w.WinningLine),
 
         Draw => new OutcomeDto(
             Kind: "draw",
             WinningSide: null,
             ResigningSide: null,
+            TimedOutSide: null,
             WinningLine: null),
 
         Resign r => new OutcomeDto(
             Kind: "resign",
             WinningSide: null,
             ResigningSide: r.ResigningSide,
+            TimedOutSide: null,
+            WinningLine: null),
+
+        Domain.Platform.Timeout t => new OutcomeDto(
+            Kind: "timeout",
+            WinningSide: null,
+            ResigningSide: null,
+            TimedOutSide: t.TimedOutSide,
             WinningLine: null),
 
         _ => throw new InvalidOperationException(

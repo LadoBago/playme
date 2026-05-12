@@ -15,7 +15,7 @@ export type Role = 'host' | 'challenger';
 
 export type SideSelectionMode = 'hostPicksSpecific' | 'random' | 'challengerPicks';
 
-export type OutcomeKind = 'win' | 'draw' | 'resign';
+export type OutcomeKind = 'win' | 'draw' | 'resign' | 'timeout';
 
 export interface BoardCoordinate {
   row: number;
@@ -26,12 +26,26 @@ export interface OutcomeDto {
   kind: OutcomeKind;
   winningSide?: string;
   resigningSide?: string;
+  timedOutSide?: string;
   winningLine?: readonly BoardCoordinate[];
 }
 
 export interface PlayerDto {
   displayName: string;
   side?: string;
+}
+
+/**
+ * Server-authoritative chess-clock snapshot. Server emits this stamped at
+ * `serverNowAt`; the client extrapolates the active player's remaining time
+ * locally between snapshots via `Date.now() - serverNowAt`.
+ */
+export interface ClockSnapshotDto {
+  hostMs: number;
+  challengerMs: number;
+  activePlayer: Role;
+  lastTickAt: string;
+  serverNowAt: string;
 }
 
 export interface MatchDto {
@@ -41,6 +55,7 @@ export interface MatchDto {
   rows: number;
   cols: number;
   cells: readonly (string | null)[];
+  clock: ClockSnapshotDto;
   outcome?: OutcomeDto;
 }
 

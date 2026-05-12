@@ -1,5 +1,4 @@
 using PlayMe.Application.Abstractions;
-using PlayMe.Application.Dtos;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Domain.Games.TicTacToe3x3;
@@ -11,18 +10,30 @@ namespace PlayMe.Application.Commands.SubmitMove;
 /// The authoritative move pipeline (CLAUDE.md §2.1: "The server is the
 /// single source of truth"). Inside the room's distributed lock: authorize
 /// the caller, verify the match is in progress and the caller is the active
-/// player, parse and apply the move via the game module, commit if accepted,
-/// and persist.
+/// player, recompute the active clock and convert to a timeout if it has
+/// already run out, then parse and apply the move via the game module,
+/// commit if accepted, advance the clock, and persist.
 /// </summary>
 public sealed class SubmitMoveHandler
 {
     private readonly IRoomRepository _rooms;
     private readonly IGameModuleRegistry _games;
+    private readonly IClock _clock;
+    private readonly IClockService _clockService;
+    private readonly ITimeoutScheduler _timeouts;
 
-    public SubmitMoveHandler(IRoomRepository rooms, IGameModuleRegistry games)
+    public SubmitMoveHandler(
+        IRoomRepository rooms,
+        IGameModuleRegistry games,
+        IClock clock,
+        IClockService clockService,
+        ITimeoutScheduler timeouts)
     {
         _rooms = rooms;
         _games = games;
+        _clock = clock;
+        _clockService = clockService;
+        _timeouts = timeouts;
     }
 
     public async Task<AppResult<SubmitMoveResult>> HandleAsync(
@@ -64,6 +75,27 @@ public sealed class SubmitMoveHandler
                     return AppResult<SubmitMoveResult>.Fail(ErrorCode.MoveMatchNotInProgress);
                 }
 
+                var now = _clock.UtcNow;
+
+                // Convert a stale-clock move into a timeout before doing
+                // anything else: if the caller's clock has already run out,
+                // their move is rejected by virtue of having lost on time.
+                if (_clockService.HasActivePlayerTimedOut(match.Clock, now))
+                {
+                    var activeSide = match.SideToMove;
+                    match.ApplyTimeout(activeSide, now);
+                    room.EndCurrentMatch();
+                    await _rooms.SaveAsync(room, ct);
+                    await _timeouts.CancelAsync(code, ct);
+
+                    return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
+                        Room: RoomMapper.ToDto(room, now),
+                        MatchEnded: true,
+                        TimedOut: true,
+                        AcceptedCell: null,
+                        ByMoveSide: null));
+                }
+
                 var callerSide = stored.Side;
                 if (callerSide is null || callerSide != match.SideToMove)
                 {
@@ -92,16 +124,30 @@ public sealed class SubmitMoveHandler
                 }
 
                 var nextSide = module.OtherSide(callerSide);
-                match.ApplyAcceptedMove(moveResult.NewState!, nextSide, moveResult.Ending);
+                var nextActive = room.RoleForSide(nextSide);
+                match.ApplyAcceptedMove(moveResult.NewState!, nextSide, nextActive, now, moveResult.Ending);
+
                 if (moveResult.Ending is not null)
                 {
                     room.EndCurrentMatch();
+                    await _rooms.SaveAsync(room, ct);
+                    await _timeouts.CancelAsync(code, ct);
                 }
-                await _rooms.SaveAsync(room, ct);
+                else
+                {
+                    await _rooms.SaveAsync(room, ct);
+                    // The opponent's clock is now ticking — re-schedule the
+                    // timeout check at their new deadline.
+                    await _timeouts.ScheduleAsync(
+                        code,
+                        match.Clock.ActivePlayerDeadline(),
+                        ct);
+                }
 
                 return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
-                    Room: RoomMapper.ToDto(room),
+                    Room: RoomMapper.ToDto(room, now),
                     MatchEnded: moveResult.Ending is not null,
+                    TimedOut: false,
                     AcceptedCell: ExtractCell(parseResult.Value!),
                     ByMoveSide: callerSide));
             }, ct);

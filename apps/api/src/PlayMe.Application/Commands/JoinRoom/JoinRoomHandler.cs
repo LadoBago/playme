@@ -17,15 +17,18 @@ public sealed class JoinRoomHandler
     private readonly IRoomRepository _rooms;
     private readonly IPlayerIdGenerator _playerIds;
     private readonly IGameModuleRegistry _games;
+    private readonly IClock _clock;
 
     public JoinRoomHandler(
         IRoomRepository rooms,
         IPlayerIdGenerator playerIds,
-        IGameModuleRegistry games)
+        IGameModuleRegistry games,
+        IClock clock)
     {
         _rooms = rooms;
         _playerIds = playerIds;
         _games = games;
+        _clock = clock;
     }
 
     public async Task<AppResult<JoinRoomResult>> HandleAsync(
@@ -82,7 +85,7 @@ public sealed class JoinRoomHandler
                 await _rooms.SaveAsync(room, ct);
 
                 return AppResult<JoinRoomResult>.Ok(
-                    new JoinRoomResult(challengerPlayerId, RoomMapper.ToDto(room)));
+                    new JoinRoomResult(challengerPlayerId, RoomMapper.ToDto(room, _clock.UtcNow)));
             }, ct);
         }
         catch (LockTimeoutException)

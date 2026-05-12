@@ -14,5 +14,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <!--
+      Pure-interface logging package (no provider, no console sink). Lets
+      Application handlers inject ILogger<T> per CLAUDE.md §6 without
+      pulling in a logging implementation; concrete providers (Serilog,
+      OTel) are wired in Infrastructure / Api.
+    -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 </Project>
