@@ -7,7 +7,7 @@ import type {
   OpponentJoinedPayload,
 } from './events';
 import { RoomHubEvent } from './events';
-import type { MoveDto, RoomDto } from '../api/types';
+import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
 
 /**
  * Typed wrapper around @microsoft/signalr's HubConnection. Keeps the
@@ -76,11 +76,12 @@ export class RoomHubClient {
 
   /**
    * Call Hub.JoinRoom — registers presence in the room (CLAUDE.md §2.4).
-   * Returns the current room state; the server fires MatchStarted to the
+   * Returns the room state and the caller's role (decoded from the signed
+   * session cookie on the server). The server fires MatchStarted to the
    * group if this call flipped WaitingForOpponent → InProgress.
    */
-  joinRoom(): Promise<RoomDto> {
-    return this._connection.invoke<RoomDto>('JoinRoom');
+  joinRoom(): Promise<RoomSessionDto> {
+    return this._connection.invoke<RoomSessionDto>('JoinRoom');
   }
 
   /**

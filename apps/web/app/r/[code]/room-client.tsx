@@ -24,10 +24,10 @@ interface RoomClientProps {
  * connection, decides whether to render the join form or the match UI,
  * and threads the room state from server events through to the board.
  *
- * Role detection: the page can't decode the (encrypted) session cookie
- * server-side, so we attempt SignalR.JoinRoom() on mount and use the
- * resolved role from the server's RegisterPresence response. On failure
- * we render the join form.
+ * Role detection: the session cookie is HttpOnly + encrypted, so the
+ * client cannot decode it. We attempt SignalR.JoinRoom() on mount; the
+ * server returns the caller's role alongside the room state. On failure
+ * (no cookie / not authorized) we render the join form.
  */
 export function RoomClient({ initialRoom }: RoomClientProps) {
   const [room, setRoom] = useState<RoomDto>(initialRoom);
@@ -38,23 +38,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   const hubRef = useRef<RoomHubClient | null>(null);
 
   const game = useMemo(() => findGame(room.gameId), [room.gameId]);
-
-  const inferRoleFrom = useCallback((freshRoom: RoomDto): Role | null => {
-    // Without server help, we can't infer which seat is ours from the
-    // RoomDto alone. The server-side equivalent of this lookup would
-    // compare the cookie's playerId to room.host/challenger. Instead, we
-    // exploit a property of the WaitingForOpponent flow: a user who
-    // successfully calls JoinRoom on the hub is whichever seat sent the
-    // request that minted their cookie. We resolve role by which seat
-    // the freshly-bound presence flag flipped to true since the last tick.
-    // For Sprint 1's bring-up, we treat the host as "first connection"
-    // and the challenger as "second" via the auth-test sequence below.
-    return room.hostConnected !== freshRoom.hostConnected
-      ? 'host'
-      : room.challengerConnected !== freshRoom.challengerConnected
-        ? 'challenger'
-        : null;
-  }, [room.hostConnected, room.challengerConnected]);
 
   const connect = useCallback(async (signal: { cancelled: boolean }) => {
     setError(null);
@@ -82,15 +65,14 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         return;
       }
       hubRef.current = hub;
-      const freshRoom = await hub.joinRoom();
+      const session = await hub.joinRoom();
       if (signal.cancelled) {
         await hub.stop().catch(() => {});
         hubRef.current = null;
         return;
       }
-      const inferredRole = inferRoleFrom(freshRoom);
-      setRoom(freshRoom);
-      setRole(inferredRole);
+      setRoom(session.room);
+      setRole(session.role);
       setAuthStatus('authed');
     } catch (e) {
       if (signal.cancelled) return;
@@ -110,7 +92,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       await hub.stop().catch(() => {});
       hubRef.current = null;
     }
-  }, [inferRoleFrom]);
+  }, []);
 
   useEffect(() => {
     const signal = { cancelled: false };

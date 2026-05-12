@@ -57,6 +57,16 @@ export interface RoomDto {
   createdAt: string;
 }
 
+/**
+ * Caller-scoped view of a room. Returned by RoomHub.JoinRoom so the web
+ * client learns which seat its (HttpOnly, encrypted) session cookie
+ * authorizes it for — the client cannot decode the cookie itself.
+ */
+export interface RoomSessionDto {
+  role: Role;
+  room: RoomDto;
+}
+
 export interface MoveDto {
   cell?: number;
 }
