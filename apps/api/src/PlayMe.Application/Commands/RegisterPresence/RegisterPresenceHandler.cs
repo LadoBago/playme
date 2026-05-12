@@ -57,7 +57,10 @@ public sealed class RegisterPresenceHandler
                 await _rooms.SaveAsync(room, ct);
 
                 return AppResult<RegisterPresenceResult>.Ok(
-                    new RegisterPresenceResult(RoomMapper.ToDto(room), matchJustStarted));
+                    new RegisterPresenceResult(
+                        RoomMapper.ToDto(room),
+                        cmd.CallerRole,
+                        matchJustStarted));
             }, ct);
         }
         catch (LockTimeoutException)

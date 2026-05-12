@@ -88,8 +88,12 @@ public sealed class RoomHub : Hub
     /// index, this is called on every (re)connect; the server records that
     /// the role is online and — if both players are now registered AND
     /// both connected — starts the match per §2.9.
+    ///
+    /// Returns a <see cref="RoomSessionDto"/> so the client learns which
+    /// seat its (encrypted, HttpOnly) session cookie authorizes it for. The
+    /// client cannot decode the cookie itself and must not be left guessing.
     /// </summary>
-    public async Task<RoomDto> JoinRoom()
+    public async Task<RoomSessionDto> JoinRoom()
     {
         var session = RequireSession();
         var cmd = new RegisterPresenceCommand(
@@ -110,7 +114,7 @@ public sealed class RoomHub : Hub
                     Context.ConnectionAborted);
         }
 
-        return value.Room;
+        return new RoomSessionDto(value.CallerRole, value.Room);
     }
 
     /// <summary>
