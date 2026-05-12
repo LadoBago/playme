@@ -5,4 +5,7 @@
     <Project Path="src/PlayMe.Domain/PlayMe.Domain.csproj" />
     <Project Path="src/PlayMe.Infrastructure/PlayMe.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PlayMe.Application.Tests/PlayMe.Application.Tests.csproj" />
+  </Folder>
 </Solution>
