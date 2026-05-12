@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Transpile workspace TS packages from source — `@playme/shared`
+  // exports `src/index.ts` directly, not a built `.js`.
+  transpilePackages: ['@playme/shared'],
   // Security headers (CLAUDE.md §5.6) — full CSP will be tightened in Sprint 7.
   // For Sprint 0 we set the always-on ones.
   async headers() {
