@@ -56,10 +56,9 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         : null;
   }, [room.hostConnected, room.challengerConnected]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (signal: { cancelled: boolean }) => {
     setError(null);
     const hub = new RoomHubClient({ url: hubUrl() });
-    hubRef.current = hub;
 
     hub.on({
       onOpponentJoined: ({ room: r }) => setRoom(r),
@@ -74,12 +73,27 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 
     try {
       await hub.start();
+      // If the effect was cleaned up while negotiating (StrictMode dev
+      // double-mount, fast route change), tear down here instead of
+      // letting cleanup call stop() mid-negotiation — that surfaces as
+      // "The connection was stopped during negotiation" in the console.
+      if (signal.cancelled) {
+        await hub.stop().catch(() => {});
+        return;
+      }
+      hubRef.current = hub;
       const freshRoom = await hub.joinRoom();
+      if (signal.cancelled) {
+        await hub.stop().catch(() => {});
+        hubRef.current = null;
+        return;
+      }
       const inferredRole = inferRoleFrom(freshRoom);
       setRoom(freshRoom);
       setRole(inferredRole);
       setAuthStatus('authed');
     } catch (e) {
+      if (signal.cancelled) return;
       // The probe failed — either the visitor has no session yet (the
       // common case: just opened the share link) or the JoinRoom call
       // surfaced an i18n error. Either way the join form is the right
@@ -99,8 +113,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   }, [inferRoleFrom]);
 
   useEffect(() => {
-    void connect();
+    const signal = { cancelled: false };
+    void connect(signal);
     return () => {
+      signal.cancelled = true;
       hubRef.current?.stop().catch(() => {});
       hubRef.current = null;
     };
@@ -113,7 +129,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     // Tear down any partial connection and try again with the fresh cookie.
     await hubRef.current?.stop().catch(() => {});
     hubRef.current = null;
-    await connect();
+    await connect({ cancelled: false });
   }, [connect]);
 
   const handleSubmitMove = useCallback((cell: number) => {
