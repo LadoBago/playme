@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { t } from '@playme/shared';
+import { AnalyticsBoot } from '@/lib/analytics-boot';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // the ka/en switcher per CLAUDE.md §2.5 / §3.
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AnalyticsBoot />
+        {children}
+      </body>
     </html>
   );
 }
