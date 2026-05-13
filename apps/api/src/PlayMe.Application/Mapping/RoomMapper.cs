@@ -45,17 +45,40 @@ public static class RoomMapper
             Rows: rows,
             Cols: cols,
             Cells: cells,
-            Clock: ToClockSnapshotDto(match.Clock, now),
+            Clock: ToClockSnapshotDto(match.Clock, now, match.IsEnded),
             Outcome: match.Outcome is null ? null : ToOutcomeDto(match.Outcome));
     }
 
-    public static ClockSnapshotDto ToClockSnapshotDto(MatchClock clock, DateTimeOffset now) =>
-        new(
-            HostMs: (long)clock.HostRemaining.TotalMilliseconds,
-            ChallengerMs: (long)clock.ChallengerRemaining.TotalMilliseconds,
+    /// <summary>
+    /// Serialize the clock as values <em>effective at <paramref name="now"/></em>,
+    /// not as raw stored values. The wire contract is "<c>hostMs</c> is the
+    /// remaining time at <c>serverNowAt</c>" — the client extrapolates
+    /// from there using its local clock delta. If we shipped the raw
+    /// stored values (which are "as of <c>lastTickAt</c>"), a snapshot
+    /// produced mid-turn (e.g. an HTTP <c>getRoom</c> during the active
+    /// player's move) would top the clock back up to its pre-move value
+    /// on the client, then jump to zero when the server's timeout
+    /// sweeper actually fires. <paramref name="matchEnded"/> short-
+    /// circuits the extrapolation: an ended match has a frozen clock,
+    /// so we ship the stored values unchanged.
+    /// </summary>
+    public static ClockSnapshotDto ToClockSnapshotDto(
+        MatchClock clock, DateTimeOffset now, bool matchEnded)
+    {
+        var hostRemaining = matchEnded
+            ? clock.HostRemaining
+            : clock.EffectiveRemaining(Role.Host, now);
+        var challengerRemaining = matchEnded
+            ? clock.ChallengerRemaining
+            : clock.EffectiveRemaining(Role.Challenger, now);
+
+        return new ClockSnapshotDto(
+            HostMs: (long)hostRemaining.TotalMilliseconds,
+            ChallengerMs: (long)challengerRemaining.TotalMilliseconds,
             ActivePlayer: clock.ActivePlayer.ToString().ToLowerInvariant(),
             LastTickAt: clock.LastTickAt,
             ServerNowAt: now);
+    }
 
     public static OutcomeDto ToOutcomeDto(Outcome outcome) => outcome switch
     {
