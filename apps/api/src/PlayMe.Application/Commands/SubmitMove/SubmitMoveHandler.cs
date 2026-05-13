@@ -1,7 +1,6 @@
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
-using PlayMe.Domain.Games.TicTacToe3x3;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.SubmitMove;
@@ -13,6 +12,10 @@ namespace PlayMe.Application.Commands.SubmitMove;
 /// player, recompute the active clock and convert to a timeout if it has
 /// already run out, then parse and apply the move via the game module,
 /// commit if accepted, advance the clock, and persist.
+///
+/// The handler is fully game-agnostic — move parsing, rules, and reject
+/// vocabulary all come from the per-game module (CLAUDE.md §7 "Platform
+/// thinness"). Reject keys flow through opaquely.
 /// </summary>
 public sealed class SubmitMoveHandler
 {
@@ -91,9 +94,7 @@ public sealed class SubmitMoveHandler
                     return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
                         Room: RoomMapper.ToDto(room, now, _games),
                         MatchEnded: true,
-                        TimedOut: true,
-                        AcceptedCell: null,
-                        ByMoveSide: null));
+                        TimedOut: true));
                 }
 
                 var callerSide = stored.Side;
@@ -113,14 +114,7 @@ public sealed class SubmitMoveHandler
                 var moveResult = module.ApplyMove(match.State, callerSide, parseResult.Value!);
                 if (!moveResult.Accepted)
                 {
-                    var errorCode = moveResult.RejectReason switch
-                    {
-                        MoveRejectReason.IllegalCell => PlatformErrors.MoveIllegalCell,
-                        MoveRejectReason.CellOccupied => PlatformErrors.MoveCellOccupied,
-                        // Sprint 1 has no Connect 4; FullColumn isn't reachable yet.
-                        _ => PlatformErrors.ValidationMove,
-                    };
-                    return AppResult<SubmitMoveResult>.Fail(errorCode);
+                    return AppResult<SubmitMoveResult>.Fail(moveResult.RejectKey!);
                 }
 
                 var nextSide = module.OtherSide(callerSide);
@@ -147,9 +141,7 @@ public sealed class SubmitMoveHandler
                 return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
                     Room: RoomMapper.ToDto(room, now, _games),
                     MatchEnded: moveResult.Ending is not null,
-                    TimedOut: false,
-                    AcceptedCell: ExtractCell(parseResult.Value!),
-                    ByMoveSide: callerSide));
+                    TimedOut: false));
             }, ct);
         }
         catch (LockTimeoutException)
@@ -157,15 +149,4 @@ public sealed class SubmitMoveHandler
             return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
-
-    /// <summary>
-    /// Pull the move's primary coordinate for the Hub's broadcast event.
-    /// Sprint 1 only knows Tic-Tac-Toe; refactor when Connect 4 arrives.
-    /// </summary>
-    private static int ExtractCell(GameMove move) => move switch
-    {
-        TicTacToeMove t => t.Cell,
-        _ => throw new InvalidOperationException(
-            $"No cell extractor for move type {move.GetType().Name}."),
-    };
 }

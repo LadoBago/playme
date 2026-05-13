@@ -1,7 +1,6 @@
 using System.Text.Json;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Dtos;
-using PlayMe.Application.Errors;
 using PlayMe.Domain.Games.TicTacToe3x3;
 using PlayMe.Domain.Platform;
 
@@ -10,9 +9,9 @@ namespace PlayMe.Application.Games.TicTacToe3x3;
 /// <summary>
 /// Wire → domain mapper for Tic-Tac-Toe moves. Reads <c>cell</c> off the
 /// opaque <see cref="MoveDto.Payload"/>; the platform never inspects the
-/// payload shape (CLAUDE.md §7 "Platform thinness"). The contract is between
-/// this parser and the TTT web renderer: both agree the payload looks like
-/// <c>{"cell": 0..8}</c>. Range / legality are left to the rules module.
+/// payload shape (CLAUDE.md §7 "Platform thinness"). Both the payload shape
+/// and the reject key are agreed between this parser and the TTT web
+/// renderer — see <see cref="TicTacToeErrors"/>.
 /// </summary>
 public sealed class TicTacToeMoveParser : IGameMoveParser
 {
@@ -27,7 +26,7 @@ public sealed class TicTacToeMoveParser : IGameMoveParser
             !cellEl.TryGetInt32(out var cell))
         {
             return AppResult<GameMove>.Fail(
-                PlatformErrors.ValidationMove, "TicTacToe move requires a numeric 'cell'.");
+                TicTacToeErrors.ValidationMove, "TicTacToe move requires a numeric 'cell'.");
         }
         return AppResult<GameMove>.Ok(new TicTacToeMove(cell));
     }

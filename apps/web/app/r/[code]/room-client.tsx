@@ -17,16 +17,20 @@ import { Clock } from './clock';
 import { MatchHeader } from './match-header';
 
 /**
- * PR 3 TODO: extract the per-game state parse and cell renderer into a
- * per-game web module registered via the catalog. For PR 2 we keep them
- * inline because TTT 3×3 is still the only game in the catalog; the
- * platform shell (this file) is still TTT-aware. The platform `Board`
- * itself (see ./board.tsx) is already game-agnostic.
+ * TTT 3×3 per-game web bindings — kept inline in the platform shell while
+ * the catalog has only one game. When a second game module lands, lift
+ * these into a per-game web renderer registered via the catalog. The
+ * platform `Board` (see ./board.tsx), the wire DTOs, and the SignalR event
+ * payloads are already game-agnostic.
  */
 interface TttBoardState {
   rows: number;
   cols: number;
   cells: readonly (string | null)[];
+  /** Cell index 0..8 of the most-recently-played move, if any. */
+  lastMove?: number;
+  /** Three cells aligned by the winning move, if the match is won. */
+  winningLine?: readonly { row: number; col: number }[];
 }
 
 function parseTttState(state: string): TttBoardState {
@@ -57,7 +61,6 @@ interface RoomClientProps {
 export function RoomClient({ initialRoom }: RoomClientProps) {
   const [room, setRoom] = useState<RoomDto>(initialRoom);
   const [role, setRole] = useState<Role | null>(null);
-  const [lastMove, setLastMove] = useState<{ cell: number; side: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<'pending' | 'authed' | 'needsJoin'>('pending');
   const [connectionStatus, setConnectionStatus] = useState<
@@ -79,10 +82,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     hub.on({
       onOpponentJoined: ({ room: r }) => setRoom(r),
       onMatchStarted: ({ room: r }) => setRoom(r),
-      onMoveAccepted: ({ room: r, cell, side }) => {
-        setRoom(r);
-        setLastMove({ cell, side });
-      },
+      onMoveAccepted: ({ room: r }) => setRoom(r),
       onMatchEnded: ({ room: r }) => setRoom(r),
       onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
@@ -210,7 +210,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     <MatchView
       room={room}
       role={role}
-      lastMove={lastMove}
       onSubmitMove={handleSubmitMove}
       error={error}
       connectionStatus={connectionStatus}
@@ -221,7 +220,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
-  lastMove: { cell: number; side: string } | null;
   onSubmitMove: (cell: number) => void;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
@@ -230,7 +228,6 @@ interface MatchViewProps {
 function MatchView({
   room,
   role,
-  lastMove,
   onSubmitMove,
   error,
   connectionStatus,
@@ -260,8 +257,8 @@ function MatchView({
   const boardState = parseTttState(match.state);
 
   const winningCells = new Set<number>();
-  if (match.outcome?.kind === 'win' && match.outcome.winningLine) {
-    for (const c of match.outcome.winningLine) {
+  if (boardState.winningLine) {
+    for (const c of boardState.winningLine) {
       winningCells.add(c.row * boardState.cols + c.col);
     }
   }
@@ -294,7 +291,7 @@ function MatchView({
         rows={boardState.rows}
         cols={boardState.cols}
         cells={boardState.cells}
-        lastMoveCell={lastMove?.cell ?? null}
+        lastMoveCell={boardState.lastMove ?? null}
         winningCells={winningCells}
         canPlay={isMyTurn}
         onCellClick={onSubmitMove}

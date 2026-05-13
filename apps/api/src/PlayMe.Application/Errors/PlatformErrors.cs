@@ -15,7 +15,6 @@ public static class PlatformErrors
 {
     // --- Validation ---
     public const string ValidationDisplayName = "errors.validation.displayName";
-    public const string ValidationMove = "errors.validation.move";
 
     // --- Configuration (room creation) ---
     public const string ConfigInvalidGameId = "errors.config.invalidGameId";
@@ -33,9 +32,8 @@ public static class PlatformErrors
     public const string RoomNotJoinable = "errors.room.notJoinable";
     public const string RoomBusy = "errors.room.busy";
 
-    // --- Move-time ---
-    public const string MoveIllegalCell = "errors.move.illegalCell";
-    public const string MoveCellOccupied = "errors.move.cellOccupied";
+    // --- Move-time (platform-level only — per-game reject keys live in
+    //     each module's own constants class, e.g. TicTacToeErrors) ---
     public const string MoveNotYourTurn = "errors.move.notYourTurn";
     public const string MoveMatchNotInProgress = "errors.move.matchNotInProgress";
 

@@ -1,12 +1,17 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Domain.Games.TicTacToe3x3;
 
 /// <summary>
-/// Tic-Tac-Toe 3×3 rules (CLAUDE.md §2.3 canonical spec): players alternate
-/// placing X/O; the first to align 3 consecutive marks (row, column, or
-/// diagonal) wins. Board fills with no line → draw. X moves first.
+/// Tic-Tac-Toe 3×3 rules: players alternate placing X/O; the first to align
+/// 3 consecutive marks (row, column, or diagonal) wins. Board fills with no
+/// line → draw. X moves first.
+///
+/// All vocabulary (sides, reject keys, state shape, winning-line shape) is
+/// per-module — the platform never inspects any of it (CLAUDE.md §7
+/// "Platform thinness").
 /// </summary>
 public sealed class TicTacToe3x3GameModule : IGameModule
 {
@@ -26,7 +31,10 @@ public sealed class TicTacToe3x3GameModule : IGameModule
         new[] { 0, 4, 8 }, new[] { 2, 4, 6 },                    // diagonals
     };
 
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
 
     public GameId Id => GameId;
 
@@ -45,6 +53,51 @@ public sealed class TicTacToe3x3GameModule : IGameModule
 
     public IGameState NewMatch() => new TicTacToe3x3State();
 
+    public MoveResult ApplyMove(IGameState state, string side, GameMove move)
+    {
+        if (state is not TicTacToe3x3State board)
+        {
+            throw new ArgumentException(
+                $"Expected {nameof(TicTacToe3x3State)}, got {state.GetType().Name}.", nameof(state));
+        }
+        if (move is not TicTacToeMove tttMove)
+        {
+            throw new ArgumentException(
+                $"Expected {nameof(TicTacToeMove)}, got {move.GetType().Name}.", nameof(move));
+        }
+        if (side != TicTacToeSides.X && side != TicTacToeSides.O)
+        {
+            throw new ArgumentException($"Unknown side '{side}'.", nameof(side));
+        }
+
+        var cell = tttMove.Cell;
+        if (cell < 0 || cell >= TicTacToe3x3State.CellCount)
+        {
+            return MoveResult.Reject(TicTacToeErrors.IllegalCell);
+        }
+        if (!board.IsCellEmpty(cell))
+        {
+            return MoveResult.Reject(TicTacToeErrors.CellOccupied);
+        }
+
+        // Probe for a winning line before constructing the new state so
+        // the line travels with the state's WithMove call.
+        var winningLine = FindWinningLineFor(board, cell, side);
+        var newState = board.WithMove(cell, side, winningLine);
+
+        if (winningLine is not null)
+        {
+            return MoveResult.Accept(newState, new Win(side));
+        }
+
+        if (newState.IsFull())
+        {
+            return MoveResult.Accept(newState, new Draw());
+        }
+
+        return MoveResult.Accept(newState);
+    }
+
     public string Serialize(IGameState state)
     {
         if (state is not TicTacToe3x3State board)
@@ -52,7 +105,12 @@ public sealed class TicTacToe3x3GameModule : IGameModule
             throw new ArgumentException(
                 $"Expected {nameof(TicTacToe3x3State)}, got {state.GetType().Name}.", nameof(state));
         }
-        var payload = new StatePayload(TicTacToe3x3State.Size, TicTacToe3x3State.Size, board.Cells);
+        var payload = new StatePayload(
+            TicTacToe3x3State.Size,
+            TicTacToe3x3State.Size,
+            board.Cells,
+            board.LastMove,
+            board.WinningLine);
         return JsonSerializer.Serialize(payload, SerializerOptions);
     }
 
@@ -81,69 +139,26 @@ public sealed class TicTacToe3x3GameModule : IGameModule
                 $"TicTacToe3x3 state shape mismatch: rows={payload.Rows}, cols={payload.Cols}, cells={payload.Cells?.Count ?? 0}.",
                 nameof(serialized));
         }
-        return new TicTacToe3x3State(payload.Cells);
-    }
-
-    /// <summary>Wire shape of TTT-3×3's serialized state. Per-game and opaque
-    /// to the platform.</summary>
-    private sealed record StatePayload(int Rows, int Cols, IReadOnlyList<string?> Cells);
-
-    public MoveResult ApplyMove(IGameState state, string side, GameMove move)
-    {
-        if (state is not TicTacToe3x3State board)
-        {
-            throw new ArgumentException(
-                $"Expected {nameof(TicTacToe3x3State)}, got {state.GetType().Name}.", nameof(state));
-        }
-        if (move is not TicTacToeMove tttMove)
-        {
-            throw new ArgumentException(
-                $"Expected {nameof(TicTacToeMove)}, got {move.GetType().Name}.", nameof(move));
-        }
-        if (side != TicTacToeSides.X && side != TicTacToeSides.O)
-        {
-            throw new ArgumentException($"Unknown side '{side}'.", nameof(side));
-        }
-
-        var cell = tttMove.Cell;
-        if (cell < 0 || cell >= TicTacToe3x3State.CellCount)
-        {
-            return MoveResult.Reject(MoveRejectReason.IllegalCell);
-        }
-        if (!board.IsCellEmpty(cell))
-        {
-            return MoveResult.Reject(MoveRejectReason.CellOccupied);
-        }
-
-        var newState = board.WithCell(cell, side);
-
-        var winningLine = FindWinningLine(newState, side);
-        if (winningLine is not null)
-        {
-            return MoveResult.Accept(newState, new Win(side, winningLine));
-        }
-
-        if (newState.IsFull())
-        {
-            return MoveResult.Accept(newState, new Draw());
-        }
-
-        return MoveResult.Accept(newState);
+        return new TicTacToe3x3State(payload.Cells, payload.LastMove, payload.WinningLine);
     }
 
     /// <summary>
-    /// Return the first winning line on which <paramref name="side"/> has
-    /// all three cells, or null if no win. Coordinates are returned in
-    /// (row, col) form so the client can highlight them directly.
+    /// Return the line through <paramref name="cell"/> on which
+    /// <paramref name="side"/> has just completed three in a row, or null
+    /// if no win. We only check the lines containing the latest cell —
+    /// every earlier winning configuration would have ended the match.
     /// </summary>
-    private static BoardCoordinate[]? FindWinningLine(
-        TicTacToe3x3State board, string side)
+    private static BoardCoordinate[]? FindWinningLineFor(
+        TicTacToe3x3State board, int cell, string side)
     {
         foreach (var line in WinningLines)
         {
-            if (board.CellAt(line[0]) == side &&
-                board.CellAt(line[1]) == side &&
-                board.CellAt(line[2]) == side)
+            if (line[0] != cell && line[1] != cell && line[2] != cell) continue;
+
+            var a = line[0] == cell ? side : board.CellAt(line[0]);
+            var b = line[1] == cell ? side : board.CellAt(line[1]);
+            var c = line[2] == cell ? side : board.CellAt(line[2]);
+            if (a == side && b == side && c == side)
             {
                 return new[]
                 {
@@ -158,4 +173,13 @@ public sealed class TicTacToe3x3GameModule : IGameModule
 
     private static BoardCoordinate ToCoordinate(int cellIndex) =>
         new(cellIndex / TicTacToe3x3State.Size, cellIndex % TicTacToe3x3State.Size);
+
+    /// <summary>Wire shape of TTT-3×3's serialized state. Per-game and opaque
+    /// to the platform.</summary>
+    private sealed record StatePayload(
+        int Rows,
+        int Cols,
+        IReadOnlyList<string?> Cells,
+        int? LastMove = null,
+        IReadOnlyList<BoardCoordinate>? WinningLine = null);
 }
