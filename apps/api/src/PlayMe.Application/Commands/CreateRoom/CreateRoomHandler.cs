@@ -48,18 +48,18 @@ public sealed class CreateRoomHandler
         try { gameId = new GameId(cmd.GameId); }
         catch (ArgumentException)
         {
-            return AppResult<CreateRoomResult>.Fail(ErrorCode.ConfigInvalidGameId);
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidGameId);
         }
 
         if (!_games.IsRegistered(gameId))
         {
-            return AppResult<CreateRoomResult>.Fail(ErrorCode.ConfigInvalidGameId);
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidGameId);
         }
         var module = _games.GetModule(gameId);
 
         if (!Enum.IsDefined(cmd.SideSelectionMode))
         {
-            return AppResult<CreateRoomResult>.Fail(ErrorCode.ConfigInvalidSideSelectionMode);
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidSideSelectionMode);
         }
 
         var sideResult = ResolveHostSide(cmd.SideSelectionMode, cmd.HostSide, module);
@@ -73,7 +73,7 @@ public sealed class CreateRoomHandler
         try { displayName = DisplayName.Create(cmd.HostDisplayName); }
         catch (ArgumentException)
         {
-            return AppResult<CreateRoomResult>.Fail(ErrorCode.ValidationDisplayName);
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ValidationDisplayName);
         }
 
         var hostPlayerId = _playerIds.NewPlayerId();
@@ -99,7 +99,7 @@ public sealed class CreateRoomHandler
         if (created is null)
         {
             return AppResult<CreateRoomResult>.Fail(
-                ErrorCode.RoomBusy,
+                PlatformErrors.RoomBusy,
                 "Repeated room-code collisions; aborting room creation.");
         }
 
@@ -115,7 +115,7 @@ public sealed class CreateRoomHandler
             case SideSelectionMode.HostPicksSpecific:
                 if (requestedHostSide is null || !module.ValidSides.Contains(requestedHostSide))
                 {
-                    return AppResult<string?>.Fail(ErrorCode.ConfigInvalidHostSide);
+                    return AppResult<string?>.Fail(PlatformErrors.ConfigInvalidHostSide);
                 }
                 return AppResult<string?>.Ok(requestedHostSide);
 
@@ -123,7 +123,7 @@ public sealed class CreateRoomHandler
                 if (requestedHostSide is not null)
                 {
                     return AppResult<string?>.Fail(
-                        ErrorCode.ConfigInvalidHostSide,
+                        PlatformErrors.ConfigInvalidHostSide,
                         "Host side must not be provided under Random mode.");
                 }
                 var pick = module.ValidSides[_random.NextInt(module.ValidSides.Count)];
@@ -133,13 +133,13 @@ public sealed class CreateRoomHandler
                 if (requestedHostSide is not null)
                 {
                     return AppResult<string?>.Fail(
-                        ErrorCode.ConfigInvalidHostSide,
+                        PlatformErrors.ConfigInvalidHostSide,
                         "Host side must not be provided under ChallengerPicks mode.");
                 }
                 return AppResult<string?>.Ok(null);
 
             default:
-                return AppResult<string?>.Fail(ErrorCode.ConfigInvalidSideSelectionMode);
+                return AppResult<string?>.Fail(PlatformErrors.ConfigInvalidSideSelectionMode);
         }
     }
 }

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using PlayMe.Application;
-using PlayMe.Application.Errors;
 
 namespace PlayMe.Api.Http;
 
 /// <summary>
 /// Turns an <see cref="AppResult{T}"/> into an <see cref="IActionResult"/>.
 /// Success → 200 with the value; failure → <see cref="ProblemDetails"/>
-/// carrying the i18n key (CLAUDE.md §3) under <c>code</c>.
+/// carrying the i18n key (CLAUDE.md §7 "Platform thinness") under
+/// <c>code</c>.
 /// </summary>
 public static class AppResultActionExtensions
 {
@@ -20,13 +20,12 @@ public static class AppResultActionExtensions
         {
             return new OkObjectResult(result.Value);
         }
-        return ToProblem(result.Error!.Value, result.Detail);
+        return ToProblem(result.Error!, result.Detail);
     }
 
-    public static ActionResult ToProblem(ErrorCode code, string? detail)
+    public static ActionResult ToProblem(string key, string? detail)
     {
-        var key = code.ToI18nKey(); // e.g. "errors.room.notFound"
-        var status = code.ToHttpStatus();
+        var status = key.ToHttpStatus();
 
         // Strip the "errors." prefix so the URI doesn't end up with a
         // duplicate "errors/errors/..." segment.

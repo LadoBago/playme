@@ -40,7 +40,7 @@ public sealed class JoinRoomHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<JoinRoomResult>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomNotFound);
         }
 
         try
@@ -50,17 +50,17 @@ public sealed class JoinRoomHandler
                 var room = await _rooms.LoadAsync(code, ct);
                 if (room is null)
                 {
-                    return AppResult<JoinRoomResult>.Fail(ErrorCode.RoomNotFound);
+                    return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomNotFound);
                 }
 
                 if (room.Status != RoomStatus.WaitingForOpponent)
                 {
-                    return AppResult<JoinRoomResult>.Fail(ErrorCode.RoomNotJoinable);
+                    return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomNotJoinable);
                 }
 
                 if (room.Challenger is not null)
                 {
-                    return AppResult<JoinRoomResult>.Fail(ErrorCode.RoomAlreadyJoined);
+                    return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomAlreadyJoined);
                 }
 
                 var module = _games.GetModule(room.GameId);
@@ -75,7 +75,7 @@ public sealed class JoinRoomHandler
                 try { displayName = DisplayName.Create(cmd.DisplayName); }
                 catch (ArgumentException)
                 {
-                    return AppResult<JoinRoomResult>.Fail(ErrorCode.ValidationDisplayName);
+                    return AppResult<JoinRoomResult>.Fail(PlatformErrors.ValidationDisplayName);
                 }
 
                 var challengerPlayerId = _playerIds.NewPlayerId();
@@ -90,7 +90,7 @@ public sealed class JoinRoomHandler
         }
         catch (LockTimeoutException)
         {
-            return AppResult<JoinRoomResult>.Fail(ErrorCode.RoomBusy);
+            return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
 
@@ -103,23 +103,23 @@ public sealed class JoinRoomHandler
             case SideSelectionMode.Random:
                 if (side is not null)
                 {
-                    return AppResult<Unit>.Fail(ErrorCode.JoinSideNotAllowed);
+                    return AppResult<Unit>.Fail(PlatformErrors.JoinSideNotAllowed);
                 }
                 return AppResult<Unit>.Ok(Unit.Value);
 
             case SideSelectionMode.ChallengerPicks:
                 if (side is null)
                 {
-                    return AppResult<Unit>.Fail(ErrorCode.JoinSidePickRequired);
+                    return AppResult<Unit>.Fail(PlatformErrors.JoinSidePickRequired);
                 }
                 if (!module.ValidSides.Contains(side))
                 {
-                    return AppResult<Unit>.Fail(ErrorCode.JoinInvalidSide);
+                    return AppResult<Unit>.Fail(PlatformErrors.JoinInvalidSide);
                 }
                 return AppResult<Unit>.Ok(Unit.Value);
 
             default:
-                return AppResult<Unit>.Fail(ErrorCode.ConfigInvalidSideSelectionMode);
+                return AppResult<Unit>.Fail(PlatformErrors.ConfigInvalidSideSelectionMode);
         }
     }
 }

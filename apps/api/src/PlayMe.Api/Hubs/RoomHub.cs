@@ -105,7 +105,7 @@ public sealed class RoomHub : Hub
             // Stale cookie for a different room. Don't run RegisterPresence
             // — that would mark the caller connected in the wrong room and
             // emit OpponentReconnected to the wrong group.
-            throw new HubException(ErrorCode.SessionUnauthorized.ToI18nKey());
+            throw new HubException(PlatformErrors.SessionUnauthorized);
         }
 
         var cmd = new RegisterPresenceCommand(
@@ -114,7 +114,7 @@ public sealed class RoomHub : Hub
         var result = await _registerPresence.HandleAsync(cmd, Context.ConnectionAborted);
         if (!result.Succeeded)
         {
-            throw new HubException(result.Error!.Value.ToI18nKey());
+            throw new HubException(result.Error!);
         }
 
         var value = result.Value!;
@@ -152,7 +152,7 @@ public sealed class RoomHub : Hub
         var result = await _submitMove.HandleAsync(cmd, Context.ConnectionAborted);
         if (!result.Succeeded)
         {
-            throw new HubException(result.Error!.Value.ToI18nKey());
+            throw new HubException(result.Error!);
         }
 
         var value = result.Value!;
@@ -193,6 +193,6 @@ public sealed class RoomHub : Hub
         {
             return session;
         }
-        throw new HubException(ErrorCode.SessionUnauthorized.ToI18nKey());
+        throw new HubException(PlatformErrors.SessionUnauthorized);
     }
 }
