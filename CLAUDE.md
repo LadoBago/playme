@@ -233,6 +233,18 @@ If a SOLID violation is necessary, call it out in the PR description with a one-
 - After security-relevant changes (auth, CORS, headers, rate limits, dependency bumps): `pnpm audit --prod` + `dotnet list package --vulnerable --include-transitive`; recheck headers via `securityheaders.com`.
 - When unsure about a tradeoff affecting the platform layer or more than one game, **stops and asks** rather than guessing.
 
+### Platform thinness (the open-closed rule, made concrete)
+
+The platform layer (`PlayMe.Domain/Platform/`, the platform handlers in `PlayMe.Application/`, the SignalR `RoomHub`, the Redis serialization) is the **skeleton** for the project's class of games: turn-based, two-player, clocked. It owns: room/match lifecycle, presence/reconnect, the chess clock, side assignment, and the move-pipeline shell (auth → distributed lock → dispatch → broadcast). **Nothing else.**
+
+- **Adding a new in-scope game (TTT 6×6 / 9×9, Connect 4, chess, …) must touch zero platform code.** The diff is a new `Domain/Games/<game>/` folder, a new `IGameModule` + `IGameMoveParser`, DI registration, a catalog entry, and per-game web rendering. If a new game forces an edit in `Domain/Platform/`, in the platform handlers, in the Hub, or in `Infrastructure/Redis/`, **the seam is wrong — fix the seam first, then add the game.**
+- **The platform changes only when its own scope changes** — supporting 3+ players, dropping the clock, allowing simultaneous (non-turn-based) play. Those are explicit, deliberate, discussed changes; never a side-effect of adding a game.
+- **Per-game code duplication is acceptable and expected.** Two games independently implementing "find N-in-a-row on a grid" is fine. **Do not grow the platform to host shared helpers** — that's how skeletons grow fat and tightly couple every future game to assumptions made for an earlier one.
+- **For genuine commonality between games, prefer composition over inheritance.** Expose a small utility (e.g. `GridLineDetector`) that a game module *chooses to instantiate and use*, never as platform behavior every module inherits or that the platform routes through. The platform must not know the helper exists.
+- **Game-specific vocabulary stays inside the module:** move payloads, move-reject keys, board shape, side identifiers ("x"/"o" vs "red"/"yellow"), state encoding. The platform sees only opaque types — `IGameState` (marker), `GameMove` (abstract record), `IGameModule.Serialize`/`Deserialize`, and reject keys that are an **agreement between the per-game server module and the per-game web renderer** (not platform-owned i18n keys, not a platform enum).
+
+The test: **could this code work unchanged if we removed every game except chess?** If yes, it's platform. If no, it's a game module.
+
 ### What Claude Code MUST NOT do
 
 - Don't introduce a shared rules engine across game modules. Each game is intentionally self-contained.
@@ -259,6 +271,7 @@ If a SOLID violation is necessary, call it out in the PR description with a one-
 - Don't bypass the generated API client by hand-rolling `fetch` calls in features.
 - Don't add `any`, disable strict mode, or suppress lint rules to make code compile.
 - Don't pause the chess clock on disconnect — the design is that the clock keeps running during reconnect grace.
+- Don't add a periodic `ClockTick` broadcast. By design the server is **event-driven only**: every state-mutating event carries a `ClockSnapshotDto` and the web client interpolates locally at ~10 Hz. The `ClockTick` event name is reserved for a possible future drift-correction sweep; do not implement it without a concrete drift symptom (see [`docs/state.md`](docs/state.md) §2.2).
 - Don't add user-facing strings without translations in both locales.
 - Don't introduce new top-level dependencies without flagging them in the PR description (license, size, maintenance).
 - Don't change CI configuration, release scripts, `turbo.json`, or the deploy targets silently — call them out.

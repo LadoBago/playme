@@ -69,7 +69,7 @@ Every room follows a small finite-state machine, enforced server-side. Handlers 
 
 The clock state lives in the Redis room hash: `lastTickAt` (server UTC ms), `activePlayer` (`host` | `challenger`), `hostClockMs`, `challengerClockMs`. Stored values represent remaining time *as of `lastTickAt`*. **No background timer mutates clock state every second.** The effective clock at moment `T` is computed lazily — for the active player: `storedClockMs - (T - lastTickAt)`; for the inactive player: the stored value unchanged. State is rewritten only when something changes (move accepted, match ends, room closes).
 
-Clients extrapolate locally between server snapshots (`displayedMs = serverClockAtSnapshot - (Date.now() - snapshotReceivedAt)`) and re-sync whenever a `ClockTick` arrives. Drift is bounded by network RTT and irrelevant at 1-second display granularity.
+Clients extrapolate locally between server snapshots (`displayedMs = serverClockAtSnapshot - (Date.now() - snapshotReceivedAt)`) and re-sync whenever a fresh snapshot arrives. Every state-mutating server event (`MatchStarted`, `MoveAccepted`, `MatchEnded`, `OpponentDisconnected`, `OpponentReconnected`, presence responses) carries a `ClockSnapshotDto`; **no separate periodic `ClockTick` event is broadcast.** The web client re-renders the countdown locally at ~10 Hz (`apps/web/app/r/[code]/clock.tsx`) using the most recent snapshot. Drift is bounded by network RTT and irrelevant at 1-second display granularity. The `ClockTick` event name is **reserved** (see §2.3) for a possible future drift-correction sweep; don't add a periodic broadcast without a concrete drift symptom to fix.
 
 **Timeout detection** is two-pronged:
 
@@ -88,7 +88,7 @@ Broadcast to both clients via SignalR unless noted:
 | `MatchStarted` | entering `InProgress` (initial or after rematch accept) | starting clock snapshot, both players' sides (**swapped on each rematch** per [`platform-and-games.md`](platform-and-games.md) §1 #15), who moves first |
 | `MoveAccepted` | server accepts a `SubmitMove` | move, updated board state, who's next, clock snapshot |
 | `MoveRejected` | server rejects a `SubmitMove` | reason code (illegal cell, full column, not-your-turn) — sent to submitter only |
-| `ClockTick` | on every accepted move, on connect/reconnect, on match end, and (optional) a slow drift-correction sweep every 5–10 s | per-player remaining time |
+| `ClockTick` *(reserved — not emitted today)* | Event name reserved for a future drift-correction sweep. **Not implemented by design** — every state-mutating event in this table already carries a `ClockSnapshotDto`, and the client interpolates between snapshots locally. Only add a periodic broadcast if a measurable drift problem appears in the wild (see §2.2). | per-player remaining time |
 | `MatchEnded` | `InProgress` → `Ended` | outcome, winning-line coordinates (if `Win`), final clock |
 | `RematchOffered` | a player offers rematch | which player offered |
 | `RematchAccepted` | `AwaitingRematch` → `InProgress` (new match) | (followed by `MatchStarted`) |
