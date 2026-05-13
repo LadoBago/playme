@@ -25,8 +25,6 @@ export interface MatchStartedPayload {
 
 export interface MoveAcceptedPayload {
   room: RoomDto;
-  cell: number;
-  side: string;
 }
 
 export interface MatchEndedPayload {

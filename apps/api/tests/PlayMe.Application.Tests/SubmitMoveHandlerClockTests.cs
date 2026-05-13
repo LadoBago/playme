@@ -90,7 +90,6 @@ public sealed class SubmitMoveHandlerClockTests
         result.Succeeded.Should().BeTrue();
         result.Value!.TimedOut.Should().BeTrue();
         result.Value.MatchEnded.Should().BeTrue();
-        result.Value.AcceptedCell.Should().BeNull();
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
         saved!.Status.Should().Be(RoomStatus.Ended);

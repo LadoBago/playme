@@ -84,29 +84,25 @@ public static class RoomMapper
             Kind: "win",
             WinningSide: w.WinningSide,
             ResigningSide: null,
-            TimedOutSide: null,
-            WinningLine: w.WinningLine),
+            TimedOutSide: null),
 
         Draw => new OutcomeDto(
             Kind: "draw",
             WinningSide: null,
             ResigningSide: null,
-            TimedOutSide: null,
-            WinningLine: null),
+            TimedOutSide: null),
 
         Resign r => new OutcomeDto(
             Kind: "resign",
             WinningSide: null,
             ResigningSide: r.ResigningSide,
-            TimedOutSide: null,
-            WinningLine: null),
+            TimedOutSide: null),
 
         Domain.Platform.Timeout t => new OutcomeDto(
             Kind: "timeout",
             WinningSide: null,
             ResigningSide: null,
-            TimedOutSide: t.TimedOutSide,
-            WinningLine: null),
+            TimedOutSide: t.TimedOutSide),
 
         _ => throw new InvalidOperationException(
             $"Unsupported outcome type {outcome.GetType().Name}."),

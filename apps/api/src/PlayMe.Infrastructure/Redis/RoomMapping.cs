@@ -70,18 +70,17 @@ internal static class RoomMapping
 
     private static OutcomeRecord ToOutcomeRecord(Outcome outcome) => outcome switch
     {
-        Win w => new OutcomeRecord("win", w.WinningSide, ResigningSide: null, TimedOutSide: null, WinningLine: w.WinningLine),
-        Draw => new OutcomeRecord("draw", WinningSide: null, ResigningSide: null, TimedOutSide: null, WinningLine: null),
-        Resign r => new OutcomeRecord("resign", WinningSide: null, ResigningSide: r.ResigningSide, TimedOutSide: null, WinningLine: null),
-        Domain.Platform.Timeout t => new OutcomeRecord("timeout", WinningSide: null, ResigningSide: null, TimedOutSide: t.TimedOutSide, WinningLine: null),
+        Win w => new OutcomeRecord("win", w.WinningSide, ResigningSide: null, TimedOutSide: null),
+        Draw => new OutcomeRecord("draw", WinningSide: null, ResigningSide: null, TimedOutSide: null),
+        Resign r => new OutcomeRecord("resign", WinningSide: null, ResigningSide: r.ResigningSide, TimedOutSide: null),
+        Domain.Platform.Timeout t => new OutcomeRecord("timeout", WinningSide: null, ResigningSide: null, TimedOutSide: t.TimedOutSide),
         _ => throw new InvalidOperationException($"Unsupported outcome '{outcome.GetType().Name}'."),
     };
 
     private static Outcome FromOutcomeRecord(OutcomeRecord record) => record.Kind switch
     {
         "win" => new Win(
-            record.WinningSide ?? throw new InvalidOperationException("Win outcome missing winningSide."),
-            record.WinningLine ?? throw new InvalidOperationException("Win outcome missing winningLine.")),
+            record.WinningSide ?? throw new InvalidOperationException("Win outcome missing winningSide.")),
         "draw" => new Draw(),
         "resign" => new Resign(
             record.ResigningSide ?? throw new InvalidOperationException("Resign outcome missing resigningSide.")),

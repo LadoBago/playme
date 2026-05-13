@@ -4,30 +4,32 @@ namespace PlayMe.Domain.Platform;
 /// Outcome of <see cref="IGameModule.ApplyMove"/>. Either the move was
 /// accepted (in which case <see cref="NewState"/> is set; <see cref="Ending"/>
 /// is non-null only if the move ended the match) or rejected (in which case
-/// <see cref="RejectReason"/> explains why and the state is unchanged).
+/// <see cref="RejectKey"/> is an opaque string the per-game module emits and
+/// the per-game web renderer interprets — CLAUDE.md §7 "Platform thinness":
+/// the platform never enumerates reject reasons).
 /// </summary>
 public sealed record MoveResult
 {
     public bool Accepted { get; }
     public IGameState? NewState { get; }
     public Outcome? Ending { get; }
-    public MoveRejectReason? RejectReason { get; }
+    public string? RejectKey { get; }
 
     private MoveResult(
         bool accepted,
         IGameState? newState,
         Outcome? ending,
-        MoveRejectReason? rejectReason)
+        string? rejectKey)
     {
         Accepted = accepted;
         NewState = newState;
         Ending = ending;
-        RejectReason = rejectReason;
+        RejectKey = rejectKey;
     }
 
     public static MoveResult Accept(IGameState newState, Outcome? ending = null) =>
         new(true, newState, ending, null);
 
-    public static MoveResult Reject(MoveRejectReason reason) =>
-        new(false, null, null, reason);
+    public static MoveResult Reject(string rejectKey) =>
+        new(false, null, null, rejectKey);
 }

@@ -15,15 +15,12 @@ public static class ErrorKeyHttpStatus
     {
         // 400 — bad input or move-time validation
         PlatformErrors.ValidationDisplayName => StatusCodes.Status400BadRequest,
-        PlatformErrors.ValidationMove => StatusCodes.Status400BadRequest,
         PlatformErrors.ConfigInvalidGameId => StatusCodes.Status400BadRequest,
         PlatformErrors.ConfigInvalidSideSelectionMode => StatusCodes.Status400BadRequest,
         PlatformErrors.ConfigInvalidHostSide => StatusCodes.Status400BadRequest,
         PlatformErrors.JoinSideNotAllowed => StatusCodes.Status400BadRequest,
         PlatformErrors.JoinSidePickRequired => StatusCodes.Status400BadRequest,
         PlatformErrors.JoinInvalidSide => StatusCodes.Status400BadRequest,
-        PlatformErrors.MoveIllegalCell => StatusCodes.Status400BadRequest,
-        PlatformErrors.MoveCellOccupied => StatusCodes.Status400BadRequest,
         PlatformErrors.MoveNotYourTurn => StatusCodes.Status400BadRequest,
 
         // 401 — cookie missing, tampered, expired, or playerId mismatch

@@ -160,12 +160,7 @@ public sealed class RoomHub : Hub
         {
             await Clients.Group(GroupName(session.RoomCode.Value))
                 .SendAsync(RoomHubEvents.MoveAccepted,
-                    new
-                    {
-                        room = value.Room,
-                        cell = value.AcceptedCell,
-                        side = value.ByMoveSide,
-                    },
+                    new { room = value.Room },
                     Context.ConnectionAborted);
         }
 
