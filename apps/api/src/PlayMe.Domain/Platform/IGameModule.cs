@@ -23,6 +23,13 @@ public interface IGameModule
     /// </summary>
     string FirstMoveSide { get; }
 
+    /// <summary>
+    /// Per-side starting clock budget for this game. The platform reads this
+    /// when a match starts; it never enumerates per-game budgets itself
+    /// (CLAUDE.md §7 "Platform thinness").
+    /// </summary>
+    TimeSpan DefaultClockBudget { get; }
+
     /// <summary>Initial state for a new match (empty board).</summary>
     IGameState NewMatch();
 
@@ -37,4 +44,20 @@ public interface IGameModule
 
     /// <summary>Side opposite to <paramref name="side"/>.</summary>
     string OtherSide(string side);
+
+    /// <summary>
+    /// Serialize <paramref name="state"/> to an opaque JSON string. Used by
+    /// both persistence (Redis room blob) and the wire (`MatchDto.State`)
+    /// without the platform inspecting the shape — round-tripping through
+    /// <see cref="Deserialize"/> is the module's responsibility. The string
+    /// is rendered by the per-game web renderer; the platform never reads
+    /// it (CLAUDE.md §7 "Platform thinness").
+    /// </summary>
+    string Serialize(IGameState state);
+
+    /// <summary>
+    /// Reverse of <see cref="Serialize"/>. Throws <see cref="ArgumentException"/>
+    /// if the blob can't be parsed as this game's state.
+    /// </summary>
+    IGameState Deserialize(string serialized);
 }

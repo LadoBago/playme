@@ -28,14 +28,17 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     private static readonly TimeSpan LockRetryDelay = TimeSpan.FromMilliseconds(20);
 
     private readonly IConnectionMultiplexer _redis;
+    private readonly IGameModuleRegistry _games;
     private readonly ILogger<RedisRoomRepository> _logger;
     private readonly JsonSerializerOptions _json;
 
     public RedisRoomRepository(
         IConnectionMultiplexer redis,
+        IGameModuleRegistry games,
         ILogger<RedisRoomRepository> logger)
     {
         _redis = redis;
+        _games = games;
         _logger = logger;
         _json = PlayMeJsonOptions.CreateDefault();
     }
@@ -54,7 +57,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         var record = JsonSerializer.Deserialize<RoomRecord>((string)json!, _json)
             ?? throw new InvalidOperationException(
                 $"Room blob for {code} deserialized to null.");
-        return RoomMapping.FromRecord(record);
+        return RoomMapping.FromRecord(record, _games);
     }
 
     public async Task SaveAsync(Room room, CancellationToken ct)
@@ -62,7 +65,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         ct.ThrowIfCancellationRequested();
 
         var db = _redis.GetDatabase();
-        var record = RoomMapping.ToRecord(room);
+        var record = RoomMapping.ToRecord(room, _games);
         var json = JsonSerializer.Serialize(record, _json);
         await db.StringSetAsync(
             RedisKeys.Room(room.Code.Value),
@@ -75,7 +78,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         ct.ThrowIfCancellationRequested();
 
         var db = _redis.GetDatabase();
-        var record = RoomMapping.ToRecord(room);
+        var record = RoomMapping.ToRecord(room, _games);
         var json = JsonSerializer.Serialize(record, _json);
         return await db.StringSetAsync(
             RedisKeys.Room(room.Code.Value),

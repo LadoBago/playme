@@ -21,15 +21,18 @@ public sealed class AdjudicateTimeoutHandler
     private readonly IRoomRepository _rooms;
     private readonly IClock _clock;
     private readonly IClockService _clockService;
+    private readonly IGameModuleRegistry _games;
 
     public AdjudicateTimeoutHandler(
         IRoomRepository rooms,
         IClock clock,
-        IClockService clockService)
+        IClockService clockService,
+        IGameModuleRegistry games)
     {
         _rooms = rooms;
         _clock = clock;
         _clockService = clockService;
+        _games = games;
     }
 
     public async Task<AppResult<AdjudicateTimeoutResult>> HandleAsync(
@@ -58,14 +61,14 @@ public sealed class AdjudicateTimeoutHandler
             || room.CurrentMatch.IsEnded)
         {
             return AppResult<AdjudicateTimeoutResult>.Ok(
-                new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now), TimedOut: false));
+                new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now, _games), TimedOut: false));
         }
 
         var match = room.CurrentMatch;
         if (!_clockService.HasActivePlayerTimedOut(match.Clock, now))
         {
             return AppResult<AdjudicateTimeoutResult>.Ok(
-                new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now), TimedOut: false));
+                new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now, _games), TimedOut: false));
         }
 
         match.ApplyTimeout(match.SideToMove, now);
@@ -73,6 +76,6 @@ public sealed class AdjudicateTimeoutHandler
         await _rooms.SaveAsync(room, ct);
 
         return AppResult<AdjudicateTimeoutResult>.Ok(
-            new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now), TimedOut: true));
+            new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now, _games), TimedOut: true));
     }
 }

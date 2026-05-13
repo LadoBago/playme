@@ -10,11 +10,13 @@ public sealed class GetRoomHandler
 {
     private readonly IRoomRepository _rooms;
     private readonly IClock _clock;
+    private readonly IGameModuleRegistry _games;
 
-    public GetRoomHandler(IRoomRepository rooms, IClock clock)
+    public GetRoomHandler(IRoomRepository rooms, IClock clock, IGameModuleRegistry games)
     {
         _rooms = rooms;
         _clock = clock;
+        _games = games;
     }
 
     public async Task<AppResult<RoomDto>> HandleAsync(
@@ -35,6 +37,6 @@ public sealed class GetRoomHandler
             return AppResult<RoomDto>.Fail(PlatformErrors.RoomNotFound);
         }
 
-        return AppResult<RoomDto>.Ok(RoomMapper.ToDto(room, _clock.UtcNow));
+        return AppResult<RoomDto>.Ok(RoomMapper.ToDto(room, _clock.UtcNow, _games));
     }
 }

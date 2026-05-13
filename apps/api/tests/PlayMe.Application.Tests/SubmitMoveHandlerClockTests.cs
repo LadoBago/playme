@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Dtos;
@@ -44,7 +45,7 @@ public sealed class SubmitMoveHandlerClockTests
                 RoomFactory.RoomCodeValue,
                 RoomFactory.HostPlayerId,
                 Role.Host,
-                new MoveDto(Cell: 0)),
+                new MoveDto(JsonSerializer.SerializeToElement(new { cell = 0 }))),
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
@@ -83,7 +84,7 @@ public sealed class SubmitMoveHandlerClockTests
                 RoomFactory.RoomCodeValue,
                 RoomFactory.HostPlayerId,
                 Role.Host,
-                new MoveDto(Cell: 0)),
+                new MoveDto(JsonSerializer.SerializeToElement(new { cell = 0 }))),
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
@@ -130,7 +131,7 @@ public sealed class SubmitMoveHandlerClockTests
                     RoomFactory.RoomCodeValue,
                     playerId,
                     role,
-                    new MoveDto(Cell: cell)),
+                    new MoveDto(JsonSerializer.SerializeToElement(new { cell }))),
                 CancellationToken.None);
             ok.Succeeded.Should().BeTrue();
         }

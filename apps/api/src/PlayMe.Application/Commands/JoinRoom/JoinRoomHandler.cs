@@ -85,7 +85,7 @@ public sealed class JoinRoomHandler
                 await _rooms.SaveAsync(room, ct);
 
                 return AppResult<JoinRoomResult>.Ok(
-                    new JoinRoomResult(challengerPlayerId, RoomMapper.ToDto(room, _clock.UtcNow)));
+                    new JoinRoomResult(challengerPlayerId, RoomMapper.ToDto(room, _clock.UtcNow, _games)));
             }, ct);
         }
         catch (LockTimeoutException)

@@ -16,6 +16,30 @@ import { Board } from './board';
 import { Clock } from './clock';
 import { MatchHeader } from './match-header';
 
+/**
+ * PR 3 TODO: extract the per-game state parse and cell renderer into a
+ * per-game web module registered via the catalog. For PR 2 we keep them
+ * inline because TTT 3×3 is still the only game in the catalog; the
+ * platform shell (this file) is still TTT-aware. The platform `Board`
+ * itself (see ./board.tsx) is already game-agnostic.
+ */
+interface TttBoardState {
+  rows: number;
+  cols: number;
+  cells: readonly (string | null)[];
+}
+
+function parseTttState(state: string): TttBoardState {
+  return JSON.parse(state) as TttBoardState;
+}
+
+function renderTttCell(side: string | null): string {
+  if (side === null) return '';
+  if (side === 'x') return '✕';
+  if (side === 'o') return '◯';
+  return side.toUpperCase();
+}
+
 interface RoomClientProps {
   initialRoom: RoomDto;
 }
@@ -151,7 +175,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     void (async () => {
       setError(null);
       try {
-        const updated = await hubRef.current?.submitMove({ cell });
+        const updated = await hubRef.current?.submitMove({ payload: { cell } });
         if (updated) setRoom(updated);
       } catch (e) {
         const message = e instanceof Error ? e.message : 'errors.unknown';
@@ -233,10 +257,12 @@ function MatchView({
     return <p>…</p>;
   }
 
+  const boardState = parseTttState(match.state);
+
   const winningCells = new Set<number>();
   if (match.outcome?.kind === 'win' && match.outcome.winningLine) {
     for (const c of match.outcome.winningLine) {
-      winningCells.add(c.row * match.cols + c.col);
+      winningCells.add(c.row * boardState.cols + c.col);
     }
   }
 
@@ -265,13 +291,14 @@ function MatchView({
       )}
 
       <Board
-        rows={match.rows}
-        cols={match.cols}
-        cells={match.cells}
+        rows={boardState.rows}
+        cols={boardState.cols}
+        cells={boardState.cells}
         lastMoveCell={lastMove?.cell ?? null}
         winningCells={winningCells}
         canPlay={isMyTurn}
         onCellClick={onSubmitMove}
+        renderCell={renderTttCell}
       />
 
       <ConnectionHint room={room} role={role} />
