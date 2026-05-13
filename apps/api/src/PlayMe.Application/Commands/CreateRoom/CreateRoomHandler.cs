@@ -104,7 +104,7 @@ public sealed class CreateRoomHandler
         }
 
         return AppResult<CreateRoomResult>.Ok(
-            new CreateRoomResult(hostPlayerId, RoomMapper.ToDto(created)));
+            new CreateRoomResult(hostPlayerId, RoomMapper.ToDto(created, _clock.UtcNow)));
     }
 
     private AppResult<string?> ResolveHostSide(

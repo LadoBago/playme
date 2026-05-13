@@ -1,14 +1,16 @@
 // Server → client event names broadcast by the C# RoomHub
 // (apps/api/src/PlayMe.Api/Hubs/RoomHubEvents.cs). Keep in sync.
 
-import type { RoomDto } from '../api/types';
+import type { Role, RoomDto } from '../api/types';
 
 export const RoomHubEvent = {
   OpponentJoined: 'OpponentJoined',
   MatchStarted: 'MatchStarted',
   MoveAccepted: 'MoveAccepted',
   MatchEnded: 'MatchEnded',
+  ClockTick: 'ClockTick',
   OpponentDisconnected: 'OpponentDisconnected',
+  OpponentReconnected: 'OpponentReconnected',
 } as const;
 
 export type RoomHubEventName = (typeof RoomHubEvent)[keyof typeof RoomHubEvent];
@@ -32,5 +34,10 @@ export interface MatchEndedPayload {
 }
 
 export interface OpponentDisconnectedPayload {
-  role: string;
+  role: Role;
+}
+
+export interface OpponentReconnectedPayload {
+  role: Role;
+  room: RoomDto;
 }

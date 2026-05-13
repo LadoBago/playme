@@ -9,10 +9,12 @@ namespace PlayMe.Application.Queries.GetRoom;
 public sealed class GetRoomHandler
 {
     private readonly IRoomRepository _rooms;
+    private readonly IClock _clock;
 
-    public GetRoomHandler(IRoomRepository rooms)
+    public GetRoomHandler(IRoomRepository rooms, IClock clock)
     {
         _rooms = rooms;
+        _clock = clock;
     }
 
     public async Task<AppResult<RoomDto>> HandleAsync(
@@ -33,6 +35,6 @@ public sealed class GetRoomHandler
             return AppResult<RoomDto>.Fail(ErrorCode.RoomNotFound);
         }
 
-        return AppResult<RoomDto>.Ok(RoomMapper.ToDto(room));
+        return AppResult<RoomDto>.Ok(RoomMapper.ToDto(room, _clock.UtcNow));
     }
 }

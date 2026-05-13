@@ -15,6 +15,10 @@ namespace PlayMe.Application.Dtos;
 /// <param name="MoveCount">Total accepted moves in this match.</param>
 /// <param name="Cells">Row-major board: side string ("x", "o", ...) or null
 /// for empty.</param>
+/// <param name="Clock">Server-authoritative clock snapshot — see
+/// <see cref="ClockSnapshotDto"/>. Sent on every event that mutates the
+/// match (start, accepted move, timeout, match end) so clients can
+/// re-sync without a separate request.</param>
 /// <param name="Outcome">Non-null once the match terminates.</param>
 public sealed record MatchDto(
     GameId GameId,
@@ -23,4 +27,5 @@ public sealed record MatchDto(
     int Rows,
     int Cols,
     IReadOnlyList<string?> Cells,
+    ClockSnapshotDto Clock,
     OutcomeDto? Outcome);

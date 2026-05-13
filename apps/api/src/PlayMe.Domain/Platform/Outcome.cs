@@ -3,8 +3,8 @@ namespace PlayMe.Domain.Platform;
 /// <summary>
 /// Terminal match result (CLAUDE.md §2.7). Sprint 1 reaches
 /// <see cref="Win"/>, <see cref="Draw"/>, and <see cref="Resign"/>;
-/// <c>Timeout</c> and <c>Disconnect</c> arrive with the clock (Sprint 2)
-/// and abandon-grace (Sprint 5) work.
+/// Sprint 2 adds <see cref="Timeout"/>. <c>Disconnect</c> arrives with the
+/// abandon-grace work in Sprint 5.
 /// </summary>
 public abstract record Outcome;
 
@@ -16,3 +16,9 @@ public sealed record Draw : Outcome;
 
 /// <summary>A player resigned the match.</summary>
 public sealed record Resign(string ResigningSide) : Outcome;
+
+/// <summary>
+/// One side's clock ran out. The opponent wins; no winning-line coordinates
+/// because the board may be in any legal state.
+/// </summary>
+public sealed record Timeout(string TimedOutSide) : Outcome;

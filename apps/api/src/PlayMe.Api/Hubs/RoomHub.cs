@@ -72,7 +72,7 @@ public sealed class RoomHub : Hub
             var cmd = new ReleasePresenceCommand(
                 session.RoomCode.Value, session.PlayerId.Value, session.Role);
             var result = await _releasePresence.HandleAsync(cmd, Context.ConnectionAborted);
-            if (result.Succeeded)
+            if (result.Succeeded && result.Value!.OpponentNotificationDue)
             {
                 await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
                     .SendAsync(RoomHubEvents.OpponentDisconnected,
@@ -113,6 +113,13 @@ public sealed class RoomHub : Hub
                     new { room = value.Room },
                     Context.ConnectionAborted);
         }
+        else if (value.Reconnected)
+        {
+            await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                .SendAsync(RoomHubEvents.OpponentReconnected,
+                    new { role = session.Role.ToString(), room = value.Room },
+                    Context.ConnectionAborted);
+        }
 
         return new RoomSessionDto(value.CallerRole, value.Room);
     }
@@ -137,15 +144,18 @@ public sealed class RoomHub : Hub
         }
 
         var value = result.Value!;
-        await Clients.Group(GroupName(session.RoomCode.Value))
-            .SendAsync(RoomHubEvents.MoveAccepted,
-                new
-                {
-                    room = value.Room,
-                    cell = value.AcceptedCell,
-                    side = value.ByMoveSide,
-                },
-                Context.ConnectionAborted);
+        if (!value.TimedOut)
+        {
+            await Clients.Group(GroupName(session.RoomCode.Value))
+                .SendAsync(RoomHubEvents.MoveAccepted,
+                    new
+                    {
+                        room = value.Room,
+                        cell = value.AcceptedCell,
+                        side = value.ByMoveSide,
+                    },
+                    Context.ConnectionAborted);
+        }
 
         if (value.MatchEnded)
         {

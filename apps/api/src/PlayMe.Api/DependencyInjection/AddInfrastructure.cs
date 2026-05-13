@@ -4,6 +4,7 @@ using PlayMe.Application.Abstractions;
 using PlayMe.Infrastructure.Games;
 using PlayMe.Infrastructure.Random;
 using PlayMe.Infrastructure.Redis;
+using PlayMe.Infrastructure.Scheduling;
 using PlayMe.Infrastructure.Security;
 using PlayMe.Infrastructure.Time;
 using StackExchange.Redis;
@@ -41,6 +42,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
+
+        // Sprint 2 PR #1: in-process scheduler stubs so DI is satisfied and
+        // handlers can compile/call against the ports. PR #2 replaces with
+        // Redis-backed sorted-set schedulers + a BackgroundService sweeper
+        // per state.md §2.2.
+        services.AddSingleton<ITimeoutScheduler, InMemoryTimeoutScheduler>();
+        services.AddSingleton<IDisconnectGraceScheduler, InMemoryDisconnectGraceScheduler>();
 
         return services;
     }
