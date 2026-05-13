@@ -81,7 +81,7 @@ public sealed class PresenceHandlerTests
         var graces = new RecordingGraceScheduler();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new ReleasePresenceHandler(rooms, clock, graces);
+        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
 
         var result = await handler.HandleAsync(
             new ReleasePresenceCommand(
@@ -114,7 +114,7 @@ public sealed class PresenceHandlerTests
         seed.MarkDisconnected(Role.Host);
         rooms.Seed(seed);
 
-        var handler = new ReleasePresenceHandler(rooms, clock, graces);
+        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
 
         // A second disconnect — e.g. a stale-cookie probe that briefly
         // connected and tore down — must NOT re-broadcast OpponentDisconnected
@@ -141,7 +141,7 @@ public sealed class PresenceHandlerTests
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
         // Drop the host.
-        var release = new ReleasePresenceHandler(rooms, clock, graces);
+        var release = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
         await release.HandleAsync(
             new ReleasePresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),

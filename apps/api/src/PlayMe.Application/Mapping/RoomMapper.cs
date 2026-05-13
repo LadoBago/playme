@@ -1,6 +1,5 @@
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Dtos;
-using PlayMe.Domain.Games.TicTacToe3x3;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Mapping;
@@ -10,9 +9,10 @@ namespace PlayMe.Application.Mapping;
 /// because handler return types are DTOs (CLAUDE.md §8: "Never expose Domain
 /// entities directly through controllers or hubs").
 ///
-/// Per-game state shape is encoded in <see cref="MapState"/>: each game
-/// flattens its <c>IGameState</c> into a row-major <c>cells</c> array with
-/// the right dimensions. New games extend the switch.
+/// Per-game state encoding is delegated to <see cref="IGameModule.Serialize"/>
+/// per CLAUDE.md §7 "Platform thinness" — this mapper never inspects board
+/// shape. Callers pass an <see cref="IGameModuleRegistry"/> so the mapper can
+/// resolve the module when a match exists.
 ///
 /// Mapping a <see cref="Room"/> requires a <see cref="DateTimeOffset"/>
 /// "now" so the <see cref="ClockSnapshotDto"/> can stamp <c>serverNowAt</c>
@@ -20,7 +20,7 @@ namespace PlayMe.Application.Mapping;
 /// </summary>
 public static class RoomMapper
 {
-    public static RoomDto ToDto(Room room, DateTimeOffset now) => new(
+    public static RoomDto ToDto(Room room, DateTimeOffset now, IGameModuleRegistry games) => new(
         Code: room.Code,
         GameId: room.GameId,
         SideSelectionMode: room.SideSelectionMode,
@@ -29,22 +29,20 @@ public static class RoomMapper
         Challenger: room.Challenger is null ? null : ToPlayerDto(room.Challenger),
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected,
-        CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch, now),
+        CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch, now, games),
         CreatedAt: room.CreatedAt);
 
     public static PlayerDto ToPlayerDto(Player player) =>
         new(player.DisplayName.Value, player.Side);
 
-    public static MatchDto ToMatchDto(Match match, DateTimeOffset now)
+    public static MatchDto ToMatchDto(Match match, DateTimeOffset now, IGameModuleRegistry games)
     {
-        var (rows, cols, cells) = MapState(match.GameId, match.State);
+        var module = games.GetModule(match.GameId);
         return new MatchDto(
             GameId: match.GameId,
             SideToMove: match.SideToMove,
             MoveCount: match.MoveCount,
-            Rows: rows,
-            Cols: cols,
-            Cells: cells,
+            State: module.Serialize(match.State),
             Clock: ToClockSnapshotDto(match.Clock, now, match.IsEnded),
             Outcome: match.Outcome is null ? null : ToOutcomeDto(match.Outcome));
     }
@@ -113,16 +111,4 @@ public static class RoomMapper
         _ => throw new InvalidOperationException(
             $"Unsupported outcome type {outcome.GetType().Name}."),
     };
-
-    private static (int Rows, int Cols, IReadOnlyList<string?> Cells) MapState(
-        GameId gameId, IGameState state)
-    {
-        if (state is TicTacToe3x3State ttt)
-        {
-            return (TicTacToe3x3State.Size, TicTacToe3x3State.Size, ttt.Cells);
-        }
-
-        throw new InvalidOperationException(
-            $"No state mapper registered for game '{gameId}'.");
-    }
 }

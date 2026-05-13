@@ -1,3 +1,4 @@
+using System.Text.Json;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Domain.Games.TicTacToe3x3;
@@ -25,11 +26,15 @@ public sealed class TicTacToe3x3GameModule : IGameModule
         new[] { 0, 4, 8 }, new[] { 2, 4, 6 },                    // diagonals
     };
 
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+
     public GameId Id => GameId;
 
     public IReadOnlyList<string> ValidSides => ValidSidesArray;
 
     public string FirstMoveSide => TicTacToeSides.X;
+
+    public TimeSpan DefaultClockBudget { get; } = TimeSpan.FromSeconds(60);
 
     public string OtherSide(string side) => side switch
     {
@@ -39,6 +44,49 @@ public sealed class TicTacToe3x3GameModule : IGameModule
     };
 
     public IGameState NewMatch() => new TicTacToe3x3State();
+
+    public string Serialize(IGameState state)
+    {
+        if (state is not TicTacToe3x3State board)
+        {
+            throw new ArgumentException(
+                $"Expected {nameof(TicTacToe3x3State)}, got {state.GetType().Name}.", nameof(state));
+        }
+        var payload = new StatePayload(TicTacToe3x3State.Size, TicTacToe3x3State.Size, board.Cells);
+        return JsonSerializer.Serialize(payload, SerializerOptions);
+    }
+
+    public IGameState Deserialize(string serialized)
+    {
+        ArgumentNullException.ThrowIfNull(serialized);
+        StatePayload? payload;
+        try
+        {
+            payload = JsonSerializer.Deserialize<StatePayload>(serialized, SerializerOptions);
+        }
+        catch (JsonException e)
+        {
+            throw new ArgumentException("Failed to parse TicTacToe3x3 state.", nameof(serialized), e);
+        }
+        if (payload is null)
+        {
+            throw new ArgumentException("TicTacToe3x3 state blob was null.", nameof(serialized));
+        }
+        if (payload.Rows != TicTacToe3x3State.Size ||
+            payload.Cols != TicTacToe3x3State.Size ||
+            payload.Cells is null ||
+            payload.Cells.Count != TicTacToe3x3State.CellCount)
+        {
+            throw new ArgumentException(
+                $"TicTacToe3x3 state shape mismatch: rows={payload.Rows}, cols={payload.Cols}, cells={payload.Cells?.Count ?? 0}.",
+                nameof(serialized));
+        }
+        return new TicTacToe3x3State(payload.Cells);
+    }
+
+    /// <summary>Wire shape of TTT-3×3's serialized state. Per-game and opaque
+    /// to the platform.</summary>
+    private sealed record StatePayload(int Rows, int Cols, IReadOnlyList<string?> Cells);
 
     public MoveResult ApplyMove(IGameState state, string side, GameMove move)
     {

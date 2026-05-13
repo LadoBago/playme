@@ -70,7 +70,7 @@ public sealed class RegisterPresenceHandler
                 {
                     var module = _games.GetModule(room.GameId);
                     matchJustStarted = room.TryStartMatch(
-                        module, PlatformConstants.DefaultClockBudget, now);
+                        module, module.DefaultClockBudget, now);
                 }
 
                 await _rooms.SaveAsync(room, ct);
@@ -97,7 +97,7 @@ public sealed class RegisterPresenceHandler
 
                 return AppResult<RegisterPresenceResult>.Ok(
                     new RegisterPresenceResult(
-                        RoomMapper.ToDto(room, now),
+                        RoomMapper.ToDto(room, now, _games),
                         cmd.CallerRole,
                         matchJustStarted,
                         reconnected));

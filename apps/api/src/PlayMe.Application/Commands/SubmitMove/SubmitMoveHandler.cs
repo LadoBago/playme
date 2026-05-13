@@ -89,7 +89,7 @@ public sealed class SubmitMoveHandler
                     await _timeouts.CancelAsync(code, ct);
 
                     return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
-                        Room: RoomMapper.ToDto(room, now),
+                        Room: RoomMapper.ToDto(room, now, _games),
                         MatchEnded: true,
                         TimedOut: true,
                         AcceptedCell: null,
@@ -145,7 +145,7 @@ public sealed class SubmitMoveHandler
                 }
 
                 return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
-                    Room: RoomMapper.ToDto(room, now),
+                    Room: RoomMapper.ToDto(room, now, _games),
                     MatchEnded: moveResult.Ending is not null,
                     TimedOut: false,
                     AcceptedCell: ExtractCell(parseResult.Value!),

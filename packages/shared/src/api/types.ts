@@ -52,9 +52,13 @@ export interface MatchDto {
   gameId: string;
   sideToMove: string;
   moveCount: number;
-  rows: number;
-  cols: number;
-  cells: readonly (string | null)[];
+  /**
+   * Opaque per-game state blob (JSON string produced by the server-side
+   * `IGameModule.Serialize`). The platform never inspects the shape; the
+   * per-game web renderer is responsible for `JSON.parse(state)` and
+   * understanding its own shape. See CLAUDE.md §7 "Platform thinness".
+   */
+  state: string;
   clock: ClockSnapshotDto;
   outcome?: OutcomeDto;
 }
@@ -82,8 +86,14 @@ export interface RoomSessionDto {
   room: RoomDto;
 }
 
+/**
+ * Wire-level move payload. `payload` is opaque to the platform — its shape
+ * is an agreement between the per-game server module's `IGameMoveParser`
+ * and the per-game web renderer. TTT uses `{cell: 0..8}`, Connect 4 will
+ * use `{column: 0..6}`, etc. See CLAUDE.md §7 "Platform thinness".
+ */
 export interface MoveDto {
-  cell?: number;
+  payload: unknown;
 }
 
 export interface ProblemDetailsResponse {

@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 interface BoardProps {
   rows: number;
   cols: number;
@@ -10,12 +12,19 @@ interface BoardProps {
   winningCells: ReadonlySet<number>;
   canPlay: boolean;
   onCellClick: (cell: number) => void;
+  /**
+   * Per-game cell renderer. Called for every cell with its side string (or
+   * null for empty). The platform Board component never inspects side
+   * vocabulary — per-game iconography belongs to the per-game module
+   * (CLAUDE.md §7 "Platform thinness").
+   */
+  renderCell: (side: string | null) => ReactNode;
 }
 
 /**
- * Generic grid board. Same renderer works for every Sprint 1 game; per-
- * game iconography (X/O vs disc/ring for Connect 4) is just a function
- * of the side string.
+ * Generic grid board. Same renderer works for every grid-shaped game; the
+ * per-game iconography (X/O vs disc/ring for Connect 4) is injected via
+ * <see cref="BoardProps.renderCell"/>.
  */
 export function Board({
   rows,
@@ -25,6 +34,7 @@ export function Board({
   winningCells,
   canPlay,
   onCellClick,
+  renderCell,
 }: BoardProps) {
   return (
     <div
@@ -55,19 +65,10 @@ export function Board({
             aria-label={`row ${Math.floor(i / cols) + 1} column ${(i % cols) + 1}`}
             onClick={() => onCellClick(i)}
           >
-            {renderSide(side)}
+            {renderCell(side)}
           </button>
         );
       })}
     </div>
   );
-}
-
-function renderSide(side: string | null): string {
-  if (side === null) return '';
-  // Sprint 1 only supports Tic-Tac-Toe; Connect 4's red/yellow rendering
-  // ships in Sprint 3.
-  if (side === 'x') return '✕';
-  if (side === 'o') return '◯';
-  return side.toUpperCase();
 }

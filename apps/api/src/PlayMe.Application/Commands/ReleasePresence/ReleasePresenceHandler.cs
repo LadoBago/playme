@@ -10,15 +10,18 @@ public sealed class ReleasePresenceHandler
     private readonly IRoomRepository _rooms;
     private readonly IClock _clock;
     private readonly IDisconnectGraceScheduler _graces;
+    private readonly IGameModuleRegistry _games;
 
     public ReleasePresenceHandler(
         IRoomRepository rooms,
         IClock clock,
-        IDisconnectGraceScheduler graces)
+        IDisconnectGraceScheduler graces,
+        IGameModuleRegistry games)
     {
         _rooms = rooms;
         _clock = clock;
         _graces = graces;
+        _games = games;
     }
 
     public async Task<AppResult<ReleasePresenceResult>> HandleAsync(
@@ -50,7 +53,7 @@ public sealed class ReleasePresenceHandler
                 {
                     return AppResult<ReleasePresenceResult>.Ok(
                         new ReleasePresenceResult(
-                            RoomMapper.ToDto(room, _clock.UtcNow),
+                            RoomMapper.ToDto(room, _clock.UtcNow, _games),
                             OpponentNotificationDue: false));
                 }
 
@@ -72,7 +75,7 @@ public sealed class ReleasePresenceHandler
                 {
                     return AppResult<ReleasePresenceResult>.Ok(
                         new ReleasePresenceResult(
-                            RoomMapper.ToDto(room, _clock.UtcNow),
+                            RoomMapper.ToDto(room, _clock.UtcNow, _games),
                             OpponentNotificationDue: false));
                 }
 
@@ -94,7 +97,7 @@ public sealed class ReleasePresenceHandler
 
                 return AppResult<ReleasePresenceResult>.Ok(
                     new ReleasePresenceResult(
-                        RoomMapper.ToDto(room, _clock.UtcNow),
+                        RoomMapper.ToDto(room, _clock.UtcNow, _games),
                         OpponentNotificationDue: notifyOpponent));
             }, ct);
         }

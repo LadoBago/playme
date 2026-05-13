@@ -1,18 +1,17 @@
-using System.Diagnostics.CodeAnalysis;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Application.Abstractions;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Infrastructure.Redis;
 
 /// <summary>
 /// Bidirectional mapping between the <see cref="Room"/> domain aggregate and
-/// its <see cref="RoomRecord"/> persisted form. Game-state flattening lives
-/// here; the Domain doesn't know about the storage shape. New game modules
-/// extend the per-game cases in <see cref="EncodeState"/> / <see cref="DecodeState"/>.
+/// its <see cref="RoomRecord"/> persisted form. Per-game state encoding is
+/// delegated to <see cref="IGameModule.Serialize"/> / <see cref="IGameModule.Deserialize"/>
+/// — this layer never knows board shape (CLAUDE.md §7 "Platform thinness").
 /// </summary>
 internal static class RoomMapping
 {
-    public static RoomRecord ToRecord(Room room) => new(
+    public static RoomRecord ToRecord(Room room, IGameModuleRegistry games) => new(
         Code: room.Code,
         GameId: room.GameId,
         SideSelectionMode: room.SideSelectionMode,
@@ -20,11 +19,13 @@ internal static class RoomMapping
         Host: ToPlayerRecord(room.Host),
         Challenger: room.Challenger is null ? null : ToPlayerRecord(room.Challenger),
         Status: room.Status,
-        CurrentMatch: room.CurrentMatch is null ? null : ToMatchRecord(room.CurrentMatch),
+        CurrentMatch: room.CurrentMatch is null
+            ? null
+            : ToMatchRecord(room.CurrentMatch, games.GetModule(room.GameId)),
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected);
 
-    public static Room FromRecord(RoomRecord record) => Room.Rehydrate(
+    public static Room FromRecord(RoomRecord record, IGameModuleRegistry games) => Room.Rehydrate(
         code: record.Code,
         gameId: record.GameId,
         sideSelectionMode: record.SideSelectionMode,
@@ -32,7 +33,9 @@ internal static class RoomMapping
         host: FromPlayerRecord(record.Host),
         challenger: record.Challenger is null ? null : FromPlayerRecord(record.Challenger),
         status: record.Status,
-        currentMatch: record.CurrentMatch is null ? null : FromMatchRecord(record.CurrentMatch),
+        currentMatch: record.CurrentMatch is null
+            ? null
+            : FromMatchRecord(record.CurrentMatch, games.GetModule(record.GameId)),
         hostConnected: record.HostConnected,
         challengerConnected: record.ChallengerConnected);
 
@@ -42,26 +45,20 @@ internal static class RoomMapping
     private static Player FromPlayerRecord(PlayerRecord record) =>
         new(record.Id, record.DisplayName, record.Side);
 
-    private static MatchRecord ToMatchRecord(Match match)
-    {
-        var (rows, cols, cells) = EncodeState(match.GameId, match.State);
-        return new MatchRecord(
-            GameId: match.GameId,
-            SideToMove: match.SideToMove,
-            MoveCount: match.MoveCount,
-            StateRows: rows,
-            StateCols: cols,
-            StateCells: cells,
-            HostClockMs: (long)match.Clock.HostRemaining.TotalMilliseconds,
-            ChallengerClockMs: (long)match.Clock.ChallengerRemaining.TotalMilliseconds,
-            ActivePlayer: match.Clock.ActivePlayer,
-            LastTickAt: match.Clock.LastTickAt,
-            Outcome: match.Outcome is null ? null : ToOutcomeRecord(match.Outcome));
-    }
+    private static MatchRecord ToMatchRecord(Match match, IGameModule module) => new(
+        GameId: match.GameId,
+        SideToMove: match.SideToMove,
+        MoveCount: match.MoveCount,
+        State: module.Serialize(match.State),
+        HostClockMs: (long)match.Clock.HostRemaining.TotalMilliseconds,
+        ChallengerClockMs: (long)match.Clock.ChallengerRemaining.TotalMilliseconds,
+        ActivePlayer: match.Clock.ActivePlayer,
+        LastTickAt: match.Clock.LastTickAt,
+        Outcome: match.Outcome is null ? null : ToOutcomeRecord(match.Outcome));
 
-    private static Match FromMatchRecord(MatchRecord record) => Match.Rehydrate(
+    private static Match FromMatchRecord(MatchRecord record, IGameModule module) => Match.Rehydrate(
         gameId: record.GameId,
-        state: DecodeState(record.GameId, record.StateRows, record.StateCols, record.StateCells),
+        state: module.Deserialize(record.State),
         sideToMove: record.SideToMove,
         moveCount: record.MoveCount,
         clock: new MatchClock(
@@ -92,35 +89,4 @@ internal static class RoomMapping
             record.TimedOutSide ?? throw new InvalidOperationException("Timeout outcome missing timedOutSide.")),
         _ => throw new InvalidOperationException($"Unknown outcome kind '{record.Kind}'."),
     };
-
-    private static (int Rows, int Cols, IReadOnlyList<string?> Cells) EncodeState(
-        GameId gameId, IGameState state)
-    {
-        if (state is TicTacToe3x3State ttt)
-        {
-            return (TicTacToe3x3State.Size, TicTacToe3x3State.Size, ttt.Cells);
-        }
-        throw new InvalidOperationException(
-            $"No state encoder registered for game '{gameId}'.");
-    }
-
-    [SuppressMessage("Performance", "CA1859:Use concrete types when possible",
-        Justification = "Polymorphic per-game dispatch; concrete return type would defeat the abstraction once more games register.")]
-    private static IGameState DecodeState(
-        GameId gameId, int rows, int cols, IReadOnlyList<string?> cells)
-    {
-        if (gameId == TicTacToe3x3GameModule.GameId)
-        {
-            if (rows != TicTacToe3x3State.Size ||
-                cols != TicTacToe3x3State.Size ||
-                cells.Count != TicTacToe3x3State.CellCount)
-            {
-                throw new InvalidOperationException(
-                    $"TicTacToe3x3 state shape mismatch: rows={rows}, cols={cols}, cells={cells.Count}.");
-            }
-            return new TicTacToe3x3State(cells);
-        }
-        throw new InvalidOperationException(
-            $"No state decoder registered for game '{gameId}'.");
-    }
 }

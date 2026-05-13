@@ -1,10 +1,14 @@
+using System.Text.Json;
+
 namespace PlayMe.Application.Dtos;
 
 /// <summary>
-/// Wire-level move payload. Sprint 1 has only Tic-Tac-Toe, which uses
-/// <see cref="Cell"/> (0..8, row-major). Connect 4 (Sprint 3) will add a
-/// <c>Column</c> field; per-game parsers (<c>IGameMoveParser</c>) interpret
-/// the relevant fields and reject moves with fields that don't match the
-/// game's shape.
+/// Wire-level move payload. The platform routes <see cref="Payload"/>
+/// opaquely from the web caller to the registered <see cref="Abstractions.IGameMoveParser"/>
+/// for the room's game; the platform never inspects the shape (CLAUDE.md §7
+/// "Platform thinness"). Tic-Tac-Toe parsers read <c>{"cell": 0..8}</c>;
+/// Connect 4 will read <c>{"column": 0..6}</c>; chess will read
+/// <c>{"from": ..., "to": ..., "promote": ...}</c>. None of those keys are
+/// known to the platform.
 /// </summary>
-public sealed record MoveDto(int? Cell);
+public sealed record MoveDto(JsonElement Payload);
