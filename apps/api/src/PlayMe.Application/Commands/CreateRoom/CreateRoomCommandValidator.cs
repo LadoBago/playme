@@ -7,7 +7,7 @@ namespace PlayMe.Application.Commands.CreateRoom;
 /// Surface-level validation for <see cref="CreateRoomCommand"/>. Display-
 /// name and side semantics get a second-line check in the handler
 /// (<c>DisplayName.Create</c>, side-vs-mode rules) because they need the
-/// resolved game module — those produce typed <c>ErrorCode</c>s rather than
+/// resolved game module — those produce typed <c>PlatformErrors</c> keys rather than
 /// FluentValidation faults.
 /// </summary>
 public sealed class CreateRoomCommandValidator : AbstractValidator<CreateRoomCommand>

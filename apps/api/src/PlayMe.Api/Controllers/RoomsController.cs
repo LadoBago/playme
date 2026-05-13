@@ -53,7 +53,7 @@ public sealed class RoomsController : ControllerBase
         var result = await _createRoom.HandleAsync(command, ct);
         if (!result.Succeeded)
         {
-            return AppResultActionExtensions.ToProblem(result.Error!.Value, result.Detail);
+            return AppResultActionExtensions.ToProblem(result.Error!, result.Detail);
         }
 
         var value = result.Value!;
@@ -87,7 +87,7 @@ public sealed class RoomsController : ControllerBase
         var result = await _joinRoom.HandleAsync(command, ct);
         if (!result.Succeeded)
         {
-            return AppResultActionExtensions.ToProblem(result.Error!.Value, result.Detail);
+            return AppResultActionExtensions.ToProblem(result.Error!, result.Detail);
         }
 
         var value = result.Value!;

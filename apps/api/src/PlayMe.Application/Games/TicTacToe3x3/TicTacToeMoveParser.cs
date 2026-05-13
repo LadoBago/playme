@@ -21,7 +21,7 @@ public sealed class TicTacToeMoveParser : IGameMoveParser
         if (dto.Cell is null)
         {
             return AppResult<GameMove>.Fail(
-                ErrorCode.ValidationMove, "TicTacToe move requires 'cell'.");
+                PlatformErrors.ValidationMove, "TicTacToe move requires 'cell'.");
         }
         return AppResult<GameMove>.Ok(new TicTacToeMove(dto.Cell.Value));
     }

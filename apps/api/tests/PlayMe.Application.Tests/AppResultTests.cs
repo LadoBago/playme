@@ -27,23 +27,23 @@ public sealed class AppResultTests
     [Fact]
     public void Fail_carries_error_and_no_value()
     {
-        var result = AppResult<int>.Fail(ErrorCode.RoomNotFound, detail: "for diagnostics");
+        var result = AppResult<int>.Fail(PlatformErrors.RoomNotFound, detail: "for diagnostics");
 
         result.Succeeded.Should().BeFalse();
         result.Value.Should().Be(default);
-        result.Error.Should().Be(ErrorCode.RoomNotFound);
+        result.Error.Should().Be(PlatformErrors.RoomNotFound);
         result.Detail.Should().Be("for diagnostics");
     }
 
     [Fact]
     public void ToFailure_propagates_error_to_a_different_value_type()
     {
-        var failure = AppResult<int>.Fail(ErrorCode.RoomBusy, detail: "lock timeout");
+        var failure = AppResult<int>.Fail(PlatformErrors.RoomBusy, detail: "lock timeout");
 
         var propagated = failure.ToFailure<string>();
 
         propagated.Succeeded.Should().BeFalse();
-        propagated.Error.Should().Be(ErrorCode.RoomBusy);
+        propagated.Error.Should().Be(PlatformErrors.RoomBusy);
         propagated.Detail.Should().Be("lock timeout");
     }
 

@@ -41,7 +41,7 @@ public sealed class AdjudicateTimeoutHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<AdjudicateTimeoutResult>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<AdjudicateTimeoutResult>.Fail(PlatformErrors.RoomNotFound);
         }
 
         var room = await _rooms.LoadAsync(code, ct);

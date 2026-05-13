@@ -48,8 +48,8 @@ public static class ApiServiceCollectionExtensions
 
         // Note: FluentValidation auto-validation is intentionally NOT wired.
         // Handler-internal validation (DisplayName.Create, GameId ctor,
-        // mode-vs-side rules) returns typed ErrorCode values that map 1:1
-        // to §3 i18n keys — auto-validation's ValidationProblemDetails
+        // mode-vs-side rules) returns typed PlatformErrors keys that are
+        // already i18n keys — auto-validation's ValidationProblemDetails
         // would require an extra mapping layer for no real gain.
 
         services.AddEndpointsApiExplorer();

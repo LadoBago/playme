@@ -26,13 +26,13 @@ public sealed class GetRoomHandler
         try { code = new RoomCode(query.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<RoomDto>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<RoomDto>.Fail(PlatformErrors.RoomNotFound);
         }
 
         var room = await _rooms.LoadAsync(code, ct);
         if (room is null)
         {
-            return AppResult<RoomDto>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<RoomDto>.Fail(PlatformErrors.RoomNotFound);
         }
 
         return AppResult<RoomDto>.Ok(RoomMapper.ToDto(room, _clock.UtcNow));

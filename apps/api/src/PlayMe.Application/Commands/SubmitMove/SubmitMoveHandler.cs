@@ -45,7 +45,7 @@ public sealed class SubmitMoveHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<SubmitMoveResult>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomNotFound);
         }
 
         try
@@ -55,24 +55,24 @@ public sealed class SubmitMoveHandler
                 var room = await _rooms.LoadAsync(code, ct);
                 if (room is null)
                 {
-                    return AppResult<SubmitMoveResult>.Fail(ErrorCode.RoomNotFound);
+                    return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomNotFound);
                 }
 
                 var stored = room.PlayerFor(cmd.CallerRole);
                 if (stored is null || stored.Id.Value != cmd.CallerPlayerId)
                 {
-                    return AppResult<SubmitMoveResult>.Fail(ErrorCode.SessionUnauthorized);
+                    return AppResult<SubmitMoveResult>.Fail(PlatformErrors.SessionUnauthorized);
                 }
 
                 if (room.Status != RoomStatus.InProgress || room.CurrentMatch is null)
                 {
-                    return AppResult<SubmitMoveResult>.Fail(ErrorCode.MoveMatchNotInProgress);
+                    return AppResult<SubmitMoveResult>.Fail(PlatformErrors.MoveMatchNotInProgress);
                 }
 
                 var match = room.CurrentMatch;
                 if (match.IsEnded)
                 {
-                    return AppResult<SubmitMoveResult>.Fail(ErrorCode.MoveMatchNotInProgress);
+                    return AppResult<SubmitMoveResult>.Fail(PlatformErrors.MoveMatchNotInProgress);
                 }
 
                 var now = _clock.UtcNow;
@@ -99,7 +99,7 @@ public sealed class SubmitMoveHandler
                 var callerSide = stored.Side;
                 if (callerSide is null || callerSide != match.SideToMove)
                 {
-                    return AppResult<SubmitMoveResult>.Fail(ErrorCode.MoveNotYourTurn);
+                    return AppResult<SubmitMoveResult>.Fail(PlatformErrors.MoveNotYourTurn);
                 }
 
                 var parser = _games.GetMoveParser(room.GameId);
@@ -115,10 +115,10 @@ public sealed class SubmitMoveHandler
                 {
                     var errorCode = moveResult.RejectReason switch
                     {
-                        MoveRejectReason.IllegalCell => ErrorCode.MoveIllegalCell,
-                        MoveRejectReason.CellOccupied => ErrorCode.MoveCellOccupied,
+                        MoveRejectReason.IllegalCell => PlatformErrors.MoveIllegalCell,
+                        MoveRejectReason.CellOccupied => PlatformErrors.MoveCellOccupied,
                         // Sprint 1 has no Connect 4; FullColumn isn't reachable yet.
-                        _ => ErrorCode.ValidationMove,
+                        _ => PlatformErrors.ValidationMove,
                     };
                     return AppResult<SubmitMoveResult>.Fail(errorCode);
                 }
@@ -154,7 +154,7 @@ public sealed class SubmitMoveHandler
         }
         catch (LockTimeoutException)
         {
-            return AppResult<SubmitMoveResult>.Fail(ErrorCode.RoomBusy);
+            return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
 

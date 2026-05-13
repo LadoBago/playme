@@ -36,7 +36,7 @@ public sealed class RegisterPresenceHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<RegisterPresenceResult>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.RoomNotFound);
         }
 
         try
@@ -46,13 +46,13 @@ public sealed class RegisterPresenceHandler
                 var room = await _rooms.LoadAsync(code, ct);
                 if (room is null)
                 {
-                    return AppResult<RegisterPresenceResult>.Fail(ErrorCode.RoomNotFound);
+                    return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.RoomNotFound);
                 }
 
                 var stored = room.PlayerFor(cmd.CallerRole);
                 if (stored is null || stored.Id.Value != cmd.CallerPlayerId)
                 {
-                    return AppResult<RegisterPresenceResult>.Fail(ErrorCode.SessionUnauthorized);
+                    return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.SessionUnauthorized);
                 }
 
                 var wasInProgress = room.Status == RoomStatus.InProgress;
@@ -105,7 +105,7 @@ public sealed class RegisterPresenceHandler
         }
         catch (LockTimeoutException)
         {
-            return AppResult<RegisterPresenceResult>.Fail(ErrorCode.RoomBusy);
+            return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
 }

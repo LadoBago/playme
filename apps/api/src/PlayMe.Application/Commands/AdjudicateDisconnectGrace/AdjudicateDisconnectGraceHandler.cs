@@ -33,7 +33,7 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<bool>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<bool>.Fail(PlatformErrors.RoomNotFound);
         }
 
         var room = await _rooms.LoadAsync(code, ct);

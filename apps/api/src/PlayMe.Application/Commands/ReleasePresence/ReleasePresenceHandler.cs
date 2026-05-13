@@ -30,7 +30,7 @@ public sealed class ReleasePresenceHandler
         try { code = new RoomCode(cmd.RoomCode); }
         catch (ArgumentException)
         {
-            return AppResult<ReleasePresenceResult>.Fail(ErrorCode.RoomNotFound);
+            return AppResult<ReleasePresenceResult>.Fail(PlatformErrors.RoomNotFound);
         }
 
         try
@@ -40,7 +40,7 @@ public sealed class ReleasePresenceHandler
                 var room = await _rooms.LoadAsync(code, ct);
                 if (room is null)
                 {
-                    return AppResult<ReleasePresenceResult>.Fail(ErrorCode.RoomNotFound);
+                    return AppResult<ReleasePresenceResult>.Fail(PlatformErrors.RoomNotFound);
                 }
 
                 var stored = room.PlayerFor(cmd.CallerRole);
@@ -100,7 +100,7 @@ public sealed class ReleasePresenceHandler
         }
         catch (LockTimeoutException)
         {
-            return AppResult<ReleasePresenceResult>.Fail(ErrorCode.RoomBusy);
+            return AppResult<ReleasePresenceResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
 }

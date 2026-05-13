@@ -30,7 +30,7 @@ public interface IRoomRepository
     /// Execute <paramref name="work"/> while holding the per-room distributed
     /// lock (CLAUDE.md §2.8). Lock TTL ≈ 5 s; acquire budget ≈ 500 ms; on
     /// timeout, throws <see cref="LockTimeoutException"/> so handlers can
-    /// translate to <c>ErrorCode.RoomBusy</c>. The lock is released on exit
+    /// translate to <c>PlatformErrors.RoomBusy</c>. The lock is released on exit
     /// (success or exception).
     /// </summary>
     Task<T> WithLockAsync<T>(
