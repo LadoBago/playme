@@ -13,6 +13,7 @@ import {
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { JoinForm } from './join-form';
 import { Board } from './board';
+import { Clock } from './clock';
 import { MatchHeader } from './match-header';
 
 interface RoomClientProps {
@@ -35,6 +36,9 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   const [lastMove, setLastMove] = useState<{ cell: number; side: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<'pending' | 'authed' | 'needsJoin'>('pending');
+  const [connectionStatus, setConnectionStatus] = useState<
+    'live' | 'reconnecting' | 'lost'
+  >('live');
   const hubRef = useRef<RoomHubClient | null>(null);
 
   const game = useMemo(() => findGame(room.gameId), [room.gameId]);
@@ -52,6 +56,30 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       },
       onMatchEnded: ({ room: r }) => setRoom(r),
       onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
+      onOpponentReconnected: ({ room: r }) => setRoom(r),
+      onReconnecting: () => setConnectionStatus('reconnecting'),
+      onReconnected: () => {
+        // Transport is back — re-call JoinRoom so the server records the
+        // presence (cancels its disconnect-grace entry) and we receive a
+        // fresh room+clock snapshot.
+        void (async () => {
+          try {
+            const session = await hub.joinRoom();
+            setRoom(session.room);
+            setRole(session.role);
+            setConnectionStatus('live');
+          } catch {
+            setConnectionStatus('lost');
+          }
+        })();
+      },
+      // onclose fires on any stop() — including the React StrictMode
+      // dev double-mount cleanup and our own handleJoined teardown. Only
+      // treat it as "connection lost" when we were already in the
+      // reconnecting state (i.e. the auto-reconnect schedule exhausted);
+      // an unsolicited onclose while live means we initiated it.
+      onConnectionClosed: () =>
+        setConnectionStatus((prev) => (prev === 'reconnecting' ? 'lost' : prev)),
     });
 
     try {
@@ -156,6 +184,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       lastMove={lastMove}
       onSubmitMove={handleSubmitMove}
       error={error}
+      connectionStatus={connectionStatus}
     />
   );
 }
@@ -166,9 +195,17 @@ interface MatchViewProps {
   lastMove: { cell: number; side: string } | null;
   onSubmitMove: (cell: number) => void;
   error: string | null;
+  connectionStatus: 'live' | 'reconnecting' | 'lost';
 }
 
-function MatchView({ room, role, lastMove, onSubmitMove, error }: MatchViewProps) {
+function MatchView({
+  room,
+  role,
+  lastMove,
+  onSubmitMove,
+  error,
+  connectionStatus,
+}: MatchViewProps) {
   const match = room.currentMatch;
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponent = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
@@ -201,6 +238,16 @@ function MatchView({ room, role, lastMove, onSubmitMove, error }: MatchViewProps
   return (
     <div className="match-layout stack">
       <MatchHeader room={room} role={role} />
+
+      <Clock snapshot={match.clock} callerRole={role} isFinal={match.outcome != null} />
+
+      {connectionStatus !== 'live' ? (
+        <div className="banner banner--error">
+          {connectionStatus === 'reconnecting'
+            ? t('match.reconnecting')
+            : t('match.connectionLost')}
+        </div>
+      ) : null}
 
       {error ? <div className="banner banner--error">{error}</div> : null}
 
@@ -243,6 +290,16 @@ function OutcomeBanner({
     return (
       <div className={`banner ${youWon ? 'banner--win' : ''}`}>
         {youWon ? t('match.result.youWin') : t('match.result.youLose')}
+      </div>
+    );
+  }
+  if (outcome.kind === 'timeout') {
+    const youTimedOut = mySide != null && outcome.timedOutSide === mySide;
+    return (
+      <div className={`banner ${youTimedOut ? '' : 'banner--win'}`}>
+        {youTimedOut
+          ? t('match.result.youTimedOut')
+          : t('match.result.opponentTimedOut')}
       </div>
     );
   }

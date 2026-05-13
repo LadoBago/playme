@@ -299,6 +299,48 @@ textarea {
   background: var(--win-highlight);
 }
 
+.match-clock {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.match-clock__side {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.match-clock__side--active {
+  border-color: var(--accent);
+  background: var(--highlight);
+}
+
+.match-clock__side--low {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.match-clock__role {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.match-clock__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .board {
   display: grid;
   gap: 6px;
