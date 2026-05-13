@@ -20,8 +20,8 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     /// to self-release if an instance dies mid-flight (§2.8: 5 s).</summary>
     private static readonly TimeSpan LockTtl = TimeSpan.FromSeconds(5);
 
-    /// <summary>Cap on acquisition time: ~500 ms per §2.8.</summary>
-    private static readonly TimeSpan LockAcquireBudget = TimeSpan.FromMilliseconds(500);
+    /// <summary>Cap on acquisition time: ~500 ms per §2.8 (handler default).</summary>
+    private static readonly TimeSpan DefaultLockAcquireBudget = TimeSpan.FromMilliseconds(500);
 
     /// <summary>Backoff between lock attempts. Bounded contention is expected
     /// (turn-based play), so a short busy-wait is the right shape.</summary>
@@ -84,8 +84,15 @@ public sealed partial class RedisRoomRepository : IRoomRepository
             when: When.NotExists);
     }
 
+    public Task<T> WithLockAsync<T>(
+        RoomCode code, Func<Task<T>> work, CancellationToken ct) =>
+        WithLockAsync(code, DefaultLockAcquireBudget, work, ct);
+
     public async Task<T> WithLockAsync<T>(
-        RoomCode code, Func<Task<T>> work, CancellationToken ct)
+        RoomCode code,
+        TimeSpan acquireWait,
+        Func<Task<T>> work,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(work);
         ct.ThrowIfCancellationRequested();
@@ -94,9 +101,9 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         var lockToken = NewLockToken();
         var db = _redis.GetDatabase();
 
-        if (!await TryAcquireAsync(db, lockKey, lockToken, ct))
+        if (!await TryAcquireAsync(db, lockKey, lockToken, acquireWait, ct))
         {
-            LogRoomLockAcquireTimeout(_logger, code.Value, LockAcquireBudget.TotalMilliseconds);
+            LogRoomLockAcquireTimeout(_logger, code.Value, acquireWait.TotalMilliseconds);
             throw new LockTimeoutException(code.Value);
         }
 
@@ -114,9 +121,13 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     }
 
     private static async Task<bool> TryAcquireAsync(
-        IDatabase db, string lockKey, string lockToken, CancellationToken ct)
+        IDatabase db,
+        string lockKey,
+        string lockToken,
+        TimeSpan acquireWait,
+        CancellationToken ct)
     {
-        var deadline = DateTimeOffset.UtcNow + LockAcquireBudget;
+        var deadline = DateTimeOffset.UtcNow + acquireWait;
         while (true)
         {
             if (await db.LockTakeAsync(lockKey, lockToken, LockTtl))

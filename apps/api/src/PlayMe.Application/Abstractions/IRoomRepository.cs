@@ -37,4 +37,18 @@ public interface IRoomRepository
         RoomCode code,
         Func<Task<T>> work,
         CancellationToken ct);
+
+    /// <summary>
+    /// Same as <see cref="WithLockAsync{T}(RoomCode, Func{Task{T}}, CancellationToken)"/>
+    /// but uses the caller-supplied <paramref name="acquireWait"/> instead
+    /// of the default ~500 ms budget. Suited to the sweepers (state.md
+    /// §2.2): a short wait (~100 ms) followed by <see cref="LockTimeoutException"/>
+    /// they can swallow lets the loop move on to the next entry — the
+    /// dropped entry stays in the sorted set and the next sweep retries.
+    /// </summary>
+    Task<T> WithLockAsync<T>(
+        RoomCode code,
+        TimeSpan acquireWait,
+        Func<Task<T>> work,
+        CancellationToken ct);
 }

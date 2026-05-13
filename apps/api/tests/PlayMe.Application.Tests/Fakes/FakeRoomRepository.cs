@@ -29,12 +29,22 @@ public sealed class FakeRoomRepository : IRoomRepository
         return Task.FromResult(true);
     }
 
+    public Task<T> WithLockAsync<T>(
+        RoomCode code,
+        Func<Task<T>> work,
+        CancellationToken ct) =>
+        WithLockAsync(code, TimeSpan.FromSeconds(1), work, ct);
+
     public async Task<T> WithLockAsync<T>(
         RoomCode code,
+        TimeSpan acquireWait,
         Func<Task<T>> work,
         CancellationToken ct)
     {
-        await _lock.WaitAsync(ct);
+        if (!await _lock.WaitAsync(acquireWait, ct))
+        {
+            throw new LockTimeoutException(code.Value);
+        }
         try { return await work(); }
         finally { _lock.Release(); }
     }

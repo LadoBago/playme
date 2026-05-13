@@ -43,12 +43,17 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
 
-        // Sprint 2 PR #1: in-process scheduler stubs so DI is satisfied and
-        // handlers can compile/call against the ports. PR #2 replaces with
-        // Redis-backed sorted-set schedulers + a BackgroundService sweeper
-        // per state.md §2.2.
-        services.AddSingleton<ITimeoutScheduler, InMemoryTimeoutScheduler>();
-        services.AddSingleton<IDisconnectGraceScheduler, InMemoryDisconnectGraceScheduler>();
+        // Sprint 2 PR #2: Redis-backed sorted-set schedulers + BackgroundService
+        // sweepers per state.md §2.2. Schedulers are stateless (just ZADD/ZREM
+        // wrappers); sweepers run one instance per API process and dispatch
+        // adjudication handlers under the per-room distributed lock.
+        services.Configure<SweeperOptions>(configuration.GetSection("Sweepers"));
+        services.AddSingleton<ITimeoutScheduler, RedisTimeoutScheduler>();
+        services.AddSingleton<IDisconnectGraceScheduler, RedisDisconnectGraceScheduler>();
+        services.AddSingleton<RedisTimeoutSweeperService>();
+        services.AddSingleton<RedisDisconnectGraceSweeperService>();
+        services.AddHostedService(sp => sp.GetRequiredService<RedisTimeoutSweeperService>());
+        services.AddHostedService(sp => sp.GetRequiredService<RedisDisconnectGraceSweeperService>());
 
         return services;
     }
