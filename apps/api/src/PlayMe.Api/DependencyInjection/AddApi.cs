@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Trace;
+using PlayMe.Api.Hubs;
 using PlayMe.Api.Security;
 using PlayMe.Application.Abstractions;
 using PlayMe.Infrastructure.Json;
@@ -33,6 +34,11 @@ public static class ApiServiceCollectionExtensions
         });
         services.AddSingleton<SessionCookieWriter>();
         services.AddSingleton<SessionCookieReader>();
+
+        // Sweeper-side broadcast hook (PR #2). Sprint 2 sweepers in
+        // Infrastructure depend on IRoomNotifier so they can publish
+        // MatchEnded without referencing SignalR directly.
+        services.AddSingleton<IRoomNotifier, RoomNotifier>();
 
         // Controllers + JSON options aligned with PlayMeJsonOptions so
         // HTTP responses use the same shape as the Redis blob and SignalR

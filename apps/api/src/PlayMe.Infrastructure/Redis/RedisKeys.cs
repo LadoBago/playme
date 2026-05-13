@@ -11,4 +11,19 @@ internal static class RedisKeys
 
     public static string Room(string code) => $"{Prefix}room:{code}";
     public static string RoomLock(string code) => $"{Prefix}room:{code}:lock";
+
+    /// <summary>
+    /// Sorted set: score = unix-ms deadline, value = roomCode. state.md §2.2:
+    /// one scheduled timeout check per active room; the sweeper drains via
+    /// <c>ZRANGEBYSCORE … LIMIT 0 N</c>, processes under the room lock, and
+    /// <c>ZREM</c>s the entry whether or not the timeout was adjudicated.
+    /// </summary>
+    public const string Timeouts = $"{Prefix}timeouts";
+
+    /// <summary>
+    /// Sorted set: score = unix-ms deadline, value = <c>{roomCode}:{role}</c>.
+    /// Mirrors the timeout schedule but keyed per (room, player) so each
+    /// disconnect can have its own pending grace entry.
+    /// </summary>
+    public const string Grace = $"{Prefix}grace";
 }
