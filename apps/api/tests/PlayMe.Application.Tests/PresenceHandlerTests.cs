@@ -104,6 +104,34 @@ public sealed class PresenceHandlerTests
     }
 
     [Fact]
+    public async Task ReleasePresence_when_caller_already_disconnected_is_silent()
+    {
+        var clock = new FakeClock();
+        var rooms = new FakeRoomRepository();
+        var graces = new RecordingGraceScheduler();
+        var seed = RoomFactory.InProgress(clock.UtcNow, Budget);
+        // Pre-condition: host has already dropped (e.g. earlier disconnect).
+        seed.MarkDisconnected(Role.Host);
+        rooms.Seed(seed);
+
+        var handler = new ReleasePresenceHandler(rooms, clock, graces);
+
+        // A second disconnect — e.g. a stale-cookie probe that briefly
+        // connected and tore down — must NOT re-broadcast OpponentDisconnected
+        // or schedule another grace entry.
+        var result = await handler.HandleAsync(
+            new ReleasePresenceCommand(
+                RoomFactory.RoomCodeValue,
+                RoomFactory.HostPlayerId,
+                Role.Host),
+            CancellationToken.None);
+
+        result.Succeeded.Should().BeTrue();
+        result.Value!.OpponentNotificationDue.Should().BeFalse();
+        graces.Scheduled.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task RegisterPresence_on_reconnect_cancels_grace_and_flags_reconnected()
     {
         var clock = new FakeClock();

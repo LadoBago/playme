@@ -114,9 +114,15 @@ export class RoomHubClient {
    * group if this call flipped WaitingForOpponent → InProgress, or
    * OpponentReconnected to the other player if this call landed on a
    * reconnect path.
+   *
+   * <paramref name="expectedRoomCode"/> is the URL's room code. The server
+   * validates it against the cookie's session and rejects with
+   * <c>errors.session.unauthorized</c> if they don't match — covers the
+   * "stale cookie for a previously-joined room" case when the same
+   * browser opens a different room's link.
    */
-  joinRoom(): Promise<RoomSessionDto> {
-    return this._connection.invoke<RoomSessionDto>('JoinRoom');
+  joinRoom(expectedRoomCode: string): Promise<RoomSessionDto> {
+    return this._connection.invoke<RoomSessionDto>('JoinRoom', expectedRoomCode);
   }
 
   /**

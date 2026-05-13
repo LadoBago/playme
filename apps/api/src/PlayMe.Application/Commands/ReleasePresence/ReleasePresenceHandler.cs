@@ -54,6 +54,28 @@ public sealed class ReleasePresenceHandler
                             OpponentNotificationDue: false));
                 }
 
+                // Defensive no-op: a SignalR disconnect for a role that's
+                // already marked disconnected mustn't re-broadcast
+                // OpponentDisconnected or re-schedule grace. Happens when
+                // a stale-cookie probe connects briefly and tears down
+                // (e.g. opening a different room's link in the same
+                // browser) — the client's hub.stop() triggers
+                // OnDisconnectedAsync even though no presence was
+                // actually held in this room.
+                var wasConnected = cmd.CallerRole switch
+                {
+                    Role.Host => room.HostConnected,
+                    Role.Challenger => room.ChallengerConnected,
+                    _ => false,
+                };
+                if (!wasConnected)
+                {
+                    return AppResult<ReleasePresenceResult>.Ok(
+                        new ReleasePresenceResult(
+                            RoomMapper.ToDto(room, _clock.UtcNow),
+                            OpponentNotificationDue: false));
+                }
+
                 var notifyOpponent = room.Status == RoomStatus.InProgress;
                 room.MarkDisconnected(cmd.CallerRole);
                 await _rooms.SaveAsync(room, ct);
