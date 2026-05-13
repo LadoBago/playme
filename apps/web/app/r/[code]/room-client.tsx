@@ -41,6 +41,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   >('live');
   const hubRef = useRef<RoomHubClient | null>(null);
 
+  // URL room code — passed to hub.joinRoom() so the server can reject a
+  // stale cookie that belongs to a different room (see RoomHub.JoinRoom).
+  // Stable for the component's lifetime; the page never swaps room codes.
+  const expectedRoomCode = initialRoom.code;
+
   const game = useMemo(() => findGame(room.gameId), [room.gameId]);
 
   const connect = useCallback(async (signal: { cancelled: boolean }) => {
@@ -64,7 +69,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         // fresh room+clock snapshot.
         void (async () => {
           try {
-            const session = await hub.joinRoom();
+            const session = await hub.joinRoom(expectedRoomCode);
             setRoom(session.room);
             setRole(session.role);
             setConnectionStatus('live');
@@ -93,7 +98,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         return;
       }
       hubRef.current = hub;
-      const session = await hub.joinRoom();
+      const session = await hub.joinRoom(expectedRoomCode);
       if (signal.cancelled) {
         await hub.stop().catch(() => {});
         hubRef.current = null;
@@ -120,7 +125,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       await hub.stop().catch(() => {});
       hubRef.current = null;
     }
-  }, []);
+  }, [expectedRoomCode]);
 
   useEffect(() => {
     const signal = { cancelled: false };

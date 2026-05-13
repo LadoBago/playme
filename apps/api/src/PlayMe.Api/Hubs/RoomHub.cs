@@ -89,13 +89,25 @@ public sealed class RoomHub : Hub
     /// the role is online and — if both players are now registered AND
     /// both connected — starts the match per §2.9.
     ///
-    /// Returns a <see cref="RoomSessionDto"/> so the client learns which
-    /// seat its (encrypted, HttpOnly) session cookie authorizes it for. The
-    /// client cannot decode the cookie itself and must not be left guessing.
+    /// <paramref name="expectedRoomCode"/> is the room code from the URL
+    /// the client is rendering. The session cookie is single-slot per
+    /// browser (encrypted token carries one room's identity); a user who
+    /// last played in Room A and then opens Room C's link would otherwise
+    /// see Room A's state surface here. Validating the URL against the
+    /// cookie's room makes the mismatch fail cleanly — the client falls
+    /// back to the JoinForm and mints a fresh session for Room C.
     /// </summary>
-    public async Task<RoomSessionDto> JoinRoom()
+    public async Task<RoomSessionDto> JoinRoom(string expectedRoomCode)
     {
         var session = RequireSession();
+        if (!string.Equals(session.RoomCode.Value, expectedRoomCode, StringComparison.Ordinal))
+        {
+            // Stale cookie for a different room. Don't run RegisterPresence
+            // — that would mark the caller connected in the wrong room and
+            // emit OpponentReconnected to the wrong group.
+            throw new HubException(ErrorCode.SessionUnauthorized.ToI18nKey());
+        }
+
         var cmd = new RegisterPresenceCommand(
             session.RoomCode.Value, session.PlayerId.Value, session.Role);
 
