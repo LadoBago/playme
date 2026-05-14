@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+/* global process, URL */
 
 // Baseline Content-Security-Policy (docs/security.md §6). Notes:
 // - `'unsafe-inline'` on `script-src` is a temporary concession to
