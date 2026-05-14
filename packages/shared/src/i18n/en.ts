@@ -5,7 +5,10 @@
 
 export const en = {
   // --- Site chrome ---
+  'site.title': 'PlayMe — Play casual games with a friend, no signup',
+  'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play casual games with a friend, no signup.',
+  'site.ogImageAlt': 'PlayMe — play casual games with a friend, no signup.',
   'site.howItWorks.title': 'How PlayMe works',
   'site.howItWorks.step1.title': 'Pick a game',
   'site.howItWorks.step1.body':
