@@ -69,6 +69,12 @@ h3 {
 button {
   font: inherit;
   cursor: pointer;
+  /* Disable iOS Safari's double-tap-to-zoom on tap targets. Pinch-zoom
+   * stays available site-wide via the layout's viewport meta, so a11y
+   * isn't affected — only the gesture that triggers when a user taps
+   * the same button twice in quick succession (e.g. dropping multiple
+   * discs into a single Connect 4 column). */
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -393,6 +399,115 @@ textarea {
       0 0 0 3px var(--accent) inset,
       0 0 0 0 transparent;
   }
+}
+
+/* --- Board (Connect 4) ---
+ * Disc/ring iconography per platform-and-games.md §2.1: red as solid disc,
+ * yellow as a ring (donut). The two are distinguishable without relying on
+ * hue alone, so the board stays legible for deuteranopia / protanopia and
+ * in monochrome.
+ */
+
+.c4 {
+  /* Cell size derived once from the viewport, then re-used by both the
+   * column-button row and the grid. Keeping a single source of truth
+   * avoids over-constrained layouts (Safari was triggering a layout
+   * loop when grid + cell both declared competing aspect-ratios). */
+  --c4-cell: min(56px, calc((100vw - 3rem - 16px - 36px) / 7));
+  --c4-gap: 6px;
+  width: calc(7 * var(--c4-cell) + 6 * var(--c4-gap) + 16px);
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c4__columns {
+  display: grid;
+  grid-template-columns: repeat(7, var(--c4-cell));
+  gap: var(--c4-gap);
+  padding-inline: 8px;
+}
+
+.c4__drop {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.c4__drop:hover:not(:disabled) {
+  background: var(--highlight);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.c4__drop:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.c4__grid {
+  display: grid;
+  grid-template-columns: repeat(7, var(--c4-cell));
+  grid-template-rows: repeat(6, var(--c4-cell));
+  gap: var(--c4-gap);
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.c4__cell {
+  position: relative;
+  width: var(--c4-cell);
+  height: var(--c4-cell);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c4__disc {
+  display: block;
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+}
+
+.c4__cell--red .c4__disc {
+  background: #d6303a;
+  border: 2px solid #a02028;
+}
+
+.c4__cell--yellow .c4__disc {
+  /* Ring/donut: solid border with the cell's background showing through.
+   * Color picks ensure the rim stays visible against both light + dark
+   * cell backgrounds. */
+  background: transparent;
+  border: 6px solid #e8b923;
+  box-shadow: inset 0 0 0 2px rgba(180, 130, 0, 0.55);
+}
+
+.c4__cell--last {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  animation: lastMovePulse 1.4s ease-out;
+}
+
+.c4__cell--winning {
+  box-shadow:
+    0 0 0 3px rgb(34, 197, 94) inset,
+    0 0 12px rgba(34, 197, 94, 0.5);
 }
 
 .share-link {

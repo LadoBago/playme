@@ -31,6 +31,14 @@ export const ka: Record<EnKey, string> = {
   'games.tictactoe.sideX': 'X (პირველი ხოდი)',
   'games.tictactoe.sideO': 'O',
 
+  'games.connect4.name': 'ოთხის გასწორება',
+  'games.connect4.shortDescription':
+    'ჩამოაგდე დისკები 7×6 ბადეში გრავიტაციით. ვინც პირველი დააწყობს ოთხს — იგებს.',
+  'games.connect4.rules':
+    'მოთამაშეები რიგრიგობით აგდებენ წითელ და ყვითელ დისკებს 7 სვეტიან, 6 რიგიან დაფაზე. ყოველი დისკი ეცემა არჩეული სვეტის ყველაზე ქვედა ცარიელ უჯრაში. ვინც პირველი დააწყობს ოთხ თავის დისკს — ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ დაფა შეივსება გამარჯვებული ხაზის გარეშე — ფრე. პირველი ხოდი ყოველთვის წითელს ეკუთვნის.',
+  'games.connect4.sideRed': 'წითელი (პირველი ხოდი)',
+  'games.connect4.sideYellow': 'ყვითელი',
+
   // --- Configure page ---
   'configure.title': 'ოთახის კონფიგურაცია',
   'configure.displayName.label': 'შენი სახელი',
@@ -90,6 +98,8 @@ export const ka: Record<EnKey, string> = {
   'errors.room.busy': 'სერვერი დაკავებულია. სცადე ცოტა მოგვიანებით.',
   'errors.move.illegalCell': 'აქ ვერ ითამაშებ.',
   'errors.move.cellOccupied': 'ეს უჯრა უკვე დაკავებულია.',
+  'errors.move.illegalColumn': 'ასეთი სვეტი არ არსებობს.',
+  'errors.move.columnFull': 'ეს სვეტი სავსეა.',
   'errors.move.notYourTurn': 'ეს შენი რიგი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',

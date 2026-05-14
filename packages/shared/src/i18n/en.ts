@@ -30,6 +30,14 @@ export const en = {
   'games.tictactoe.sideX': 'X (moves first)',
   'games.tictactoe.sideO': 'O',
 
+  'games.connect4.name': 'Connect 4',
+  'games.connect4.shortDescription':
+    'Drop discs into a 7×6 grid with gravity. First to line up four wins.',
+  'games.connect4.rules':
+    'Players alternate dropping red and yellow discs into a 7-column, 6-row board. Each disc falls to the lowest empty cell in the chosen column. The first to align four of their discs — horizontally, vertically, or diagonally — wins. If the board fills with no line, the game is a draw. Red always moves first.',
+  'games.connect4.sideRed': 'Red (moves first)',
+  'games.connect4.sideYellow': 'Yellow',
+
   // --- Configure page ---
   'configure.title': 'Configure room',
   'configure.displayName.label': 'Your name',
@@ -89,6 +97,8 @@ export const en = {
   'errors.room.busy': 'Server is busy. Try again in a moment.',
   'errors.move.illegalCell': "You can't play there.",
   'errors.move.cellOccupied': 'That cell is already taken.',
+  'errors.move.illegalColumn': "That column doesn't exist.",
+  'errors.move.columnFull': 'That column is full.',
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',

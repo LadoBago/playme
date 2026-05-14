@@ -12,11 +12,20 @@ describe('findGame', () => {
     expect(entry?.id).toBe('tictactoe-3x3');
   });
 
+  it('finds Connect 4 by its id', () => {
+    const entry = findGame('connect4');
+    expect(entry).toBeDefined();
+    expect(entry?.rows).toBe(6);
+    expect(entry?.cols).toBe(7);
+    expect(entry?.sides.map((s) => s.id)).toEqual(['red', 'yellow']);
+    expect(entry?.defaultHostSide).toBe('red');
+  });
+
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });
 
-  it('every catalog entry has both x/o-style sides registered', () => {
+  it('every catalog entry has exactly two sides with a valid default', () => {
     for (const game of GAME_CATALOG) {
       expect(game.sides.length).toBe(2);
       expect(game.sides.some((s) => s.id === game.defaultHostSide)).toBe(true);
