@@ -29,16 +29,19 @@ public sealed partial class RedisRoomRepository : IRoomRepository
 
     private readonly IConnectionMultiplexer _redis;
     private readonly IGameModuleRegistry _games;
+    private readonly IClock _clock;
     private readonly ILogger<RedisRoomRepository> _logger;
     private readonly JsonSerializerOptions _json;
 
     public RedisRoomRepository(
         IConnectionMultiplexer redis,
         IGameModuleRegistry games,
+        IClock clock,
         ILogger<RedisRoomRepository> logger)
     {
         _redis = redis;
         _games = games;
+        _clock = clock;
         _logger = logger;
         _json = PlayMeJsonOptions.CreateDefault();
     }
@@ -104,7 +107,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         var lockToken = NewLockToken();
         var db = _redis.GetDatabase();
 
-        if (!await TryAcquireAsync(db, lockKey, lockToken, acquireWait, ct))
+        if (!await TryAcquireAsync(db, lockKey, lockToken, acquireWait, _clock, ct))
         {
             LogRoomLockAcquireTimeout(_logger, code.Value, acquireWait.TotalMilliseconds);
             throw new LockTimeoutException(code.Value);
@@ -128,16 +131,17 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         string lockKey,
         string lockToken,
         TimeSpan acquireWait,
+        IClock clock,
         CancellationToken ct)
     {
-        var deadline = DateTimeOffset.UtcNow + acquireWait;
+        var deadline = clock.UtcNow + acquireWait;
         while (true)
         {
             if (await db.LockTakeAsync(lockKey, lockToken, LockTtl))
             {
                 return true;
             }
-            if (DateTimeOffset.UtcNow >= deadline)
+            if (clock.UtcNow >= deadline)
             {
                 return false;
             }

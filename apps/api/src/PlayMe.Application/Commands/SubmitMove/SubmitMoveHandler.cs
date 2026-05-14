@@ -1,6 +1,7 @@
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
+using PlayMe.Application.RateLimiting;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.SubmitMove;
@@ -24,19 +25,22 @@ public sealed class SubmitMoveHandler
     private readonly IClock _clock;
     private readonly IClockService _clockService;
     private readonly ITimeoutScheduler _timeouts;
+    private readonly IRateLimiter _rateLimiter;
 
     public SubmitMoveHandler(
         IRoomRepository rooms,
         IGameModuleRegistry games,
         IClock clock,
         IClockService clockService,
-        ITimeoutScheduler timeouts)
+        ITimeoutScheduler timeouts,
+        IRateLimiter rateLimiter)
     {
         _rooms = rooms;
         _games = games;
         _clock = clock;
         _clockService = clockService;
         _timeouts = timeouts;
+        _rateLimiter = rateLimiter;
     }
 
     public async Task<AppResult<SubmitMoveResult>> HandleAsync(
@@ -49,6 +53,16 @@ public sealed class SubmitMoveHandler
         catch (ArgumentException)
         {
             return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomNotFound);
+        }
+
+        // Per-session rate limit before acquiring the room lock so a
+        // flood doesn't even reach the contention path (docs/security.md
+        // §5: 60 moves/min/session). Keyed by playerId — unique per
+        // session, regenerated on each create/join.
+        if (!await _rateLimiter.TryAcquireAsync(
+                SessionRateLimitPolicies.SubmitMove, cmd.CallerPlayerId, ct))
+        {
+            return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RateExceeded);
         }
 
         try

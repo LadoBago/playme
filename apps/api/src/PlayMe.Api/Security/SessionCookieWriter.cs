@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using PlayMe.Application.Abstractions;
 
 namespace PlayMe.Api.Security;
 
@@ -13,15 +14,18 @@ public sealed class SessionCookieWriter
 {
     private readonly ISessionTokenService _tokens;
     private readonly IOptionsMonitor<SessionCookieOptions> _options;
+    private readonly IClock _clock;
     private readonly IHostEnvironment _env;
 
     public SessionCookieWriter(
         ISessionTokenService tokens,
         IOptionsMonitor<SessionCookieOptions> options,
+        IClock clock,
         IHostEnvironment env)
     {
         _tokens = tokens;
         _options = options;
+        _clock = clock;
         _env = env;
     }
 
@@ -41,7 +45,7 @@ public sealed class SessionCookieWriter
             Path = "/",
             Domain = opts.Domain,
             MaxAge = opts.MaxAge,
-            Expires = DateTimeOffset.UtcNow.Add(opts.MaxAge),
+            Expires = _clock.UtcNow.Add(opts.MaxAge),
         });
     }
 }
