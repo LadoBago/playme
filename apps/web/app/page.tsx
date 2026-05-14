@@ -18,10 +18,8 @@ export default function HomePage() {
           {GAME_CATALOG.map((game) => (
             <Link key={game.id} href={`/play/${game.slug}`} className="game-card">
               <BoardPreview rows={game.rows} cols={game.cols} />
-              <span className="game-card__title">{t(game.nameKey as 'games.tictactoe-3x3.name')}</span>
-              <span className="game-card__desc">
-                {t(game.shortDescriptionKey as 'games.tictactoe-3x3.shortDescription')}
-              </span>
+              <span className="game-card__title">{t(game.nameKey)}</span>
+              <span className="game-card__desc">{t(game.shortDescriptionKey)}</span>
             </Link>
           ))}
         </div>

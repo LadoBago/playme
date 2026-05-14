@@ -4,13 +4,15 @@
 //
 // Sprint 1 ships with one entry; later sprints add the rest.
 
+import type { I18nKey } from '../i18n/index';
+
 export interface GameCatalogEntry {
   readonly id: string;
   readonly slug: string;
-  readonly nameKey: string;
-  readonly shortDescriptionKey: string;
-  readonly rulesKey: string;
-  readonly sides: readonly { readonly id: string; readonly labelKey: string }[];
+  readonly nameKey: I18nKey;
+  readonly shortDescriptionKey: I18nKey;
+  readonly rulesKey: I18nKey;
+  readonly sides: readonly { readonly id: string; readonly labelKey: I18nKey }[];
   readonly defaultHostSide: string;
   /** Board dimensions for the configure-page preview / room renderer. */
   readonly rows: number;
