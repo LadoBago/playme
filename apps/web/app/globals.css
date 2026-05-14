@@ -69,6 +69,12 @@ h3 {
 button {
   font: inherit;
   cursor: pointer;
+  /* Disable iOS Safari's double-tap-to-zoom on tap targets. Pinch-zoom
+   * stays available site-wide via the layout's viewport meta, so a11y
+   * isn't affected — only the gesture that triggers when a user taps
+   * the same button twice in quick succession (e.g. dropping multiple
+   * discs into a single Connect 4 column). */
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -403,7 +409,14 @@ textarea {
  */
 
 .c4 {
-  width: min(420px, 100%);
+  /* Cell size derived once from the viewport, then re-used by both the
+   * column-button row and the grid. Keeping a single source of truth
+   * avoids over-constrained layouts (Safari was triggering a layout
+   * loop when grid + cell both declared competing aspect-ratios). */
+  --c4-cell: min(56px, calc((100vw - 3rem - 16px - 36px) / 7));
+  --c4-gap: 6px;
+  width: calc(7 * var(--c4-cell) + 6 * var(--c4-gap) + 16px);
+  max-width: 100%;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -412,15 +425,16 @@ textarea {
 
 .c4__columns {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(7, var(--c4-cell));
+  gap: var(--c4-gap);
+  padding-inline: 8px;
 }
 
 .c4__drop {
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem 0;
   border: 1px dashed var(--border);
   background: transparent;
   color: var(--fg-muted);
@@ -442,8 +456,9 @@ textarea {
 
 .c4__grid {
   display: grid;
-  gap: 6px;
-  aspect-ratio: 7 / 6;
+  grid-template-columns: repeat(7, var(--c4-cell));
+  grid-template-rows: repeat(6, var(--c4-cell));
+  gap: var(--c4-gap);
   padding: 8px;
   border-radius: 12px;
   background: var(--bg-elevated);
@@ -452,10 +467,11 @@ textarea {
 
 .c4__cell {
   position: relative;
+  width: var(--c4-cell);
+  height: var(--c4-cell);
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 50%;
-  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
