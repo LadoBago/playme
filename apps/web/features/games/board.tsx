@@ -14,17 +14,19 @@ interface BoardProps {
   onCellClick: (cell: number) => void;
   /**
    * Per-game cell renderer. Called for every cell with its side string (or
-   * null for empty). The platform Board component never inspects side
-   * vocabulary — per-game iconography belongs to the per-game module
-   * (CLAUDE.md §7 "Platform thinness").
+   * null for empty). The Board never inspects side vocabulary — per-game
+   * iconography belongs to the per-game module (CLAUDE.md §7 "Platform
+   * thinness").
    */
   renderCell: (side: string | null) => ReactNode;
 }
 
 /**
- * Generic grid board. Same renderer works for every grid-shaped game; the
- * per-game iconography (X/O vs disc/ring for Connect 4) is injected via
- * <see cref="BoardProps.renderCell"/>.
+ * Generic grid display. Game modules choose to use it (composition, per
+ * CLAUDE.md §7 "Platform thinness") — the platform room shell does not
+ * import it. The cell glyph is injected via <see cref="BoardProps.renderCell"/>;
+ * input handling (cell click vs. column drop, etc.) is the calling game's
+ * responsibility, which may wrap or replace this component entirely.
  */
 export function Board({
   rows,
