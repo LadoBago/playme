@@ -34,6 +34,20 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     rows: 3,
     cols: 3,
   },
+  {
+    id: 'connect4',
+    slug: 'connect4',
+    nameKey: 'games.connect4.name',
+    shortDescriptionKey: 'games.connect4.shortDescription',
+    rulesKey: 'games.connect4.rules',
+    sides: [
+      { id: 'red', labelKey: 'games.connect4.sideRed' },
+      { id: 'yellow', labelKey: 'games.connect4.sideYellow' },
+    ],
+    defaultHostSide: 'red',
+    rows: 6,
+    cols: 7,
+  },
 ];
 
 export function findGame(slugOrId: string): GameCatalogEntry | undefined {

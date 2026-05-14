@@ -1,4 +1,5 @@
 import type { GameView } from './types';
+import { Connect4View } from './connect4/view';
 import { TicTacToe3x3View } from './tictactoe-3x3/view';
 
 /**
@@ -8,6 +9,7 @@ import { TicTacToe3x3View } from './tictactoe-3x3/view';
  */
 const VIEWS = new Map<string, GameView>([
   ['tictactoe-3x3', TicTacToe3x3View],
+  ['connect4', Connect4View],
 ]);
 
 export function findGameView(gameId: string): GameView | undefined {
