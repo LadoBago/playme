@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.Hubs;
 using PlayMe.Api.Http;
+using PlayMe.Api.RateLimiting;
 using PlayMe.Api.Security;
 using PlayMe.Application.Commands.CreateRoom;
 using PlayMe.Application.Commands.JoinRoom;
@@ -47,6 +49,7 @@ public sealed class RoomsController : ControllerBase
     /// to open the SignalR connection.
     /// </summary>
     [HttpPost]
+    [EnableRateLimiting(RateLimitingPolicies.RoomsCreate)]
     public async Task<ActionResult<RoomDto>> CreateRoom(
         [FromBody] CreateRoomCommand command, CancellationToken ct)
     {
@@ -73,6 +76,7 @@ public sealed class RoomsController : ControllerBase
     /// (typically the host).
     /// </summary>
     [HttpPost("{code}/join")]
+    [EnableRateLimiting(RateLimitingPolicies.RoomsJoin)]
     public async Task<ActionResult<RoomDto>> JoinRoom(
         [FromRoute] string code,
         [FromBody] JoinRoomRequestBody body,

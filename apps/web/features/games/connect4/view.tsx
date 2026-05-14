@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { GameView, GameViewProps } from '../types';
+import { Connect4BoardStateSchema, type Connect4BoardState } from './schema';
 
 /**
  * Connect 4 web renderer. Owns the state shape (parsed from
@@ -21,20 +22,12 @@ import type { GameView, GameViewProps } from '../types';
  * (CLAUDE.md §7 composition rule: don't force Connect 4 through the
  * generic `Board` cell-click model).
  */
-interface Coord {
-  row: number;
-  col: number;
-}
-interface Connect4BoardState {
-  rows: number;
-  cols: number;
-  cells: readonly (string | null)[];
-  lastMove?: Coord;
-  winningLine?: readonly Coord[];
-}
 
 function parseConnect4State(state: string): Connect4BoardState {
-  return JSON.parse(state) as Connect4BoardState;
+  // Zod-parse the server-produced JSON blob (MatchDto.state) so a
+  // malformed payload fails loudly at the boundary rather than corrupting
+  // rendering (CLAUDE.md §6 "validate every external input").
+  return Connect4BoardStateSchema.parse(JSON.parse(state));
 }
 
 function indexOf(state: Connect4BoardState, row: number, col: number): number {

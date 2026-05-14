@@ -16,6 +16,16 @@
   --danger: #b00020;
   --highlight: rgba(42, 109, 244, 0.18);
   --win-highlight: rgba(34, 197, 94, 0.32);
+  --win-stroke: rgb(34, 197, 94);
+  --win-glow: rgba(34, 197, 94, 0.5);
+
+  /* Connect 4 piece tokens. Game-piece colors stay legible across themes,
+   * so the values are stable in light + dark; the token indirection keeps
+   * components free of hard-coded hex per CLAUDE.md §7. */
+  --c4-red-fill: #d6303a;
+  --c4-red-rim: #a02028;
+  --c4-yellow-rim: #e8b923;
+  --c4-yellow-inner-shadow: rgba(180, 130, 0, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +37,8 @@
     --border: rgba(255, 255, 255, 0.14);
     --highlight: rgba(99, 158, 255, 0.24);
     --win-highlight: rgba(74, 222, 128, 0.36);
+    --win-stroke: rgb(74, 222, 128);
+    --win-glow: rgba(74, 222, 128, 0.5);
   }
 }
 
@@ -385,7 +397,7 @@ textarea {
 
 .board__cell--winning {
   background: var(--win-highlight);
-  box-shadow: 0 0 0 3px rgb(34, 197, 94) inset;
+  box-shadow: 0 0 0 3px var(--win-stroke) inset;
 }
 
 @keyframes lastMovePulse {
@@ -485,8 +497,8 @@ textarea {
 }
 
 .c4__cell--red .c4__disc {
-  background: #d6303a;
-  border: 2px solid #a02028;
+  background: var(--c4-red-fill);
+  border: 2px solid var(--c4-red-rim);
 }
 
 .c4__cell--yellow .c4__disc {
@@ -494,8 +506,8 @@ textarea {
    * Color picks ensure the rim stays visible against both light + dark
    * cell backgrounds. */
   background: transparent;
-  border: 6px solid #e8b923;
-  box-shadow: inset 0 0 0 2px rgba(180, 130, 0, 0.55);
+  border: 6px solid var(--c4-yellow-rim);
+  box-shadow: inset 0 0 0 2px var(--c4-yellow-inner-shadow);
 }
 
 .c4__cell--last {
@@ -506,8 +518,8 @@ textarea {
 
 .c4__cell--winning {
   box-shadow:
-    0 0 0 3px rgb(34, 197, 94) inset,
-    0 0 12px rgba(34, 197, 94, 0.5);
+    0 0 0 3px var(--win-stroke) inset,
+    0 0 12px var(--win-glow);
 }
 
 .share-link {

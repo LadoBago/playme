@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { GameView, GameViewProps } from '../types';
 import { Board } from '../board';
+import { TttBoardStateSchema, type TttBoardState } from './schema';
 
 /**
  * Tic-Tac-Toe 3×3 web renderer. Owns the state shape (parsed from
@@ -11,18 +12,13 @@ import { Board } from '../board';
  * `TicTacToe3x3GameModule` and `TicTacToeMoveParser`. The platform shell
  * never inspects any of it (CLAUDE.md §7 "Platform thinness").
  */
-interface TttBoardState {
-  rows: number;
-  cols: number;
-  cells: readonly (string | null)[];
-  /** Cell index of the most-recently-played move, if any. */
-  lastMove?: number;
-  /** Cells aligned by the winning move, if the match is won. */
-  winningLine?: readonly { row: number; col: number }[];
-}
 
 function parseTttState(state: string): TttBoardState {
-  return JSON.parse(state) as TttBoardState;
+  // `state` is a server-produced JSON blob the platform forwards opaquely
+  // (MatchDto.state). Zod-parse rather than cast so a malformed payload
+  // fails loudly instead of crashing somewhere deep in the renderer
+  // (CLAUDE.md §6 "validate every external input").
+  return TttBoardStateSchema.parse(JSON.parse(state));
 }
 
 function renderTttCell(side: string | null): string {

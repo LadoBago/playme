@@ -1,5 +1,6 @@
 using System.Globalization;
 using PlayMe.Api.DependencyInjection;
+using PlayMe.Api.Middleware;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,7 +53,9 @@ builder.Services
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseCors();
+app.UseRateLimiter();
 app.MapControllers();
 app.MapHub<PlayMe.Api.Hubs.RoomHub>("/hubs/room");
 

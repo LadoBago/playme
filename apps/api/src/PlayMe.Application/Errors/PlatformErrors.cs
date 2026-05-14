@@ -39,4 +39,7 @@ public static class PlatformErrors
 
     // --- Session / authorization ---
     public const string SessionUnauthorized = "errors.session.unauthorized";
+
+    // --- Rate limiting (docs/security.md §5) ---
+    public const string RateExceeded = "errors.rate.exceeded";
 }
