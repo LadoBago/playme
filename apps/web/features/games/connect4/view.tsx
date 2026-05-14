@@ -13,11 +13,13 @@ import type { GameView, GameViewProps } from '../types';
  * platform shell never inspects any of it (CLAUDE.md §7 "Platform
  * thinness").
  *
- * Input model: column-drop. Seven full-height column buttons stack on top
- * of the visual grid; clicking one drops the caller's disc into that
- * column. The grid itself is decorative once a column is chosen — there
- * are no per-cell click targets (CLAUDE.md §7 composition rule: don't
- * force Connect 4 through the generic `Board` cell-click model).
+ * Input model: column-drop. Seven column buttons stack above the grid
+ * and another set below it; tapping either row drops the caller's disc
+ * into that column. The mirrored bottom row is for one-handed mobile use
+ * (the top row is out of the thumb zone on a phone held normally). The
+ * grid itself is decorative — there are no per-cell click targets
+ * (CLAUDE.md §7 composition rule: don't force Connect 4 through the
+ * generic `Board` cell-click model).
  */
 interface Coord {
   row: number;
@@ -64,25 +66,33 @@ export const Connect4View: GameView = ({
 
   const interactable = canPlay && !matchEnded;
 
+  const dropRow = (placement: 'top' | 'bottom') => (
+    <div
+      className="c4__columns"
+      role="group"
+      aria-label={`connect 4 columns (${placement})`}
+    >
+      {Array.from({ length: board.cols }, (_, col) => {
+        const full = columnIsFull(board, col);
+        return (
+          <button
+            key={col}
+            type="button"
+            className="c4__drop"
+            disabled={!interactable || full}
+            aria-label={`drop disc in column ${col + 1}`}
+            onClick={() => onSubmitMove({ column: col })}
+          >
+            <span aria-hidden>{placement === 'top' ? '▼' : '▲'}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="c4">
-      <div className="c4__columns" role="group" aria-label="connect 4 columns">
-        {Array.from({ length: board.cols }, (_, col) => {
-          const full = columnIsFull(board, col);
-          return (
-            <button
-              key={col}
-              type="button"
-              className="c4__drop"
-              disabled={!interactable || full}
-              aria-label={`drop disc in column ${col + 1}`}
-              onClick={() => onSubmitMove({ column: col })}
-            >
-              <span aria-hidden>▼</span>
-            </button>
-          );
-        })}
-      </div>
+      {dropRow('top')}
       <div
         className="c4__grid"
         style={{
@@ -114,6 +124,7 @@ export const Connect4View: GameView = ({
           );
         })}
       </div>
+      {dropRow('bottom')}
     </div>
   );
 };
