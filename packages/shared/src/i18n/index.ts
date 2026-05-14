@@ -9,7 +9,7 @@ const catalogs: Record<Locale, Record<EnKey, string>> = {
   ka,
 };
 
-export const DEFAULT_LOCALE: Locale = 'en';
+export const DEFAULT_LOCALE: Locale = 'ka';
 
 /**
  * Translate a key for the given locale. Falls back to en, then to the

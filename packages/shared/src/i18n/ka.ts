@@ -103,4 +103,5 @@ export const ka: Record<EnKey, string> = {
   'errors.move.notYourTurn': 'ეს შენი რიგი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',
+  'errors.rate.exceeded': 'მეტისმეტად სწრაფად ცდილობ. დაიცადე და სცადე თავიდან.',
 };

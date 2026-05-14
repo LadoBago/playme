@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Trace;
 using PlayMe.Api.Hubs;
+using PlayMe.Api.RateLimiting;
 using PlayMe.Api.Security;
 using PlayMe.Application.Abstractions;
 using PlayMe.Infrastructure.Json;
@@ -67,11 +69,18 @@ public static class ApiServiceCollectionExtensions
                 .AllowCredentials());
         });
 
+        // Per-IP HTTP rate-limit policies (docs/security.md §5). Per-session
+        // quotas (move flood, rematch spam) belong behind an Application-
+        // layer IRateLimiter port — not wired here.
+        services.AddPlayMeRateLimiting();
+
         // SignalR with Redis backplane (CLAUDE.md §2.1). Same JSON shape
-        // as MVC via AddJsonProtocol.
+        // as MVC via AddJsonProtocol. BurstHubFilter enforces the
+        // per-connection burst ceiling (docs/security.md §5).
+        services.AddSingleton<BurstHubFilter>();
         var redisConnectionString = configuration.GetConnectionString("Redis")
             ?? "localhost:6379";
-        services.AddSignalR()
+        services.AddSignalR(o => o.AddFilter<BurstHubFilter>())
             .AddJsonProtocol(o => PlayMeJsonOptions.ApplyTo(o.PayloadSerializerOptions))
             .AddStackExchangeRedis(redisConnectionString, options =>
             {

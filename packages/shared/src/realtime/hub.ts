@@ -1,4 +1,5 @@
 import * as signalR from '@microsoft/signalr';
+import type { ZodType } from 'zod';
 import type {
   MatchEndedPayload,
   MatchStartedPayload,
@@ -8,6 +9,15 @@ import type {
   OpponentReconnectedPayload,
 } from './events';
 import { RoomHubEvent } from './events';
+import {
+  MatchEndedPayloadSchema,
+  MatchStartedPayloadSchema,
+  MoveAcceptedPayloadSchema,
+  OpponentDisconnectedPayloadSchema,
+  OpponentJoinedPayloadSchema,
+  OpponentReconnectedPayloadSchema,
+} from './schemas';
+import { RoomSchema, RoomSessionSchema } from '../api/schemas';
 import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
 
 /**
@@ -64,30 +74,36 @@ export class RoomHubClient {
   }
 
   on(handlers: RoomHubHandlers): void {
-    if (handlers.onOpponentJoined) {
-      this._connection.on(RoomHubEvent.OpponentJoined, handlers.onOpponentJoined);
-    }
-    if (handlers.onMatchStarted) {
-      this._connection.on(RoomHubEvent.MatchStarted, handlers.onMatchStarted);
-    }
-    if (handlers.onMoveAccepted) {
-      this._connection.on(RoomHubEvent.MoveAccepted, handlers.onMoveAccepted);
-    }
-    if (handlers.onMatchEnded) {
-      this._connection.on(RoomHubEvent.MatchEnded, handlers.onMatchEnded);
-    }
-    if (handlers.onOpponentDisconnected) {
-      this._connection.on(
-        RoomHubEvent.OpponentDisconnected,
-        handlers.onOpponentDisconnected,
-      );
-    }
-    if (handlers.onOpponentReconnected) {
-      this._connection.on(
-        RoomHubEvent.OpponentReconnected,
-        handlers.onOpponentReconnected,
-      );
-    }
+    this._bindEvent(
+      RoomHubEvent.OpponentJoined,
+      OpponentJoinedPayloadSchema,
+      handlers.onOpponentJoined,
+    );
+    this._bindEvent(
+      RoomHubEvent.MatchStarted,
+      MatchStartedPayloadSchema,
+      handlers.onMatchStarted,
+    );
+    this._bindEvent(
+      RoomHubEvent.MoveAccepted,
+      MoveAcceptedPayloadSchema,
+      handlers.onMoveAccepted,
+    );
+    this._bindEvent(
+      RoomHubEvent.MatchEnded,
+      MatchEndedPayloadSchema,
+      handlers.onMatchEnded,
+    );
+    this._bindEvent(
+      RoomHubEvent.OpponentDisconnected,
+      OpponentDisconnectedPayloadSchema,
+      handlers.onOpponentDisconnected,
+    );
+    this._bindEvent(
+      RoomHubEvent.OpponentReconnected,
+      OpponentReconnectedPayloadSchema,
+      handlers.onOpponentReconnected,
+    );
     if (handlers.onReconnecting) {
       this._connection.onreconnecting((err) => handlers.onReconnecting!(err ?? undefined));
     }
@@ -108,6 +124,40 @@ export class RoomHubClient {
   }
 
   /**
+   * Subscribe to a server-pushed hub event after validating the payload
+   * with Zod. A schema mismatch logs a structured error and drops the
+   * message rather than calling the handler with an ill-shaped payload —
+   * the alternative (trusting the cast) is exactly the
+   * "every external input must be parsed" rule (CLAUDE.md §6).
+   *
+   * The cast at <c>handler(parsed.data as T)</c> is safe because (1) the
+   * schema has just validated the runtime shape, and (2) the compile-time
+   * drift guards in <c>./schemas.ts</c> prove the schema output is
+   * structurally compatible with each payload type. The cast exists only
+   * to bridge Zod's optional-key inference (<c>{ k?: T | undefined }</c>)
+   * with this project's <c>exactOptionalPropertyTypes: true</c>
+   * (<c>{ k?: T }</c>) — a TS strictness mismatch, not a real difference.
+   */
+  private _bindEvent<T>(
+    eventName: string,
+    schema: ZodType<unknown>,
+    handler: ((payload: T) => void) | undefined,
+  ): void {
+    if (!handler) return;
+    this._connection.on(eventName, (raw: unknown) => {
+      const parsed = schema.safeParse(raw);
+      if (!parsed.success) {
+        console.error('[RoomHub] dropping malformed payload', {
+          event: eventName,
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+      handler(parsed.data as T);
+    });
+  }
+
+  /**
    * Call Hub.JoinRoom — registers presence in the room (CLAUDE.md §2.4).
    * Returns the room state and the caller's role (decoded from the signed
    * session cookie on the server). The server fires MatchStarted to the
@@ -121,8 +171,10 @@ export class RoomHubClient {
    * "stale cookie for a previously-joined room" case when the same
    * browser opens a different room's link.
    */
-  joinRoom(expectedRoomCode: string): Promise<RoomSessionDto> {
-    return this._connection.invoke<RoomSessionDto>('JoinRoom', expectedRoomCode);
+  async joinRoom(expectedRoomCode: string): Promise<RoomSessionDto> {
+    const raw = await this._connection.invoke<unknown>('JoinRoom', expectedRoomCode);
+    // See _bindEvent for why the cast is needed (Zod ↔ exactOptionalPropertyTypes).
+    return RoomSessionSchema.parse(raw) as unknown as RoomSessionDto;
   }
 
   /**
@@ -131,8 +183,9 @@ export class RoomHubClient {
    * (errors.move.illegalCell, errors.move.cellOccupied,
    * errors.move.notYourTurn, ...).
    */
-  submitMove(move: MoveDto): Promise<RoomDto> {
-    return this._connection.invoke<RoomDto>('SubmitMove', move);
+  async submitMove(move: MoveDto): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('SubmitMove', move);
+    return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
   get state(): signalR.HubConnectionState {

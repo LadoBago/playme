@@ -46,9 +46,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  // Sprint 1 ships en-only; the /en route split + `ka` as default land in
-  // Sprint 6 (CLAUDE.md §2.5, docs/frontend.md §2). The lang literal
-  // tracks DEFAULT_LOCALE so flipping it is a one-line change.
+  // Default locale is ka (CLAUDE.md §1). The /en route split lands in
+  // Sprint 6; until then DEFAULT_LOCALE governs both <html lang> and the
+  // OG locale tag.
   return (
     <html lang={DEFAULT_LOCALE}>
       <body>

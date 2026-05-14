@@ -24,11 +24,16 @@ describe('api-base', () => {
     expect(mod.hubUrl()).toBe('https://api.playme.ge/hubs/room');
   });
 
-  it('falls back to localhost:5080 when no env var is set', async () => {
+  it('defaults browserApiBase to same-origin and ssrApiBase to localhost:5080', async () => {
+    // browserApiBase is '' in dev so the browser uses /api/* + /hubs/*
+    // and Next.js's rewrites() proxy them — keeps the session cookie
+    // first-party (important for Safari ITP). SSR talks to the API
+    // host directly via the localhost:5080 fallback.
     delete process.env.NEXT_PUBLIC_API_URL;
     delete process.env.PLAYME_API_URL;
     const mod = await import('./api-base');
-    expect(mod.browserApiBase).toBe('http://localhost:5080');
+    expect(mod.browserApiBase).toBe('');
+    expect(mod.hubUrl()).toBe('/hubs/room');
     expect(mod.ssrApiBase).toBe('http://localhost:5080');
   });
 

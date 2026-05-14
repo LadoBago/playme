@@ -102,6 +102,7 @@ export const en = {
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',
+  'errors.rate.exceeded': 'You’re going too fast. Wait a moment and try again.',
 } as const;
 
 export type EnKey = keyof typeof en;
