@@ -11,38 +11,10 @@ import {
   t,
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
+import { findGameView } from '@/features/games/registry';
 import { JoinForm } from './join-form';
-import { Board } from './board';
 import { Clock } from './clock';
 import { MatchHeader } from './match-header';
-
-/**
- * TTT 3×3 per-game web bindings — kept inline in the platform shell while
- * the catalog has only one game. When a second game module lands, lift
- * these into a per-game web renderer registered via the catalog. The
- * platform `Board` (see ./board.tsx), the wire DTOs, and the SignalR event
- * payloads are already game-agnostic.
- */
-interface TttBoardState {
-  rows: number;
-  cols: number;
-  cells: readonly (string | null)[];
-  /** Cell index 0..8 of the most-recently-played move, if any. */
-  lastMove?: number;
-  /** Three cells aligned by the winning move, if the match is won. */
-  winningLine?: readonly { row: number; col: number }[];
-}
-
-function parseTttState(state: string): TttBoardState {
-  return JSON.parse(state) as TttBoardState;
-}
-
-function renderTttCell(side: string | null): string {
-  if (side === null) return '';
-  if (side === 'x') return '✕';
-  if (side === 'o') return '◯';
-  return side.toUpperCase();
-}
 
 interface RoomClientProps {
   initialRoom: RoomDto;
@@ -171,11 +143,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     await connect({ cancelled: false });
   }, [connect]);
 
-  const handleSubmitMove = useCallback((cell: number) => {
+  const handleSubmitMove = useCallback((payload: unknown) => {
     void (async () => {
       setError(null);
       try {
-        const updated = await hubRef.current?.submitMove({ payload: { cell } });
+        const updated = await hubRef.current?.submitMove({ payload });
         if (updated) setRoom(updated);
       } catch (e) {
         const message = e instanceof Error ? e.message : 'errors.unknown';
@@ -220,7 +192,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
-  onSubmitMove: (cell: number) => void;
+  onSubmitMove: (payload: unknown) => void;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
 }
@@ -240,6 +212,8 @@ function MatchView({
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
+  const GameView = findGameView(room.gameId);
+
   if (room.status === 'waitingForOpponent') {
     return (
       <div className="stack">
@@ -254,13 +228,8 @@ function MatchView({
     return <p>…</p>;
   }
 
-  const boardState = parseTttState(match.state);
-
-  const winningCells = new Set<number>();
-  if (boardState.winningLine) {
-    for (const c of boardState.winningLine) {
-      winningCells.add(c.row * boardState.cols + c.col);
-    }
+  if (!GameView) {
+    return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
   }
 
   return (
@@ -287,15 +256,12 @@ function MatchView({
         </span>
       )}
 
-      <Board
-        rows={boardState.rows}
-        cols={boardState.cols}
-        cells={boardState.cells}
-        lastMoveCell={boardState.lastMove ?? null}
-        winningCells={winningCells}
+      <GameView
+        matchState={match.state}
+        callerSide={mySide}
         canPlay={isMyTurn}
-        onCellClick={onSubmitMove}
-        renderCell={renderTttCell}
+        matchEnded={match.outcome != null}
+        onSubmitMove={onSubmitMove}
       />
 
       <ConnectionHint room={room} role={role} />

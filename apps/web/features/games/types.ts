@@ -1,0 +1,30 @@
+import type { ReactNode } from 'react';
+
+/**
+ * Per-game web renderer contract. The platform room shell (`room-client.tsx`)
+ * resolves a `GameView` by `gameId` and hands it the state blob, the caller's
+ * side, and a callback for submitting moves. Every payload type, every reject
+ * key, every rendering choice (grid-of-cells vs. column-drop, X/O glyphs vs.
+ * disc/ring) is owned by the module — the platform never inspects any of it
+ * (CLAUDE.md §7 "Platform thinness").
+ */
+export interface GameViewProps {
+  /** Opaque per-game serialized state from `MatchDto.state`. Each module
+   *  parses its own shape. */
+  readonly matchState: string;
+  /** The caller's side ("x"/"o" for Tic-Tac-Toe, "red"/"yellow" for
+   *  Connect 4) or null while role detection is in flight. */
+  readonly callerSide: string | null;
+  /** True iff the match is in progress AND it's the caller's turn. The
+   *  module uses this to gate clickability. */
+  readonly canPlay: boolean;
+  /** True when the match has ended. The module uses this to freeze the
+   *  board (drop hover affordances, lock pointer events). */
+  readonly matchEnded: boolean;
+  /** Submit a move. The payload shape is the module's contract with its
+   *  matching `IGameMoveParser` on the API side — the platform passes it
+   *  through opaquely to `RoomHub.SubmitMove`. */
+  readonly onSubmitMove: (payload: unknown) => void;
+}
+
+export type GameView = (props: GameViewProps) => ReactNode;
