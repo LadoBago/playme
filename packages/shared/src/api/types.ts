@@ -1,7 +1,11 @@
-// TS types mirroring the PlayMe.Api DTOs. The C# records are the source of
-// truth (apps/api/src/PlayMe.Application/Dtos); these stay in sync with
-// them. A later sprint will wire `pnpm gen:api` to regenerate this file
-// from the API's OpenAPI document (tools/gen-api/).
+// @manually-maintained — kept in sync by hand until `pnpm gen:api`
+// regenerates this file from the API's OpenAPI document.
+//
+// Source of truth: apps/api/src/PlayMe.Application/Dtos (C# records).
+// If you change a DTO on the API side, update this file in the same
+// PR — there is no autogeneration today. The Zod schemas in
+// `./schemas.ts` carry compile-time drift guards that catch most
+// structural mismatches.
 
 export type RoomStatus =
   | 'waitingForOpponent'

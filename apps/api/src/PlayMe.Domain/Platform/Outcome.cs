@@ -10,17 +10,3 @@ namespace PlayMe.Domain.Platform;
 /// abandon-grace work in Sprint 5.
 /// </summary>
 public abstract record Outcome;
-
-/// <summary>One side won.</summary>
-public sealed record Win(string WinningSide) : Outcome;
-
-/// <summary>Board filled with no winner.</summary>
-public sealed record Draw : Outcome;
-
-/// <summary>A player resigned the match.</summary>
-public sealed record Resign(string ResigningSide) : Outcome;
-
-/// <summary>
-/// One side's clock ran out. The opponent wins.
-/// </summary>
-public sealed record Timeout(string TimedOutSide) : Outcome;

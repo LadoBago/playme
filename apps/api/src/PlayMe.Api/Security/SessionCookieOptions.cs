@@ -14,8 +14,12 @@ public sealed class SessionCookieOptions
     public string Name { get; set; } = "playme.session";
 
     /// <summary>
-    /// Cookie domain. Null → host-only (dev default). In prod set to
-    /// <c>playme.ge</c> so the cookie applies to <c>api.playme.ge</c> too.
+    /// Cookie domain. Null → host-only (dev default). In production this
+    /// MUST be set to <c>playme.ge</c> via configuration —
+    /// <c>SessionCookie__Domain=playme.ge</c> as an env var on Azure
+    /// App Service, or the matching key in <c>appsettings.Production.json</c>
+    /// — so the cookie applies to <c>api.playme.ge</c> too. Leaving it
+    /// unset in prod silently breaks cross-subdomain auth.
     /// </summary>
     public string? Domain { get; set; }
 
