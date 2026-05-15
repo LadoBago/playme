@@ -9,10 +9,13 @@ import { DEFAULT_LOCALE, t } from '@playme/shared';
  *
  * Generated dynamically via `ImageResponse` so the brand wordmark stays
  * in code (no binary asset to commit / regenerate when copy changes).
- * Edge runtime for a fast cold-start; the response is cached by Vercel
- * at the edge.
+ *
+ * Runs on the Node.js runtime, not edge — the next/og bundle (satori +
+ * resvg) is ~1.01 MB and Vercel's Hobby tier caps edge functions at
+ * 1 MB. Node serverless functions are 50 MB. OG images are low-volume
+ * and Vercel CDN-caches the response, so the extra cold-start is
+ * irrelevant in practice.
  */
-export const runtime = 'edge';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export const alt = 'PlayMe';
