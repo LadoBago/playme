@@ -44,21 +44,33 @@ function generateNonce(): string {
 }
 
 function buildCsp(nonce: string): string {
+  // PostHog dynamically loads supplemental scripts (config, autocapture,
+  // web-vitals) from its asset host at runtime. In production
+  // 'strict-dynamic' covers that because the PostHog SDK is loaded by a
+  // nonce'd bundle and the descendant scripts inherit; in dev there's
+  // no strict-dynamic, so the source-list mode requires explicit
+  // allowlist entries. Sentry behaves the same way.
+  const externalScriptHosts = [
+    'https://*.sentry.io',
+    'https://*.ingest.sentry.io',
+    'https://*.posthog.com',
+    'https://*.i.posthog.com',
+  ];
+
   const scriptSrc = isDev
-    ? // Next dev's HMR + React dev require these; production drops them.
-      ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
+    ? // Next dev's HMR + React dev require unsafe-inline/eval; production
+      // drops them. External hosts are needed because dev has no
+      // 'strict-dynamic' to grant scripts transitively.
+      ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...externalScriptHosts]
     : // 'strict-dynamic' tells modern browsers to ignore the source-list
       // and trust only nonce'd scripts and what they transitively load.
-      // 'self' + the Sentry/PostHog allowlists are kept as a fallback
-      // for older browsers that don't honour strict-dynamic.
+      // 'self' + the external host allowlist are kept as a fallback for
+      // older browsers that don't honour strict-dynamic.
       [
         "'self'",
         `'nonce-${nonce}'`,
         "'strict-dynamic'",
-        'https://*.sentry.io',
-        'https://*.ingest.sentry.io',
-        'https://*.posthog.com',
-        'https://*.i.posthog.com',
+        ...externalScriptHosts,
       ];
 
   const connectSrc = [
