@@ -82,7 +82,7 @@ The recommended construction sequence. Each sprint should land an **end-to-end v
 - PostHog instrumentation for every event from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2.
 - Localized error codes ([`observability-and-i18n.md`](observability-and-i18n.md) §2) end-to-end; friendly 404 / expired-room pages.
 - Basic load test (~hundreds of concurrent rooms). Verify the API and Redis hold up.
-- Production deploy with monitoring alerts wired to the on-call channel.
+- Production deploy with monitoring alerts wired to the on-call channel. Wired via `infra/provision.sh` (Azure CLI script) + `.github/workflows/deploy-api.yml` (GitHub Actions, OIDC → Azure, GHCR image). Alerts route to email; see [`security.md`](security.md) §11.
 
 **Exit criteria:** Public launch on playme.ge at the cost target from the deployment table in `CLAUDE.md` §4.
 
@@ -110,6 +110,6 @@ Intentionally unresolved — raise in PRs rather than choosing silently.
 - **Managed log/trace backend.** OTel currently exports to stdout/file. Wire to Grafana Cloud / Honeycomb / similar when scaling beyond one API instance.
 - **Secrets vault.** Currently env vars on App Service / Vercel. Once secret count or rotation frequency justifies it, move the API to Azure Key Vault (managed identity → API → Key Vault). Until then, env vars are acceptable.
 - **WAF / DDoS.** No WAF in v1. If abuse traffic shows up, put Azure Front Door / Cloudflare in front of the API (and re-evaluate rate-limit thresholds). Vercel already fronts the web.
-- **On-call channel.** Where Sentry alerts route (Slack? Telegram? Email? Discord?) — pick one before public launch and document in [`security.md`](security.md) §11.
+- ~~**On-call channel.**~~ Resolved: email. Sentry and Azure Monitor both route to the address configured in `infra/provision.env` (`ALERT_EMAIL`). Documented in [`security.md`](security.md) §11. Revisit if/when a team forms — Slack or a paging service makes more sense above one operator.
 
 When a decision is made, update the relevant doc in the same PR.

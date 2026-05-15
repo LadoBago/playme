@@ -29,6 +29,7 @@ pnpm-debug.log*
 !.env.example
 appsettings.*.local.json
 *.pfx
+infra/provision.env
 
 # OS
 .DS_Store
