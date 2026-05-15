@@ -24,6 +24,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
     private readonly IConnectionMultiplexer _redis;
     private readonly IServiceScopeFactory _scopes;
     private readonly IRoomRepository _rooms;
+    private readonly IClock _clock;
     private readonly SweeperOptions _options;
     private readonly ILogger<RedisDisconnectGraceSweeperService> _logger;
 
@@ -31,6 +32,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         IConnectionMultiplexer redis,
         IServiceScopeFactory scopes,
         IRoomRepository rooms,
+        IClock clock,
         IOptions<SweeperOptions> options,
         ILogger<RedisDisconnectGraceSweeperService> logger)
     {
@@ -38,6 +40,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         _redis = redis;
         _scopes = scopes;
         _rooms = rooms;
+        _clock = clock;
         _options = options.Value;
         _logger = logger;
     }
@@ -50,7 +53,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         {
             try
             {
-                await SweepOnceAsync(DateTimeOffset.UtcNow, stoppingToken);
+                await SweepOnceAsync(_clock.UtcNow, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

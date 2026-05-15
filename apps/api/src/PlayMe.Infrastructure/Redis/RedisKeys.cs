@@ -26,4 +26,12 @@ internal static class RedisKeys
     /// disconnect can have its own pending grace entry.
     /// </summary>
     public const string Grace = $"{Prefix}grace";
+
+    /// <summary>
+    /// Per-session rate-limit sliding-window sorted set
+    /// (docs/security.md §5). One key per policy × subject; each member
+    /// is a single recent acquisition timestamp.
+    /// </summary>
+    public static string Rate(string policy, string subject) =>
+        $"{Prefix}rate:{policy}:session:{subject}";
 }

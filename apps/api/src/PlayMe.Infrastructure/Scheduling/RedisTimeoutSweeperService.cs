@@ -30,6 +30,7 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
     private readonly IServiceScopeFactory _scopes;
     private readonly IRoomRepository _rooms;
     private readonly IRoomNotifier _notifier;
+    private readonly IClock _clock;
     private readonly SweeperOptions _options;
     private readonly ILogger<RedisTimeoutSweeperService> _logger;
 
@@ -38,6 +39,7 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
         IServiceScopeFactory scopes,
         IRoomRepository rooms,
         IRoomNotifier notifier,
+        IClock clock,
         IOptions<SweeperOptions> options,
         ILogger<RedisTimeoutSweeperService> logger)
     {
@@ -46,6 +48,7 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
         _scopes = scopes;
         _rooms = rooms;
         _notifier = notifier;
+        _clock = clock;
         _options = options.Value;
         _logger = logger;
     }
@@ -58,7 +61,7 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
         {
             try
             {
-                await SweepOnceAsync(DateTimeOffset.UtcNow, stoppingToken);
+                await SweepOnceAsync(_clock.UtcNow, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

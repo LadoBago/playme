@@ -36,7 +36,8 @@ public sealed class SubmitMoveHandlerClockTests
             new SingleGameRegistry(),
             clock,
             new ClockService(),
-            timeouts);
+            timeouts,
+            new RecordingRateLimiter());
 
         clock.Advance(TimeSpan.FromSeconds(8));
 
@@ -75,7 +76,8 @@ public sealed class SubmitMoveHandlerClockTests
             new SingleGameRegistry(),
             clock,
             new ClockService(),
-            timeouts);
+            timeouts,
+            new RecordingRateLimiter());
 
         clock.Advance(Budget + TimeSpan.FromSeconds(1));
 
@@ -112,7 +114,8 @@ public sealed class SubmitMoveHandlerClockTests
             new SingleGameRegistry(),
             clock,
             new ClockService(),
-            timeouts);
+            timeouts,
+            new RecordingRateLimiter());
 
         // Drive the match to a quick X win: X(0), O(3), X(1), O(4), X(2).
         var moves = new (string PlayerId, Role Role, int Cell)[]

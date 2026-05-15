@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
 using PlayMe.Infrastructure.Games;
+using PlayMe.Infrastructure.RateLimiting;
 using PlayMe.Infrastructure.Random;
 using PlayMe.Infrastructure.Redis;
 using PlayMe.Infrastructure.Scheduling;
@@ -42,6 +43,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
+        services.AddSingleton<IRateLimiter, RedisRateLimiter>();
 
         // Sprint 2 PR #2: Redis-backed sorted-set schedulers + BackgroundService
         // sweepers per state.md §2.2. Schedulers are stateless (just ZADD/ZREM

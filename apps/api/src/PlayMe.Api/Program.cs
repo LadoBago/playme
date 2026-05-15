@@ -7,11 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Sentry (CLAUDE.md §4.1, §5.8). DSN comes from configuration:
 // `Sentry:Dsn` in appsettings, env var `SENTRY__DSN`, or user-secrets
-// for local dev. No DSN -> SDK initializes but stays disabled.
-// Sentry (CLAUDE.md §4.1, §5.8). DSN comes from configuration:
-// `Sentry:Dsn` in appsettings, env var `SENTRY__DSN`, or user-secrets
-// for local dev. No DSN -> SDK initializes but stays disabled.
-var sentryDsn = builder.Configuration["Sentry:Dsn"];
+// for local dev. The SDK requires an empty string (not null) to stay
+// disabled — coalesce so a missing config key doesn't crash startup.
+var sentryDsn = builder.Configuration["Sentry:Dsn"] ?? string.Empty;
 builder.WebHost.UseSentry(options =>
 {
     options.Dsn = sentryDsn;
