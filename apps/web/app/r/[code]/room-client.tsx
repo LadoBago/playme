@@ -21,6 +21,23 @@ interface RoomClientProps {
 }
 
 /**
+ * Fire-and-forget hub teardown for cleanup paths (StrictMode double-
+ * mount, route change, retry after a failed probe). A stop() failure
+ * during teardown means the transport was already gone — there's no
+ * useful action and surfacing the error would spam the console on
+ * every dev re-render. Centralised so each call site doesn't have to
+ * carry its own explanatory comment.
+ */
+async function silentStop(hub: RoomHubClient | null | undefined): Promise<void> {
+  if (!hub) return;
+  try {
+    await hub.stop();
+  } catch {
+    // intentional — see jsdoc
+  }
+}
+
+/**
  * Top-level client component for the room page. Drives the SignalR
  * connection, decides whether to render the join form or the match UI,
  * and threads the room state from server events through to the board.
@@ -90,13 +107,13 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       // letting cleanup call stop() mid-negotiation — that surfaces as
       // "The connection was stopped during negotiation" in the console.
       if (signal.cancelled) {
-        await hub.stop().catch(() => {});
+        await silentStop(hub);
         return;
       }
       hubRef.current = hub;
       const session = await hub.joinRoom(expectedRoomCode);
       if (signal.cancelled) {
-        await hub.stop().catch(() => {});
+        await silentStop(hub);
         hubRef.current = null;
         return;
       }
@@ -118,7 +135,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         }
       }
       setAuthStatus('needsJoin');
-      await hub.stop().catch(() => {});
+      await silentStop(hub);
       hubRef.current = null;
     }
   }, [expectedRoomCode]);
@@ -128,7 +145,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     void connect(signal);
     return () => {
       signal.cancelled = true;
-      hubRef.current?.stop().catch(() => {});
+      void silentStop(hubRef.current);
       hubRef.current = null;
     };
     // Intentionally bind only once on mount; reconnects flow through the
@@ -138,7 +155,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   const handleJoined = useCallback(async () => {
     setAuthStatus('pending');
     // Tear down any partial connection and try again with the fresh cookie.
-    await hubRef.current?.stop().catch(() => {});
+    await silentStop(hubRef.current);
     hubRef.current = null;
     await connect({ cancelled: false });
   }, [connect]);

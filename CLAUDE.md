@@ -286,8 +286,7 @@ The test: **could this code work unchanged if we removed every game except chess
 | Shared TS types & Zod schemas | `packages/shared/src/` |
 | Generated API client | `packages/shared/src/api/` (do not edit by hand) |
 | SignalR client wrapper | `packages/shared/src/realtime/` |
-| Translation catalogs | `packages/shared/i18n/{ka,en}.json` |
-| Game rules catalog (shared, localized) | `packages/shared/i18n/rules/{ka,en}.json` |
+| Translation catalogs | `packages/shared/src/i18n/{ka,en}.ts` (game rules live under the `games.*.rules` keys) |
 | Web routes | `apps/web/app/` |
 | Web features | `apps/web/features/<feature>/` |
 | PWA manifest & icons | `apps/web/public/` |

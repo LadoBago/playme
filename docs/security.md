@@ -27,7 +27,7 @@ Persistent-data risk is low (no accounts, no DB), but rate-limit and credential 
 ## 3. Input validation
 
 - **Web:** every external input — URL params, form fields, query strings, server-pushed SignalR messages — is parsed through **Zod** before touching app state. Schemas live in `packages/shared`.
-- **API:** every controller action and SignalR Hub method validates its DTO with **FluentValidation** before reaching a handler. No `[FromBody]` payload reaches `Application` unchecked.
+- **API:** every controller action and SignalR Hub method validates its DTO before reaching a handler — no `[FromBody]` payload reaches `Application` unchecked. The seam is **handler-internal** (e.g. `DisplayName.Create`, `RoomCode` ctor, `Enum.IsDefined` on `SideSelectionMode`, the per-game `IGameMoveParser.Parse`): each handler runs its own checks and returns typed `PlatformErrors` keys that are already i18n keys, so failures flow back to the client through the existing `AppResult<T> → ProblemDetails` pipeline. FluentValidation validators are registered for surface-level checks but **not** auto-invoked at the MVC pipeline — auto-validation produces `ValidationProblemDetails` whose `.errors` map doesn't carry i18n keys, and adding a mapping layer for failure shapes the handlers already cover wouldn't earn its complexity. The validators stay as documentation of each command's surface.
 - **Display names:** max 24 chars; allow Unicode letters, digits, spaces, and a small punctuation allowlist; strip control characters, zero-width characters, and RTL/LTR-override codepoints before storing or echoing.
 - **No `dangerouslySetInnerHTML`** without an explicit sanitizer review. React's default escaping is the default and the rule.
 

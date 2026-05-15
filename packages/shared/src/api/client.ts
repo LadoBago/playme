@@ -7,7 +7,8 @@ import type {
 
 /**
  * Typed result wrapper. The API surfaces an i18n key on failure
- * (CLAUDE.md §3); the client maps it to a localized message via t().
+ * (docs/observability-and-i18n.md); the client maps it to a localized
+ * message via t().
  */
 export type ApiResult<T> =
   | { ok: true; value: T }
