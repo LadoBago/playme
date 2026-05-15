@@ -19,7 +19,10 @@ export const viewport: Viewport = {
 
 // Public-page SEO surface (CLAUDE.md §7, docs/frontend.md §2). Per-page
 // `metadata` exports inherit this and override the fields they care
-// about. hreflang alternates land with the /en route split in Sprint 6.
+// about. The hreflang alternates are wired now so the Sprint 6 /en
+// route split is a URL-table swap, not a metadata refactor; the `en`
+// entries 404 until that route lands (Google ignores broken
+// alternates) and the source of truth becomes a single map.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -29,7 +32,14 @@ export const metadata: Metadata = {
   description: t('site.tagline'),
   applicationName: 'PlayMe',
   robots: { index: true, follow: true },
-  alternates: { canonical: '/' },
+  alternates: {
+    canonical: '/',
+    languages: {
+      ka: '/',
+      en: '/en',
+      'x-default': '/',
+    },
+  },
   openGraph: {
     type: 'website',
     siteName: 'PlayMe',

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { findGame, t } from '@playme/shared';
+import { DEFAULT_LOCALE, findGame, t } from '@playme/shared';
 import { ConfigureForm } from './configure-form';
 
 interface PageProps {
@@ -11,16 +11,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { game: slug } = await params;
   const game = findGame(slug);
   if (!game) return {};
+  const path = `/play/${game.slug}`;
   return {
     title: t(game.nameKey),
     description: t(game.shortDescriptionKey),
-    alternates: { canonical: `/play/${game.slug}` },
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical: path,
+      languages: {
+        ka: path,
+        en: `/en${path}`,
+        'x-default': path,
+      },
+    },
     openGraph: {
+      type: 'website',
+      siteName: 'PlayMe',
       title: t(game.nameKey),
       description: t(game.shortDescriptionKey),
-      url: `/play/${game.slug}`,
+      url: path,
+      locale: DEFAULT_LOCALE,
     },
     twitter: {
+      card: 'summary_large_image',
       title: t(game.nameKey),
       description: t(game.shortDescriptionKey),
     },
