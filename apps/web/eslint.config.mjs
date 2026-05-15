@@ -17,6 +17,7 @@ export default [
       'lib/**/*.{ts,tsx}',
       'instrumentation.ts',
       'instrumentation-client.ts',
+      'middleware.ts',
     ],
     languageOptions: {
       parserOptions: {

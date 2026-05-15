@@ -5,6 +5,17 @@ import { AnalyticsBoot } from '@/lib/analytics-boot';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
+// Force per-request rendering so middleware's nonce CSP can attach a
+// fresh nonce to every framework script tag (see middleware.ts). Without
+// this, statically prerendered pages keep their build-time HTML — script
+// tags emitted at build time carry no nonce, but the CSP requires one
+// under 'strict-dynamic', so the browser blocks them.
+//
+// Vercel CDN-caches dynamic responses with the right cache-control, so
+// the LCP cost is small. /opengraph-image, /sitemap.xml, /robots.txt
+// are file-route handlers outside this layout and stay static.
+export const dynamic = 'force-dynamic';
+
 // Mobile viewport. Without this, iOS Safari renders the page at desktop
 // width and amplifies its double-tap-to-zoom heuristic — two rapid taps
 // on the same area (e.g. tapping the same Connect 4 column to drop a
