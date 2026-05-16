@@ -8,6 +8,7 @@
       "env": [
         "PLAYME_API_URL",
         "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_SITE_URL",
         "NEXT_PUBLIC_SENTRY_DSN",
         "NEXT_PUBLIC_POSTHOG_KEY",
         "NEXT_PUBLIC_POSTHOG_HOST"

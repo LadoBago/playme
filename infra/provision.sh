@@ -156,12 +156,20 @@ log "web app: app settings (CORS, Redis, ASP.NET env)"
 # `--settings` here REPLACES the listed keys but PRESERVES other keys already
 # on the app (e.g. WEBSITES_PORT, SCM creds). That's what we want — additive
 # in spirit, deterministic for the keys we own.
+# Derive the registry URL from GHCR_IMAGE so the App Service container
+# pull configuration matches the image we actually ship. Without this it
+# stays at https://mcr.microsoft.com from the placeholder image and is
+# merely misleading (the deploy workflow sets the full image path), but
+# keeping it accurate avoids "wait, why does this say mcr?" later.
+REGISTRY_URL="https://$(echo "${GHCR_IMAGE}" | cut -d/ -f1)"
+
 az webapp config appsettings set \
   -g "${RG}" -n "${WEBAPP}" \
   --settings \
     ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_FORWARDEDHEADERS_ENABLED=true \
     WEBSITES_PORT=8080 \
+    DOCKER_REGISTRY_SERVER_URL="${REGISTRY_URL}" \
     ConnectionStrings__Redis="${REDIS_CONN}" \
     Cors__AllowedOrigins__0="${WEB_ORIGIN}" \
     Cors__AllowedOrigins__1="${WEB_ORIGIN_ALT}" \

@@ -4,24 +4,18 @@ namespace PlayMe.Api.Security;
 
 /// <summary>
 /// Configuration for the session cookie (CLAUDE.md §5.4). Bound to the
-/// <c>SessionCookie</c> section of appsettings; default values work for
-/// local dev (no Domain, <see cref="SameSiteMode.Lax"/>, 6 h lifespan).
-/// Production deployments override:
-/// <list type="bullet">
-///   <item>
-///   <see cref="Domain"/> with <c>"playme.ge"</c> when the API is on a
-///   <c>*.playme.ge</c> subdomain — shares the cookie across subdomains.
-///   </item>
-///   <item>
-///   <see cref="SameSite"/> with <see cref="SameSiteMode.None"/> when the
-///   API is on a different site than the web (e.g. the API is hosted at
-///   <c>*.azurewebsites.net</c> while the web is at <c>www.playme.ge</c>).
-///   Without this, the browser drops the cookie on every cross-site call
-///   and the host loses their session immediately after creating a room.
-///   <see cref="SameSiteMode.None"/> requires <c>Secure=true</c>; we set
-///   that automatically outside Development.
-///   </item>
-/// </list>
+/// <c>SessionCookie</c> section of appsettings; defaults work for local
+/// dev (no Domain, <see cref="SameSiteMode.Lax"/>, 6 h lifespan) and for
+/// the current v1 production setup, where the API is at
+/// <c>api.playme.ge</c> (Cloudflare → Azure) and the web at
+/// <c>www.playme.ge</c>: same eTLD+1 means the cookie issued by the API
+/// is host-only on <c>api.playme.ge</c>, and <see cref="SameSiteMode.Lax"/>
+/// allows the browser to attach it on cross-subdomain same-site requests
+/// from the web. No production overrides required.
+///
+/// The two settings below exist for the deployment topologies we don't
+/// currently use but may need in the future — see their individual
+/// summaries for when and how to set them.
 /// </summary>
 public sealed class SessionCookieOptions
 {
@@ -30,22 +24,25 @@ public sealed class SessionCookieOptions
     public string Name { get; set; } = "playme.session";
 
     /// <summary>
-    /// Cookie domain. Null → host-only (dev default). When the API and web
-    /// share an eTLD+1 (e.g. <c>api.playme.ge</c> + <c>www.playme.ge</c>)
-    /// set this to <c>playme.ge</c> so the cookie applies to both — via
-    /// <c>SessionCookie__Domain=playme.ge</c> as an env var or the matching
-    /// key in <c>appsettings.Production.json</c>. Leave null when the API
-    /// is on a different eTLD+1 (the browser would reject a Domain that
-    /// doesn't match the response origin).
+    /// Cookie domain. <c>null</c> → host-only on the issuing host, which
+    /// is what we ship: the API issues a cookie scoped to
+    /// <c>api.playme.ge</c>, and the browser sends it on same-site
+    /// requests from the web. Only set this (e.g. to <c>playme.ge</c>)
+    /// if you need a single cookie shared across multiple subdomains the
+    /// API doesn't issue from — that isn't the case in v1.
     /// </summary>
     public string? Domain { get; set; }
 
     /// <summary>
     /// SameSite attribute on the cookie. Defaults to
     /// <see cref="SameSiteMode.Lax"/>, which is the right call when the
-    /// API and web share an eTLD+1. Set to <see cref="SameSiteMode.None"/>
-    /// in cross-site deployments — required for the browser to attach the
-    /// cookie to fetches and SignalR upgrades from a different origin.
+    /// API and web share an eTLD+1 (today's setup:
+    /// <c>api.playme.ge</c> + <c>www.playme.ge</c>). Set to
+    /// <see cref="SameSiteMode.None"/> only if the topology ever changes
+    /// to cross-site (e.g. API on <c>*.azurewebsites.net</c> directly) —
+    /// required so the browser attaches the cookie on cross-site fetches
+    /// and SignalR upgrades. <see cref="SameSiteMode.None"/> requires
+    /// <c>Secure=true</c>; we set that automatically outside Development.
     /// </summary>
     public SameSiteMode SameSite { get; set; } = SameSiteMode.Lax;
 
