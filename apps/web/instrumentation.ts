@@ -11,7 +11,7 @@ export async function register() {
     const Sentry = await import('@sentry/nextjs');
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      tracesSampleRate: 0,
+      tracesSampleRate: 1.0,
       sendDefaultPii: false,
     });
   }
@@ -20,7 +20,7 @@ export async function register() {
     const Sentry = await import('@sentry/nextjs');
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      tracesSampleRate: 0,
+      tracesSampleRate: 1.0,
       sendDefaultPii: false,
     });
   }
