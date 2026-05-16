@@ -120,11 +120,11 @@ Italy North is closer to Tbilisi (~50 ms vs ~70 ms) and was our first pick. Seve
 
 ### 6.5 Vercel "Sensitive" env vars can't be un-flagged
 
-Marking an env var as **Sensitive** in Vercel makes it unavailable to `next.config.js` at build time, and **also blocks `NEXT_PUBLIC_*` client-bundle inlining** (the entire point of the prefix). The Sensitive flag cannot be toggled off — you must **delete the variable and re-create it** without the flag. The UI gives no clear error if you try. This is what caused several false starts during the Vercel cutover; the build looked clean and the env var "existed", but its value was empty at build evaluation. `NEXT_PUBLIC_SENTRY_DSN` and `NEXT_PUBLIC_POSTHOG_KEY` are still flagged Sensitive in Vercel as of this writing — telemetry is not actually reaching the client; fix when convenient.
+Marking an env var as **Sensitive** in Vercel makes it unavailable to `next.config.js` at build time, and **also blocks `NEXT_PUBLIC_*` client-bundle inlining** (the entire point of the prefix). The Sensitive flag cannot be toggled off — you must **delete the variable and re-create it** without the flag. The UI gives no clear error if you try. This is what caused several false starts during the Vercel cutover; the build looked clean and the env var "existed", but its value was empty at build evaluation. Resolved for the three telemetry vars (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`) — they're now reaching the client bundle. Keep an eye out if you add new `NEXT_PUBLIC_*` vars later: don't tick Sensitive.
 
 ### 6.6 Container needs a writable home for Data Protection
 
-`infra/api.Dockerfile` creates a non-root user `playme`. We originally used `--no-create-home`, and every `POST /api/rooms` 500'd because ASP.NET Core's Data Protection writes its key ring under `$HOME/.aspnet/DataProtection-Keys` on the first cookie mint, and `/home/playme` didn't exist. Now `--create-home`. **Side effect**: DP keys live on the container filesystem, so they don't survive container restarts — every redeploy invalidates outstanding session cookies. Acceptable for v1 since matches are minutes long; the proper fix is `PersistKeysToStackExchangeRedis`. Tracked in §7.
+`infra/api.Dockerfile` creates a non-root user `playme`. We originally used `--no-create-home`, and every `POST /api/rooms` 500'd because ASP.NET Core's Data Protection wrote its key ring under `$HOME/.aspnet/DataProtection-Keys` on the first cookie mint, and `/home/playme` didn't exist. Now `--create-home`. Keys are now persisted to Redis (see §7), so the filesystem path is unreachable in practice, but the writable home stays as a belt-and-braces fallback in case a future framework default or DI mistake routes around our `IXmlRepository`.
 
 ### 6.7 Hostname binding doesn't survive RG re-creation
 
@@ -152,10 +152,11 @@ Right after `az webapp create`, the immediate next `az webapp config set` can 40
 
 These aren't blocking launch but each is on the list:
 
-- **Persist Data Protection keys to Redis** (`Microsoft.AspNetCore.DataProtection.StackExchangeRedis`). Session cookies will then survive container restarts/deploys and can be shared across instances if we ever scale beyond one B1. See §6.6.
-- **Re-create the Sensitive-flagged Vercel env vars** (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`) without the Sensitive flag, so telemetry actually reaches the client bundle. See §6.5.
+- ~~**Persist Data Protection keys to Redis.**~~ Done. `Microsoft.AspNetCore.DataProtection.StackExchangeRedis` is wired in `AddApi.cs` against the shared `IConnectionMultiplexer`; keys live at `playme:dp-keys` in the same Redis we use for state + the SignalR backplane. `SetApplicationName("playme-api")` namespaces them. Session cookies survive container restarts/redeploys; the key ring is also implicitly shared if we ever horizontally scale.
+- ~~**Re-create the Sensitive-flagged Vercel env vars.**~~ Done — `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` are now inlined into the client bundle.
 - **Revisit Azure App Service Managed Certificate** later. If Azure fixes `.ge`-TLD provisioning, we can drop the Cloudflare layer and serve TLS directly from App Service — fewer hops, same architecture as originally designed.
 - **Move on-call channel beyond email** when a team forms. See [`security.md`](security.md) §11 / [`roadmap.md`](roadmap.md) §2.
+- **Native-speaker pass over the rest of `packages/shared/src/i18n/ka.ts`.** Two real Georgian issues slipped past mechanical reviews; the remaining ~100 keys may have similar ones.
 
 ---
 
