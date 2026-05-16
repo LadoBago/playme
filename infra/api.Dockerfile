@@ -8,14 +8,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Restore (cached layer) — copy only project files first.
-COPY apps/api/Directory.Build.props apps/api/Directory.Packages.props apps/api/PlayMe.slnx ./apps/api/
+# Restore (cached layer) — copy only project files first. Restore the Api
+# project directly: it transitively pulls in Application/Domain/Infrastructure,
+# while the slnx also lists the test project (not needed in the prod image
+# and intentionally not COPY'd here).
+COPY apps/api/Directory.Build.props apps/api/Directory.Packages.props ./apps/api/
 COPY apps/api/src/PlayMe.Domain/PlayMe.Domain.csproj ./apps/api/src/PlayMe.Domain/
 COPY apps/api/src/PlayMe.Application/PlayMe.Application.csproj ./apps/api/src/PlayMe.Application/
 COPY apps/api/src/PlayMe.Infrastructure/PlayMe.Infrastructure.csproj ./apps/api/src/PlayMe.Infrastructure/
 COPY apps/api/src/PlayMe.Api/PlayMe.Api.csproj ./apps/api/src/PlayMe.Api/
 COPY global.json ./
-RUN dotnet restore apps/api/PlayMe.slnx
+RUN dotnet restore apps/api/src/PlayMe.Api/PlayMe.Api.csproj
 
 # Copy the rest and publish.
 COPY apps/api/ ./apps/api/
