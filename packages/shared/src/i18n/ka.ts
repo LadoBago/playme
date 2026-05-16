@@ -16,10 +16,10 @@ export const ka: Record<EnKey, string> = {
     'აირჩიე თამაში და დააფიქსირე შენი მხარე. ანგარიში არ გჭირდება.',
   'site.howItWorks.step2.title': 'გააზიარე ბმული',
   'site.howItWorks.step2.body':
-    'მიიღებ უნიკალურ ბმულს. გაუგზავნე იმას, ვისთანაც გინდა იყო.',
+    'მიიღებ უნიკალურ ბმულს. გაუგზავნე ვისთანაც გინდა ითამაშო.',
   'site.howItWorks.step3.title': 'ითამაშე ცოცხლად',
   'site.howItWorks.step3.body':
-    'პირველი მეგობარი, რომელიც ბმულს გახსნის, შემოგიერთდება. ისვრიდე რიგრიგობით.',
+    'პირველი მეგობარი, რომელიც ბმულს გახსნის, შემოგიერთდება. ითამაშე რიგრიგობით.',
   'site.catalog.title': 'აირჩიე თამაში',
 
   // --- Game names + rules ---
@@ -27,13 +27,13 @@ export const ka: Record<EnKey, string> = {
   'games.tictactoe-3x3.shortDescription':
     'კლასიკა. პირველი, ვინც 3-ს მწკრივში, სვეტში ან დიაგონალზე ერთად დააწყობს — იგებს.',
   'games.tictactoe-3x3.rules':
-    'მოთამაშეები რიგრიგობით სვამენ X-ს ან O-ს 3×3 ბადეზე. ვინც პირველი ჩამოაწყობს სამ ერთსა და იმავე ნიშანს ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ ბადე შეივსება გამარჯვებული მწკრივის გარეშე — ფრე. პირველი ხოდი ყოველთვის X-ს ეკუთვნის.',
+    'მოთამაშეები რიგრიგობით სვამენ X-ს ან O-ს 3×3 დაფაზე. ვინც პირველი ჩამოაწყობს სამ ერთსა და იმავე ნიშანს ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ დაფა შეივსება გამარჯვებული მწკრივის გარეშე — ფრე. პირველი ხოდი ყოველთვის X-ს ეკუთვნის.',
   'games.tictactoe.sideX': 'X (პირველი ხოდი)',
   'games.tictactoe.sideO': 'O',
 
   'games.connect4.name': 'ოთხის გასწორება',
   'games.connect4.shortDescription':
-    'ჩამოაგდე დისკები 7×6 ბადეში გრავიტაციით. ვინც პირველი დააწყობს ოთხს — იგებს.',
+    'ჩამოაგდე დისკები 7×6 დაფაზე გრავიტაციით. ვინც პირველი დააწყობს ოთხს — იგებს.',
   'games.connect4.rules':
     'მოთამაშეები რიგრიგობით აგდებენ წითელ და ყვითელ დისკებს 7 სვეტიან, 6 რიგიან დაფაზე. ყოველი დისკი ეცემა არჩეული სვეტის ყველაზე ქვედა ცარიელ უჯრაში. ვინც პირველი დააწყობს ოთხ თავის დისკს — ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ დაფა შეივსება გამარჯვებული ხაზის გარეშე — ფრე. პირველი ხოდი ყოველთვის წითელს ეკუთვნის.',
   'games.connect4.sideRed': 'წითელი (პირველი ხოდი)',
@@ -42,11 +42,11 @@ export const ka: Record<EnKey, string> = {
   // --- Configure page ---
   'configure.title': 'ოთახის კონფიგურაცია',
   'configure.displayName.label': 'შენი სახელი',
-  'configure.displayName.placeholder': 'როგორ მოგმართოთ?',
+  'configure.displayName.placeholder': 'როგორ მოგმართო?',
   'configure.sideMode.label': 'მხარეების მინიჭება',
   'configure.sideMode.hostPicksSpecific': 'მე ავირჩევ ჩემს მხარეს',
   'configure.sideMode.random': 'შემთხვევითად',
-  'configure.sideMode.challengerPicks': 'მეგობარს ვაცემ არჩევანს',
+  'configure.sideMode.challengerPicks': 'მეგობარს ვაძლევ უფლებას აირჩიოს',
   'configure.hostSide.label': 'შენი მხარე',
   'configure.submit': 'ოთახის შექმნა',
   'configure.submitting': 'იქმნება…',
@@ -55,7 +55,7 @@ export const ka: Record<EnKey, string> = {
   // --- Room / join ---
   'join.title': 'შემოუერთდი ოთახს',
   'join.displayName.label': 'შენი სახელი',
-  'join.displayName.placeholder': 'როგორ მოგმართოთ?',
+  'join.displayName.placeholder': 'როგორ მოგმართო?',
   'join.side.label': 'აირჩიე მხარე',
   'join.submit': 'შემოერთება',
   'join.submitting': 'შემოდიხარ…',
