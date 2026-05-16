@@ -38,10 +38,31 @@ source "${ENV_FILE}"
 : "${REDIS:?required}"
 : "${API_HOSTNAME:?required}"
 : "${WEB_ORIGIN:?required}"
+
+# Vercel (and many hosts) redirect apex ↔ www, so accept both forms in CORS.
+# Derive the alternate form from WEB_ORIGIN — strip leading `www.` if present,
+# otherwise inject it. Order in the CORS allowlist doesn't matter.
+if [[ "${WEB_ORIGIN}" =~ ^https?://www\. ]]; then
+  WEB_ORIGIN_ALT="${WEB_ORIGIN/\/\/www./\/\/}"
+else
+  WEB_ORIGIN_ALT="${WEB_ORIGIN/\/\//\/\/www.}"
+fi
+
 : "${GITHUB_OWNER:?required}"
 : "${GITHUB_REPO:?required}"
 : "${ALERT_EMAIL:?required}"
 : "${GHCR_IMAGE:?required}"
+
+# Phase selection (lets CI / unattended runs skip the interactive DNS pause):
+#   all       — default: end-to-end, with the interactive DNS pause
+#   resources — sections 1–5 only (RG, Redis, plan, webapp, app settings)
+#   domain    — sections 6–8 only (custom domain, TLS, AAD, alerts), assumes
+#               DNS records already exist; no pause
+PHASE="${PROVISION_PHASE:-all}"
+case "${PHASE}" in
+  all|resources|domain) ;;
+  *) echo "PROVISION_PHASE must be one of: all, resources, domain" >&2; exit 1 ;;
+esac
 
 # Placeholder image used for the first deploy — the GitHub Actions pipeline
 # repoints the web app at the real `${GHCR_IMAGE}` tag on its first run.
@@ -57,19 +78,31 @@ pause() {
 az account set --subscription "${AZURE_SUBSCRIPTION_ID}"
 TENANT_ID="$(az account show --query tenantId -o tsv)"
 
+if [[ "${PHASE}" == "all" || "${PHASE}" == "resources" ]]; then
+
 # ─── 1. resource group ──────────────────────────────────────────────────────
 log "resource group: ${RG}"
 az group create --name "${RG}" --location "${LOCATION}" -o none
 
-# ─── 2. redis (slow — start it first, in the background) ────────────────────
-log "redis: ${REDIS} (Basic C0) — async create"
-if ! az redis show -g "${RG}" -n "${REDIS}" -o none 2>/dev/null; then
+# ─── 2. redis (slow — kick off in the background) ──────────────────────────
+# `az redis create` doesn't expose --no-wait in current CLI versions and it
+# blocks for ~15 min waiting on the ARM operation. Spawn it as a shell job
+# so the App Service work below runs in parallel; we `wait` for it later.
+# Non-SSL port is disabled by default; the `--enable-non-ssl-port` *flag*
+# would enable it.
+REDIS_PID=""
+REDIS_LOG="$(mktemp -t provision-redis.XXXXXX)"
+log "redis: ${REDIS} (Basic C0)"
+if az redis show -g "${RG}" -n "${REDIS}" -o none 2>/dev/null; then
+  note "already exists — skipping create"
+else
+  note "kicking off async create (~15 min); log → ${REDIS_LOG}"
   az redis create \
     -g "${RG}" -n "${REDIS}" -l "${LOCATION}" \
     --sku Basic --vm-size c0 \
-    --enable-non-ssl-port false \
     --minimum-tls-version 1.2 \
-    --no-wait
+    >"${REDIS_LOG}" 2>&1 &
+  REDIS_PID=$!
 fi
 
 # ─── 3. app service plan + web app ──────────────────────────────────────────
@@ -83,6 +116,10 @@ if ! az webapp show -g "${RG}" -n "${WEBAPP}" -o none 2>/dev/null; then
   az webapp create \
     -g "${RG}" -p "${PLAN}" -n "${WEBAPP}" \
     --deployment-container-image-name "${PLACEHOLDER_IMAGE}" -o none
+  # ARM has an eventual-consistency window right after `webapp create`: the
+  # follow-up `webapp config set` can 404 even though the resource exists.
+  # Block until it's actually queryable before continuing.
+  az webapp wait -g "${RG}" -n "${WEBAPP}" --created --interval 5 --timeout 120
 fi
 
 log "web app: enable websockets, always-on, https-only, tls 1.2"
@@ -98,8 +135,17 @@ log "web app: system-assigned managed identity"
 az webapp identity assign -g "${RG}" -n "${WEBAPP}" -o none
 
 # ─── 4. wait for redis and capture its connection string ────────────────────
-log "redis: waiting for provisioning to finish (can take ~15 min on first run)"
-az redis wait -g "${RG}" -n "${REDIS}" --created --interval 30 --timeout 1800
+if [[ -n "${REDIS_PID}" ]]; then
+  log "redis: waiting on background create (pid ${REDIS_PID})"
+  if ! wait "${REDIS_PID}"; then
+    echo "redis create failed; output follows:" >&2
+    cat "${REDIS_LOG}" >&2
+    exit 1
+  fi
+  rm -f "${REDIS_LOG}"
+else
+  log "redis: already provisioned"
+fi
 
 REDIS_HOST="$(az redis show -g "${RG}" -n "${REDIS}" --query hostName -o tsv)"
 REDIS_KEY="$(az redis list-keys -g "${RG}" -n "${REDIS}" --query primaryKey -o tsv)"
@@ -118,9 +164,23 @@ az webapp config appsettings set \
     WEBSITES_PORT=8080 \
     ConnectionStrings__Redis="${REDIS_CONN}" \
     Cors__AllowedOrigins__0="${WEB_ORIGIN}" \
+    Cors__AllowedOrigins__1="${WEB_ORIGIN_ALT}" \
   -o none
 
+fi # end PHASE=all|resources
+
+if [[ "${PHASE}" == "all" || "${PHASE}" == "domain" ]]; then
+
 # ─── 6. custom domain + managed TLS cert ────────────────────────────────────
+#
+# Heads-up on the App Service Managed Certificate step below: the
+# `az webapp config ssl create --hostname` call is documented as in-preview
+# and is known to hang silently on first-time provisioning for some
+# subscriptions / TLDs. We observed it on `.ge` in both Italy North and
+# West Europe — PUT returns 202 with an operation ID, but the resource
+# never materializes and the operation eventually times out (~4 h window).
+# When that happens, fall back to a CDN-fronted TLS solution (e.g.
+# Cloudflare proxying api.<domain>) rather than burning more cycles here.
 DEFAULT_HOSTNAME="$(az webapp show -g "${RG}" -n "${WEBAPP}" --query defaultHostName -o tsv)"
 VERIFICATION_ID="$(az webapp show -g "${RG}" -n "${WEBAPP}" --query customDomainVerificationId -o tsv)"
 
@@ -138,7 +198,9 @@ if ! grep -qx "${API_HOSTNAME}" <<<"${CURRENT_HOSTNAMES}"; then
 
   Wait ~1 minute after adding them for propagation.
 EOF
-  pause "added the CNAME + TXT records?"
+  if [[ "${PHASE}" == "all" ]]; then
+    pause "added the CNAME + TXT records?"
+  fi
 
   az webapp config hostname add \
     -g "${RG}" --webapp-name "${WEBAPP}" \
@@ -263,3 +325,21 @@ cat <<EOF
 │                                                                             │
 ╰─────────────────────────────────────────────────────────────────────────────╯
 EOF
+
+fi # end PHASE=all|domain
+
+if [[ "${PHASE}" == "resources" ]]; then
+  # In phased runs the summary above is suppressed; print the DNS records that
+  # need to be set up before invoking PROVISION_PHASE=domain.
+  DEFAULT_HOSTNAME="$(az webapp show -g "${RG}" -n "${WEBAPP}" --query defaultHostName -o tsv)"
+  VERIFICATION_ID="$(az webapp show -g "${RG}" -n "${WEBAPP}" --query customDomainVerificationId -o tsv)"
+  cat <<EOF
+
+resources phase complete. Add these DNS records, then re-run with
+PROVISION_PHASE=domain bash infra/provision.sh:
+
+  CNAME  api          ${DEFAULT_HOSTNAME}
+  TXT    asuid.api    ${VERIFICATION_ID}
+
+EOF
+fi
