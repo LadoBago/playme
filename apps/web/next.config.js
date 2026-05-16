@@ -8,7 +8,18 @@
 // paths the middleware matcher skips (/_next/static, the OG image,
 // sitemap, etc.).
 
-const ssrApiBase = process.env.PLAYME_API_URL ?? 'http://localhost:5080';
+// Upstream the API actually lives at (Azure App Service in prod, the
+// local API on :5080 in dev). Used for both SSR fetches and as the
+// destination of the same-origin rewrites below.
+const apiUpstream = process.env.PLAYME_API_URL ?? 'http://localhost:5080';
+
+// Optional: a hostname (e.g. `api.playme.ge`) that Vercel claims as a
+// project domain. When set, ALL requests to that hostname are rewritten
+// to `apiUpstream`. Lets the API be reached at its branded subdomain with
+// TLS terminated by Vercel — needed when the origin can't serve a valid
+// cert for the subdomain itself (we hit this with Azure App Service
+// Managed Certificates silently failing on the `.ge` TLD). Unset in dev.
+const apiProxyHost = process.env.PLAYME_API_PROXY_HOST ?? '';
 
 const nextConfig = {
   reactStrictMode: true,
@@ -16,16 +27,29 @@ const nextConfig = {
   // Transpile workspace TS packages from source — `@playme/shared`
   // exports `src/index.ts` directly, not a built `.js`.
   transpilePackages: ['@playme/shared'],
-  // Same-origin proxy for the API in dev. Without this, the browser
-  // sees localhost:3000 and localhost:5080 as different origins, and
-  // Safari's ITP partitions the session cookie set on :5080 — leading
-  // to the host being mis-detected as a challenger on the /r/<code>
-  // page. Proxying through :3000 keeps the cookie first-party.
+  // Same-origin proxies for the API. Two complementary rules:
+  //   1. Path-based (/api/*, /hubs/*) — used in dev so the browser hits
+  //      :3000 instead of :5080, avoiding Safari ITP partitioning the
+  //      session cookie. Also a viable prod mode if you point
+  //      NEXT_PUBLIC_API_URL at the web origin itself.
+  //   2. Host-based (api.playme.ge → upstream) — used in prod so the API
+  //      is reachable at its intended subdomain with first-party TLS
+  //      served by Vercel. Skipped when PLAYME_API_PROXY_HOST is unset.
   async rewrites() {
-    return [
-      { source: '/api/:path*', destination: `${ssrApiBase}/api/:path*` },
-      { source: '/hubs/:path*', destination: `${ssrApiBase}/hubs/:path*` },
+    const rules = [
+      { source: '/api/:path*', destination: `${apiUpstream}/api/:path*` },
+      { source: '/hubs/:path*', destination: `${apiUpstream}/hubs/:path*` },
     ];
+
+    if (apiProxyHost) {
+      rules.push({
+        source: '/:path*',
+        has: [{ type: 'host', value: apiProxyHost }],
+        destination: `${apiUpstream}/:path*`,
+      });
+    }
+
+    return rules;
   },
   async headers() {
     return [
