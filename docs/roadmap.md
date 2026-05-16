@@ -109,7 +109,7 @@ Intentionally unresolved — raise in PRs rather than choosing silently.
 - **Tournaments / prizes.** Not in v1. If pursued later, legal review is required (Georgian gambling-law implications even for skill-based paid entry).
 - **Managed log/trace backend.** OTel currently exports to stdout/file. Wire to Grafana Cloud / Honeycomb / similar when scaling beyond one API instance.
 - **Secrets vault.** Currently env vars on App Service / Vercel. Once secret count or rotation frequency justifies it, move the API to Azure Key Vault (managed identity → API → Key Vault). Until then, env vars are acceptable.
-- **WAF / DDoS.** No WAF in v1. If abuse traffic shows up, put Azure Front Door / Cloudflare in front of the API (and re-evaluate rate-limit thresholds). Vercel already fronts the web.
+- **WAF / DDoS.** No dedicated WAF in v1. Cloudflare already fronts `api.playme.ge` (for TLS reasons — see [`deployment.md`](deployment.md) §6.1), which gives us free baseline DDoS protection on the API path. Vercel fronts the web. If abuse traffic shows up beyond what those handle, escalate to Cloudflare WAF rules or Azure Front Door and re-evaluate rate-limit thresholds in [`security.md`](security.md) §5.
 - ~~**On-call channel.**~~ Resolved: email. Sentry and Azure Monitor both route to the address configured in `infra/provision.env` (`ALERT_EMAIL`). Documented in [`security.md`](security.md) §11. Revisit if/when a team forms — Slack or a paging service makes more sense above one operator.
 
 When a decision is made, update the relevant doc in the same PR.

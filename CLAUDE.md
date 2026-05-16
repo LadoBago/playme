@@ -79,6 +79,7 @@ Hard rules:
 | [`docs/state.md`](docs/state.md) | Redis key schema, room lifecycle / state machine, clock model, timeout sweeper, server-emitted events |
 | [`docs/security.md`](docs/security.md) | Threat model, secrets, input validation, room/player identity & auth, rate limits, headers, CORS |
 | [`docs/observability-and-i18n.md`](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs, error code naming |
+| [`docs/deployment.md`](docs/deployment.md) | **Production topology** (Vercel + Cloudflare + Azure West Europe), DNS/TLS, deploy pipeline, alerting, non-obvious decisions and gotchas, known follow-ups, cost |
 | [`docs/roadmap.md`](docs/roadmap.md) | Implementation sprints, deferred-to-v2 questions |
 
 ---
@@ -88,14 +89,16 @@ Hard rules:
 | Component | Platform | Tier (MVP) |
 |---|---|---|
 | `apps/web` (Next.js) | **Vercel** | Free tier |
-| `apps/api` (ASP.NET Core) | **Azure App Service for Linux** | B1 (~$13/mo) |
-| Redis (state + SignalR backplane) | **Azure Cache for Redis** | Basic C0 (~$15/mo) |
+| `apps/api` (ASP.NET Core) | **Azure App Service for Linux**, West Europe | B1 (~$13/mo) |
+| Redis (state + SignalR backplane) | **Azure Cache for Redis**, West Europe | Basic C0 (~$15/mo) |
+| DNS / TLS proxy for `api.playme.ge` | **Cloudflare** | Free tier |
 | Sentry | Sentry Cloud | Free tier |
 | PostHog | PostHog Cloud | Free tier |
 
 - API ships with a Dockerfile from day one (local-dev / cloud parity, future container-platform portability).
 - SignalR uses a **Redis backplane** via `Microsoft.AspNetCore.SignalR.StackExchangeRedis`. **No** Azure SignalR Service.
 - Secrets via env vars in App Service / Vercel. Local dev: `appsettings.Development.json` + .NET user-secrets (API), `.env.local` gitignored (web).
+- Cloudflare fronts `api.playme.ge` because Azure App Service Managed Certificate silently fails to provision on `.ge` TLDs. See [`docs/deployment.md`](docs/deployment.md) §6 for the full set of operational gotchas we hit during the v1 cutover.
 
 ---
 
