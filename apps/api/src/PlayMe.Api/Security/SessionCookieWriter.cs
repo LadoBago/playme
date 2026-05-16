@@ -8,7 +8,9 @@ namespace PlayMe.Api.Security;
 /// <summary>
 /// Helper that issues the signed session cookie on an outgoing response with
 /// the attributes from CLAUDE.md §5.4: HttpOnly, Secure (in non-dev),
-/// SameSite=Lax, Path=/, configurable Domain and lifetime.
+/// configurable SameSite (default <see cref="SameSiteMode.Lax"/>; set to
+/// <see cref="SameSiteMode.None"/> in cross-site deployments), Path=/,
+/// configurable Domain and lifetime.
 /// </summary>
 public sealed class SessionCookieWriter
 {
@@ -41,7 +43,7 @@ public sealed class SessionCookieWriter
         {
             HttpOnly = true,
             Secure = !_env.IsDevelopment(),
-            SameSite = SameSiteMode.Lax,
+            SameSite = opts.SameSite,
             Path = "/",
             Domain = opts.Domain,
             MaxAge = opts.MaxAge,
