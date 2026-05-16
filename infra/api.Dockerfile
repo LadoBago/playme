@@ -33,8 +33,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-# Don't run as root.
-RUN useradd --no-create-home --shell /usr/sbin/nologin --uid 10001 playme
+# Don't run as root. `--create-home` is required: ASP.NET Core Data Protection
+# writes its key ring under $HOME/.aspnet/DataProtection-Keys on first cookie
+# encrypt, and without a writable home directory every SessionTokenService.Mint
+# call 500s with "Access to the path '/home/playme' is denied".
+# TODO: persist DP keys to Redis so they survive container restarts and can be
+# shared across instances when we scale beyond one B1.
+RUN useradd --create-home --shell /usr/sbin/nologin --uid 10001 playme
 USER playme
 
 ENV ASPNETCORE_URLS=http://+:8080
