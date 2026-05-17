@@ -67,17 +67,25 @@ public sealed class RoomHub : Hub
     {
         // Best-effort presence release. If the session isn't there (the
         // OnConnectedAsync abort path) there's nothing to do.
+        //
+        // Do NOT pass Context.ConnectionAborted here — by the time this
+        // method runs, the leaving connection's token is already canceled,
+        // which would (a) abort the Redis presence-release mid-flight and
+        // (b) cancel the broadcast to *other* connections in the group
+        // (who are still very much alive). SignalR then wraps the
+        // OperationCanceledException as "Error when dispatching
+        // 'OnDisconnectedAsync' on hub" in logs / Sentry.
         if (Context.Items[SessionContextKey] is Session session)
         {
             var cmd = new ReleasePresenceCommand(
                 session.RoomCode.Value, session.PlayerId.Value, session.Role);
-            var result = await _releasePresence.HandleAsync(cmd, Context.ConnectionAborted);
+            var result = await _releasePresence.HandleAsync(cmd, CancellationToken.None);
             if (result.Succeeded && result.Value!.OpponentNotificationDue)
             {
                 await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
                     .SendAsync(RoomHubEvents.OpponentDisconnected,
                         new { role = session.Role.ToString() },
-                        Context.ConnectionAborted);
+                        CancellationToken.None);
             }
         }
         await base.OnDisconnectedAsync(exception);
