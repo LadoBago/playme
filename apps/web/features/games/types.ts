@@ -28,3 +28,16 @@ export interface GameViewProps {
 }
 
 export type GameView = (props: GameViewProps) => ReactNode;
+
+/**
+ * Per-game module registered with the platform. The view is the renderer
+ * the room shell mounts; `getSideLabel` resolves an opaque side string
+ * (this module's vocab — "x"/"o", "red"/"yellow", …) to a localised
+ * display label so platform UI (match-header etc.) can show "Red"/"X"
+ * without importing per-game vocabulary (CLAUDE.md §7 "Platform
+ * thinness"). Returns null if `side` isn't a side this game recognises.
+ */
+export interface GameModule {
+  readonly View: GameView;
+  readonly getSideLabel: (side: string) => string | null;
+}

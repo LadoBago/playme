@@ -30,6 +30,8 @@ export const ka: Record<EnKey, string> = {
     'მოთამაშეები რიგრიგობით სვამენ X-ს ან O-ს 3×3 დაფაზე. ვინც პირველი ჩამოაწყობს სამ ერთსა და იმავე ნიშანს ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ დაფა შეივსება გამარჯვებული მწკრივის გარეშე — ფრე. პირველი სვლა ყოველთვის X-ს ეკუთვნის.',
   'games.tictactoe.sideX': 'X (პირველი სვლა)',
   'games.tictactoe.sideO': 'O',
+  'games.tictactoe.shortSideX': 'X',
+  'games.tictactoe.shortSideO': 'O',
 
   'games.connect4.name': 'ოთხის გასწორება',
   'games.connect4.shortDescription':
@@ -38,6 +40,8 @@ export const ka: Record<EnKey, string> = {
     'მოთამაშეები რიგრიგობით აგდებენ წითელ და ყვითელ დისკებს 7 სვეტიან, 6 რიგიან დაფაზე. ყოველი დისკი ეცემა არჩეული სვეტის ყველაზე ქვედა ცარიელ უჯრაში. ვინც პირველი დააწყობს ოთხ თავის დისკს — ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე — იგებს. თუ დაფა შეივსება გამარჯვებული ხაზის გარეშე — ფრე. პირველი სვლა ყოველთვის წითელს ეკუთვნის.',
   'games.connect4.sideRed': 'წითელი (პირველი სვლა)',
   'games.connect4.sideYellow': 'ყვითელი',
+  'games.connect4.shortSideRed': 'წითელი',
+  'games.connect4.shortSideYellow': 'ყვითელი',
 
   // --- Configure page ---
   'configure.title': 'ოთახის კონფიგურაცია',

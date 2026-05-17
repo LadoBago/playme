@@ -6,6 +6,17 @@ import type { GameView, GameViewProps } from '../types';
 import { Connect4BoardStateSchema, type Connect4BoardState } from './schema';
 
 /**
+ * Localised short side label ("Red" / "Yellow") for the platform's player
+ * card. Side vocab stays inside this module (CLAUDE.md §7 "Platform
+ * thinness"); the platform calls through `GameModule.getSideLabel`.
+ */
+export function connect4SideLabel(side: string): string | null {
+  if (side === 'red') return t('games.connect4.shortSideRed');
+  if (side === 'yellow') return t('games.connect4.shortSideYellow');
+  return null;
+}
+
+/**
  * Connect 4 web renderer. Owns the state shape (parsed from
  * `MatchDto.state`), the disc/ring iconography (per platform-and-games.md
  * §2.1 — red as a solid disc, yellow as a ring so the two are
