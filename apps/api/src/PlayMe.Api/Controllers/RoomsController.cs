@@ -111,7 +111,23 @@ public sealed class RoomsController : ControllerBase
         return Ok(value.Room);
     }
 
+    /// <summary>
+    /// Fetch a room snapshot by its opaque code. Powers the pre-session
+    /// invite-preview landing on <c>/r/{code}</c>.
+    /// </summary>
+    /// <remarks>
+    /// Intentionally anonymous: the invite-link flow shows host/game/rules
+    /// before a visitor decides to join (the join request is where their
+    /// session cookie is minted). Access control here is by knowledge of
+    /// the unguessable 128-bit room code (CSPRNG; see
+    /// <c>RoomCodeGenerator</c>), not by session cookie — a deliberate
+    /// carve-out from <c>docs/security.md §4</c>'s "auth on every action"
+    /// rule. The per-IP rate limit
+    /// (<see cref="RateLimitingPolicies.RoomsGet"/>) caps abuse if a code
+    /// leaks; entropy makes enumeration intractable.
+    /// </remarks>
     [HttpGet("{code}")]
+    [EnableRateLimiting(RateLimitingPolicies.RoomsGet)]
     public async Task<ActionResult<RoomDto>> GetRoom(
         [FromRoute] string code, CancellationToken ct)
     {

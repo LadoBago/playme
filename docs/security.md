@@ -64,6 +64,7 @@ Rate limits operate at three distinct scopes, each with a different lifetime. Pi
 | Action | Layer | Scope | Limit |
 |---|---|---|---|
 | `POST /api/rooms` | ASP.NET rate-limit middleware | per IP | 10 / min |
+| `GET /api/rooms/{code}` | ASP.NET rate-limit middleware | per IP | 60 / min |
 | `POST /api/rooms/{code}/join` | ASP.NET rate-limit middleware | per IP + per room code | 5 / min per IP, 10 / hr per code |
 | `RoomHub.SubmitMove` (sustained) | Application-layer check | per session | 60 / min |
 | `RoomHub.SubmitMove` (burst) | SignalR pipeline | per connection | 10 / sec |

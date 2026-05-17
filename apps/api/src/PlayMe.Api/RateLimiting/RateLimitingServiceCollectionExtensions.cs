@@ -55,6 +55,21 @@ public static class RateLimitingServiceCollectionExtensions
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     }));
+
+            // GetRoom backs the pre-session invite preview, so it's the only
+            // anonymous read in the controller surface. The room code itself
+            // is the access token (128-bit CSPRNG ⇒ enumeration intractable);
+            // this limit caps the abuse window if a code leaks elsewhere.
+            options.AddPolicy(RateLimitingPolicies.RoomsGet,
+                ctx => RateLimitPartition.GetFixedWindowLimiter(
+                    PartitionKey(ctx),
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 60,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
         });
 
         return services;
