@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { t, tf } from '@playme/shared';
 
 interface BoardProps {
   rows: number;
@@ -46,7 +47,7 @@ export function Board({
         gridTemplateRows: `repeat(${rows}, 1fr)`,
       }}
       role="grid"
-      aria-label="game board"
+      aria-label={t('match.board.label')}
     >
       {cells.map((side, i) => {
         const filled = side !== null;
@@ -64,7 +65,10 @@ export function Board({
             type="button"
             className={className}
             disabled={!canPlay || filled}
-            aria-label={`row ${Math.floor(i / cols) + 1} column ${(i % cols) + 1}`}
+            aria-label={tf('match.board.cell.label', {
+              row: Math.floor(i / cols) + 1,
+              col: (i % cols) + 1,
+            })}
             onClick={() => onCellClick(i)}
           >
             {renderCell(side)}
