@@ -35,6 +35,20 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     cols: 3,
   },
   {
+    id: 'tictactoe-6x6',
+    slug: 'tictactoe-6x6',
+    nameKey: 'games.tictactoe-6x6.name',
+    shortDescriptionKey: 'games.tictactoe-6x6.shortDescription',
+    rulesKey: 'games.tictactoe-6x6.rules',
+    sides: [
+      { id: 'x', labelKey: 'games.tictactoe.sideX' },
+      { id: 'o', labelKey: 'games.tictactoe.sideO' },
+    ],
+    defaultHostSide: 'x',
+    rows: 6,
+    cols: 6,
+  },
+  {
     id: 'connect4',
     slug: 'connect4',
     nameKey: 'games.connect4.name',

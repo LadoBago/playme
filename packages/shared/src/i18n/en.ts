@@ -27,6 +27,11 @@ export const en = {
     'The classic. First to align three Xs or Os in a row, column, or diagonal wins.',
   'games.tictactoe-3x3.rules':
     'Players alternate placing X and O on a 3×3 grid. The first to align three of their marks horizontally, vertically, or diagonally wins. If the board fills with no line, the game is a draw. X always moves first.',
+  'games.tictactoe-6x6.name': 'Tic-Tac-Toe 6×6',
+  'games.tictactoe-6x6.shortDescription':
+    'Bigger board, longer lines. First to align four Xs or Os wins.',
+  'games.tictactoe-6x6.rules':
+    'Players alternate placing X and O on a 6×6 grid. The first to align at least four of their marks horizontally, vertically, or diagonally wins — a run of five or six in a row also wins. If the board fills with no line, the game is a draw. X always moves first.',
   'games.tictactoe.sideX': 'X (moves first)',
   'games.tictactoe.sideO': 'O',
   'games.tictactoe.shortSideX': 'X',
