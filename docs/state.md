@@ -12,7 +12,7 @@ All keys are prefixed `playme:` to namespace the application. Use `:` as the seg
 |---|---|---|
 | `playme:room:{roomCode}` | Full room state (players including `hostPlayerId` / `challengerPlayerId` (see [`platform-and-games.md`](platform-and-games.md) §4), `hostSide` / `challengerSide`, display names, status, current match, clock snapshot, last-tick timestamp, series scoreboard for rematches). Stored as a JSON string. | 30 min while `WaitingForOpponent`, 1 h while `InProgress` (refreshed on every interaction), 5 min after `Ended`. |
 | `playme:room:{roomCode}:lock` | Distributed lock for atomic move processing (prevents racing `SubmitMove` calls). | ≤ 5 s (auto-expires; held only for the duration of a single move) |
-| `playme:rate:{policy}:{key}` | Rate-limit counters (e.g. `playme:rate:create-room:{ip}`, `playme:rate:submit-move:{connectionId}`). | matches the rate-limit window |
+| `playme:rate:{policy}:{key}` | Rate-limit counters (e.g. `playme:rate:move:{playerId}`, `playme:rate:join-code:{roomCode}`). | matches the rate-limit window |
 | `playme:timeouts` | Sorted set of scheduled clock-timeout checks. Score = unix-ms deadline, value = `roomCode`. Swept by a `BackgroundService` (see §2 Clock model). | entries are removed by the sweeper after firing; stale entries expire when the room is `Closed`/`Expired` and the sweeper drops them |
 | `playme:signalr:*` | SignalR backplane channels managed by `Microsoft.AspNetCore.SignalR.StackExchangeRedis`. **Don't read or write these manually.** | managed by the library |
 

@@ -65,7 +65,8 @@ Rate limits operate at three distinct scopes, each with a different lifetime. Pi
 |---|---|---|---|
 | `POST /api/rooms` | ASP.NET rate-limit middleware | per IP | 10 / min |
 | `GET /api/rooms/{code}` | ASP.NET rate-limit middleware | per IP | 60 / min |
-| `POST /api/rooms/{code}/join` | ASP.NET rate-limit middleware | per IP + per room code | 5 / min per IP, 10 / hr per code |
+| `POST /api/rooms/{code}/join` (per IP) | ASP.NET rate-limit middleware | per IP | 5 / min |
+| `POST /api/rooms/{code}/join` (per code) | Application-layer check | per room code | 10 / hr |
 | `RoomHub.SubmitMove` (sustained) | Application-layer check | per session | 60 / min |
 | `RoomHub.SubmitMove` (burst) | SignalR pipeline | per connection | 10 / sec |
 | `RoomHub.OfferRematch` / `Accept` / `Reject` | Application | per session | 30 / min |
@@ -77,8 +78,8 @@ Rate limits operate at three distinct scopes, each with a different lifetime. Pi
 
 **Implementation:**
 
-- **Per-IP** and **per-IP + per-room** policies use ASP.NET Core's built-in `RateLimiter` middleware with the appropriate partition key.
-- **Per-session** policies are enforced in the `Application` layer via an `IRateLimiter` port (interface in `PlayMe.Application/Abstractions/`, implementation in `PlayMe.Infrastructure/`). The implementation uses a Redis sliding window keyed by `playme:rate:{policy}:session:{sessionId}` (matches the [`state.md`](state.md) §1 schema).
+- **Per-IP** policies use ASP.NET Core's built-in `RateLimiter` middleware with the appropriate partition key. These are pre-session, in-process limits (no Redis); they protect HTTP routes that run before a session cookie exists.
+- **Per-session and per-resource** policies (e.g. per-room-code joins) are enforced in the `Application` layer via an `IRateLimiter` port (interface in `PlayMe.Application/Abstractions/`, implementation in `PlayMe.Infrastructure/`). The implementation uses a Redis sliding window keyed by `playme:rate:{policy}:{subject}` — `subject` is the `playerId` for per-session limits and the room code for per-resource limits. Redis-backed because the API is stateless and these limits must survive across instances (and, for per-session policies, SignalR reconnects).
 - **Per-connection** burst ceilings use SignalR's `HubOptions` plus a per-message hub filter for the hard ceiling.
 
 **Observability hook:** whenever a rate limit fires, log a structured event (`RateLimitExceeded { policy, scope, key }`) at `Warning`, emit a PostHog event tagged `source: server`, and bump a counter. Recurring abuse signals should trip Sentry breadcrumbs and (post-launch) an on-call alert per §11.
