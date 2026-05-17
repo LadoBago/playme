@@ -1,9 +1,7 @@
-import type {
-  CreateRoomRequest,
-  JoinRoomRequestBody,
-  ProblemDetailsResponse,
-  RoomDto,
-} from './types';
+import type { ZodType } from 'zod';
+
+import { ProblemDetailsSchema, RoomSchema } from './schemas';
+import type { CreateRoomRequest, JoinRoomRequestBody, RoomDto } from './types';
 
 /**
  * Typed result wrapper. The API surfaces an i18n key on failure
@@ -38,7 +36,7 @@ export class PlaymeClient {
   }
 
   createRoom(body: CreateRoomRequest, init: RequestInit = {}): Promise<ApiResult<RoomDto>> {
-    return this._post<RoomDto>('/api/rooms', body, init);
+    return this._post<RoomDto>('/api/rooms', body, RoomSchema, init);
   }
 
   joinRoom(
@@ -46,7 +44,12 @@ export class PlaymeClient {
     body: JoinRoomRequestBody,
     init: RequestInit = {},
   ): Promise<ApiResult<RoomDto>> {
-    return this._post<RoomDto>(`/api/rooms/${encodeURIComponent(code)}/join`, body, init);
+    return this._post<RoomDto>(
+      `/api/rooms/${encodeURIComponent(code)}/join`,
+      body,
+      RoomSchema,
+      init,
+    );
   }
 
   async getRoom(code: string, init: RequestInit = {}): Promise<ApiResult<RoomDto>> {
@@ -54,12 +57,13 @@ export class PlaymeClient {
       ...init,
       credentials: 'include',
     });
-    return this._readResponse<RoomDto>(res);
+    return this._readResponse<RoomDto>(res, RoomSchema);
   }
 
   private async _post<T>(
     path: string,
     body: unknown,
+    schema: ZodType<unknown>,
     init: RequestInit,
   ): Promise<ApiResult<T>> {
     const res = await this._fetch(`${this._baseUrl}${path}`, {
@@ -69,25 +73,56 @@ export class PlaymeClient {
       headers: { ...(init.headers ?? {}), 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    return this._readResponse<T>(res);
+    return this._readResponse<T>(res, schema);
   }
 
-  private async _readResponse<T>(res: Response): Promise<ApiResult<T>> {
+  /**
+   * Read and Zod-validate both success and failure response bodies. A success
+   * body that doesn't match `schema` is downgraded to a typed failure (rather
+   * than a thrown exception) so callers keep the existing `ApiResult` contract
+   * and surface a localized error instead of crashing.
+   *
+   * The `as T` bridge mirrors the convention in `realtime/hub.ts`: Zod
+   * infers optional fields as `string | undefined`, while DTO types use
+   * `exactOptionalPropertyTypes`-style `?` properties. The compile-time
+   * drift guards in `./schemas.ts` catch structural mismatches between the
+   * two.
+   */
+  private async _readResponse<T>(
+    res: Response,
+    schema: ZodType<unknown>,
+  ): Promise<ApiResult<T>> {
+    const raw = await this._readJson(res);
+
     if (res.ok) {
-      const value = (await res.json()) as T;
-      return { ok: true, value };
+      const parsed = schema.safeParse(raw);
+      if (parsed.success) {
+        return { ok: true, value: parsed.data as T };
+      }
+      return {
+        ok: false,
+        status: res.status,
+        code: 'errors.invalidResponse',
+      };
     }
-    let problem: ProblemDetailsResponse = {};
-    try {
-      problem = (await res.json()) as ProblemDetailsResponse;
-    } catch {
-      // Body wasn't JSON; keep an empty problem.
-    }
+
+    const problemParsed = ProblemDetailsSchema.safeParse(raw);
+    const problem = problemParsed.success ? problemParsed.data : {};
     return {
       ok: false,
       status: res.status,
       code: problem.code ?? 'errors.unknown',
       ...(problem.detail !== undefined ? { detail: problem.detail } : {}),
     };
+  }
+
+  private async _readJson(res: Response): Promise<unknown> {
+    try {
+      return (await res.json()) as unknown;
+    } catch {
+      // Body wasn't JSON (e.g. empty 204, network-level proxy page). The
+      // caller's safeParse will then fail and produce a typed error.
+      return undefined;
+    }
   }
 }
