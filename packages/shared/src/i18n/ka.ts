@@ -85,6 +85,22 @@ export const ka: Record<EnKey, string> = {
   'match.result.opponentTimedOut': 'მოწინააღმდეგის დრო ამოიწურა.',
   'match.rules.button': 'წესები',
   'match.rules.close': 'დახურვა',
+  'match.board.label': 'თამაშის დაფა',
+  'match.board.cell.label': 'მწკრივი {row}, სვეტი {col}',
+
+  // --- Connect 4 a11y labels (per-module vocab) ---
+  'games.connect4.board.label': 'Connect 4-ის დაფა',
+  'games.connect4.columns.top': 'Connect 4 სვეტები (ზემოდან)',
+  'games.connect4.columns.bottom': 'Connect 4 სვეტები (ქვემოდან)',
+  'games.connect4.dropColumn': 'ჩამოაგდე დისკი სვეტში {col}',
+  'games.connect4.cell.discRed': 'წითელი დისკი',
+  'games.connect4.cell.discYellow': 'ყვითელი დისკი',
+  'games.connect4.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}',
+
+  // --- App-level error / not-found chrome ---
+  'errors.boundary.title': 'რაღაც შეცდომა მოხდა.',
+  'errors.boundary.retry': 'სცადე თავიდან',
+  'notFound.home': '← მთავარი',
 
   // --- Errors ---
   'errors.unknown': 'რაღაც შეცდომა მოხდა. სცადე თავიდან.',

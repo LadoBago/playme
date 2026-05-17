@@ -11,7 +11,7 @@ export default function ErrorBoundary({
 }) {
   return (
     <main className="container stack" style={{ textAlign: 'center', gap: '1rem' }}>
-      <h1 style={{ fontSize: '1.6rem' }}>Oops.</h1>
+      <h1 style={{ fontSize: '1.6rem' }}>{t('errors.boundary.title')}</h1>
       <p style={{ color: 'var(--fg-muted)' }}>{t('errors.unknown')}</p>
       <pre
         style={{
@@ -26,7 +26,7 @@ export default function ErrorBoundary({
         {error.message}
       </pre>
       <button type="button" className="button-primary" onClick={reset} style={{ alignSelf: 'center' }}>
-        Try again
+        {t('errors.boundary.retry')}
       </button>
     </main>
   );

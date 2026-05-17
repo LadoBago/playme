@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 style={{ fontSize: '2rem' }}>404</h1>
       <p style={{ color: 'var(--fg-muted)' }}>{t('errors.room.notFound')}</p>
       <Link href="/" className="button-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-        ← Home
+        {t('notFound.home')}
       </Link>
     </main>
   );

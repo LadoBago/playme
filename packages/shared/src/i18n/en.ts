@@ -84,6 +84,22 @@ export const en = {
   'match.result.opponentTimedOut': 'Opponent ran out of time.',
   'match.rules.button': 'Rules',
   'match.rules.close': 'Close',
+  'match.board.label': 'Game board',
+  'match.board.cell.label': 'Row {row} column {col}',
+
+  // --- Connect 4 a11y labels (per-module vocab) ---
+  'games.connect4.board.label': 'Connect 4 board',
+  'games.connect4.columns.top': 'Connect 4 columns (top)',
+  'games.connect4.columns.bottom': 'Connect 4 columns (bottom)',
+  'games.connect4.dropColumn': 'Drop disc in column {col}',
+  'games.connect4.cell.discRed': 'Red disc',
+  'games.connect4.cell.discYellow': 'Yellow disc',
+  'games.connect4.cell.empty': 'Empty cell row {row}',
+
+  // --- App-level error / not-found chrome ---
+  'errors.boundary.title': 'Something went wrong.',
+  'errors.boundary.retry': 'Try again',
+  'notFound.home': '← Home',
 
   // --- Errors (mirror ErrorCode i18n keys from CLAUDE.md §3) ---
   'errors.unknown': 'Something went wrong. Please try again.',

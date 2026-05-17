@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { t, tf } from '@playme/shared';
 import type { GameView, GameViewProps } from '../types';
 import { Connect4BoardStateSchema, type Connect4BoardState } from './schema';
 
@@ -63,7 +64,11 @@ export const Connect4View: GameView = ({
     <div
       className="c4__columns"
       role="group"
-      aria-label={`connect 4 columns (${placement})`}
+      aria-label={t(
+        placement === 'top'
+          ? 'games.connect4.columns.top'
+          : 'games.connect4.columns.bottom',
+      )}
     >
       {Array.from({ length: board.cols }, (_, col) => {
         const full = columnIsFull(board, col);
@@ -73,7 +78,7 @@ export const Connect4View: GameView = ({
             type="button"
             className="c4__drop"
             disabled={!interactable || full}
-            aria-label={`drop disc in column ${col + 1}`}
+            aria-label={tf('games.connect4.dropColumn', { col: col + 1 })}
             onClick={() => onSubmitMove({ column: col })}
           >
             <span aria-hidden>{placement === 'top' ? '▼' : '▲'}</span>
@@ -93,7 +98,7 @@ export const Connect4View: GameView = ({
           gridTemplateRows: `repeat(${board.rows}, 1fr)`,
         }}
         role="grid"
-        aria-label="connect 4 board"
+        aria-label={t('games.connect4.board.label')}
       >
         {board.cells.map((side, i) => {
           const isLast = i === lastMoveIndex;
@@ -103,13 +108,19 @@ export const Connect4View: GameView = ({
             (side ? ` c4__cell--${side}` : '') +
             (isLast ? ' c4__cell--last' : '') +
             (isWinning ? ' c4__cell--winning' : '');
+          // Side identifiers ("red"/"yellow") are this module's vocab and
+          // stay inside it (CLAUDE.md §7 "Platform thinness"); the inline
+          // branch resolves them to localised cell labels.
+          const cellLabel = side
+            ? side === 'red'
+              ? t('games.connect4.cell.discRed')
+              : t('games.connect4.cell.discYellow')
+            : tf('games.connect4.cell.empty', { row: Math.floor(i / board.cols) + 1 });
           return (
             <div
               key={i}
               role="gridcell"
-              aria-label={
-                side ? `${side} disc` : `empty cell row ${Math.floor(i / board.cols) + 1}`
-              }
+              aria-label={cellLabel}
               className={className}
             >
               {side ? <span className="c4__disc" /> : null}
