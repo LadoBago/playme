@@ -63,6 +63,10 @@ export const ka: Record<EnKey, string> = {
   'join.shareLink.label': 'გააზიარე ეს ბმული',
   'join.shareLink.copy': 'ბმულის კოპირება',
   'join.shareLink.copied': 'დაკოპირდა!',
+  'join.invite.headline': 'შენ მოწვეული ხარ თამაშზე',
+  'join.invite.host': 'მასპინძელი',
+  'join.invite.game': 'თამაში',
+  'join.invite.rules': 'წესები',
 
   // --- Match UI ---
   'match.yourTurn': 'შენი რიგია',
