@@ -13,4 +13,11 @@ public static class RateLimitingPolicies
 
     /// <summary><c>POST /api/rooms/{code}/join</c> — per IP, 5/min.</summary>
     public const string RoomsJoin = "rooms-join";
+
+    /// <summary>
+    /// <c>GET /api/rooms/{code}</c> — per IP, 60/min. Pre-session invite
+    /// preview (see <c>RoomsController.GetRoom</c>); matches the Vercel
+    /// edge ceiling for <c>/r/&lt;code&gt;</c> enumeration.
+    /// </summary>
+    public const string RoomsGet = "rooms-get";
 }
