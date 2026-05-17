@@ -62,6 +62,10 @@ export const en = {
   'join.shareLink.label': 'Share this link with your friend',
   'join.shareLink.copy': 'Copy link',
   'join.shareLink.copied': 'Copied!',
+  'join.invite.headline': 'You’ve been invited to play',
+  'join.invite.host': 'Host',
+  'join.invite.game': 'Game',
+  'join.invite.rules': 'Rules',
 
   // --- Match UI ---
   'match.yourTurn': 'Your turn',

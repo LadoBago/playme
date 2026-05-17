@@ -13,6 +13,7 @@ import {
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { findGameView } from '@/features/games/registry';
 import { JoinForm } from './join-form';
+import { InviteSummary } from './invite-summary';
 import { Clock } from './clock';
 import { MatchHeader } from './match-header';
 
@@ -183,15 +184,18 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 
   if (authStatus === 'needsJoin') {
     return (
-      <JoinForm
-        room={room}
-        sides={game.sides}
-        onJoined={(updated) => {
-          setRoom(updated);
-          void handleJoined();
-        }}
-        client={new PlaymeClient({ baseUrl: browserApiBase })}
-      />
+      <div className="stack">
+        <InviteSummary hostDisplayName={room.host.displayName} game={game} />
+        <JoinForm
+          room={room}
+          sides={game.sides}
+          onJoined={(updated) => {
+            setRoom(updated);
+            void handleJoined();
+          }}
+          client={new PlaymeClient({ baseUrl: browserApiBase })}
+        />
+      </div>
     );
   }
 
