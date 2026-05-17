@@ -14,13 +14,16 @@ namespace PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 public sealed partial class AdjudicateDisconnectGraceHandler
 {
     private readonly IRoomRepository _rooms;
+    private readonly IRoomCodeRedactor _redactor;
     private readonly ILogger<AdjudicateDisconnectGraceHandler> _log;
 
     public AdjudicateDisconnectGraceHandler(
         IRoomRepository rooms,
+        IRoomCodeRedactor redactor,
         ILogger<AdjudicateDisconnectGraceHandler> log)
     {
         _rooms = rooms;
+        _redactor = redactor;
         _log = log;
     }
 
@@ -51,7 +54,11 @@ public sealed partial class AdjudicateDisconnectGraceHandler
 
         // Sprint5.TODO: emit OpponentAbandoned to the still-present player
         // and flip a flag so their UI unlocks ClaimVictory.
-        LogGraceElapsed(_log, cmd.RoomCode, cmd.Role);
+        // Redact the room code before logging (docs/security.md §8).
+        // Pre-computing the string keeps CA1873 happy; the SHA-256 cost
+        // is negligible on this cold (per-grace-elapsed) path.
+        var roomRef = _redactor.Redact(cmd.RoomCode);
+        LogGraceElapsed(_log, roomRef, cmd.Role);
 
         return AppResult<bool>.Ok(true);
     }
@@ -59,6 +66,6 @@ public sealed partial class AdjudicateDisconnectGraceHandler
     [LoggerMessage(
         EventId = 1,
         Level = LogLevel.Information,
-        Message = "Disconnect grace elapsed for room {RoomCode} role {Role} — Sprint 5 will emit OpponentAbandoned")]
-    private static partial void LogGraceElapsed(ILogger logger, string roomCode, Role role);
+        Message = "Disconnect grace elapsed for room {RoomRef} role {Role} — Sprint 5 will emit OpponentAbandoned")]
+    private static partial void LogGraceElapsed(ILogger logger, string roomRef, Role role);
 }
