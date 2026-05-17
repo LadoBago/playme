@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { t, tf } from '@playme/shared';
 
 interface BoardProps {
@@ -42,10 +42,13 @@ export function Board({
   return (
     <div
       className="board"
-      style={{
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-      }}
+      style={
+        {
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+          '--board-cells': cols,
+        } as CSSProperties
+      }
       role="grid"
       aria-label={t('match.board.label')}
     >
