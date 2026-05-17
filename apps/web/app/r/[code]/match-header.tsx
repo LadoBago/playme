@@ -1,6 +1,7 @@
 'use client';
 
 import { type RoomDto, type Role, t } from '@playme/shared';
+import { findGameModule } from '@/features/games/registry';
 
 interface MatchHeaderProps {
   room: RoomDto;
@@ -11,13 +12,26 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponentPlayer = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
 
+  // Resolve side identifiers through the per-game module so the platform
+  // header never has to know "x"/"o" vs "red"/"yellow" (CLAUDE.md §7
+  // "Platform thinness"). Unknown game → no side label, never the raw
+  // identifier.
+  const getSideLabel = findGameModule(room.gameId)?.getSideLabel;
+  const mySideLabel = myPlayer?.side != null ? (getSideLabel?.(myPlayer.side) ?? null) : null;
+  const opponentSideLabel =
+    opponentPlayer?.side != null ? (getSideLabel?.(opponentPlayer.side) ?? null) : null;
+
   return (
     <div className="match-meta">
-      <PlayerCard label={t('match.you')} name={myPlayer?.displayName ?? '?'} side={myPlayer?.side ?? null} />
+      <PlayerCard
+        label={t('match.you')}
+        name={myPlayer?.displayName ?? '?'}
+        sideLabel={mySideLabel}
+      />
       <PlayerCard
         label={t('match.opponent')}
         name={opponentPlayer?.displayName ?? '…'}
-        side={opponentPlayer?.side ?? null}
+        sideLabel={opponentSideLabel}
       />
     </div>
   );
@@ -26,18 +40,18 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
 function PlayerCard({
   label,
   name,
-  side,
+  sideLabel,
 }: {
   label: string;
   name: string;
-  side: string | null;
+  sideLabel: string | null;
 }) {
   return (
     <div className="match-meta__player">
       <span className="match-meta__role">{label}</span>
       <span className="match-meta__name">
         {name}
-        {side ? ` · ${side.toUpperCase()}` : ''}
+        {sideLabel ? ` · ${sideLabel}` : ''}
       </span>
     </div>
   );

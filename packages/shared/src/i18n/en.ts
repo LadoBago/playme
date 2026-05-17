@@ -29,6 +29,8 @@ export const en = {
     'Players alternate placing X and O on a 3×3 grid. The first to align three of their marks horizontally, vertically, or diagonally wins. If the board fills with no line, the game is a draw. X always moves first.',
   'games.tictactoe.sideX': 'X (moves first)',
   'games.tictactoe.sideO': 'O',
+  'games.tictactoe.shortSideX': 'X',
+  'games.tictactoe.shortSideO': 'O',
 
   'games.connect4.name': 'Connect 4',
   'games.connect4.shortDescription':
@@ -37,6 +39,8 @@ export const en = {
     'Players alternate dropping red and yellow discs into a 7-column, 6-row board. Each disc falls to the lowest empty cell in the chosen column. The first to align four of their discs — horizontally, vertically, or diagonally — wins. If the board fills with no line, the game is a draw. Red always moves first.',
   'games.connect4.sideRed': 'Red (moves first)',
   'games.connect4.sideYellow': 'Yellow',
+  'games.connect4.shortSideRed': 'Red',
+  'games.connect4.shortSideYellow': 'Yellow',
 
   // --- Configure page ---
   'configure.title': 'Configure room',
