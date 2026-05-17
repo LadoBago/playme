@@ -365,6 +365,9 @@ textarea {
   width: min(360px, 100%);
   margin-inline: auto;
   aspect-ratio: 1;
+  /* Glyph scales with grid density: ~2.2rem at 3×3, half at 6×6, third at
+     9×9. Cells inherit; setting it on .board__cell would defeat scaling. */
+  font-size: calc(2.2rem * 3 / var(--board-cells, 3));
 }
 
 .board__cell {
@@ -374,7 +377,6 @@ textarea {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   border-radius: 8px;
-  font-size: 2.2rem;
   font-weight: 600;
   color: var(--fg);
   cursor: pointer;
