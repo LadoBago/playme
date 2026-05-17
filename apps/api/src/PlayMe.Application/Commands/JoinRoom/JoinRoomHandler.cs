@@ -1,6 +1,7 @@
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
+using PlayMe.Application.RateLimiting;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.JoinRoom;
@@ -18,17 +19,20 @@ public sealed class JoinRoomHandler
     private readonly IPlayerIdGenerator _playerIds;
     private readonly IGameModuleRegistry _games;
     private readonly IClock _clock;
+    private readonly IRateLimiter _rateLimiter;
 
     public JoinRoomHandler(
         IRoomRepository rooms,
         IPlayerIdGenerator playerIds,
         IGameModuleRegistry games,
-        IClock clock)
+        IClock clock,
+        IRateLimiter rateLimiter)
     {
         _rooms = rooms;
         _playerIds = playerIds;
         _games = games;
         _clock = clock;
+        _rateLimiter = rateLimiter;
     }
 
     public async Task<AppResult<JoinRoomResult>> HandleAsync(
@@ -41,6 +45,17 @@ public sealed class JoinRoomHandler
         catch (ArgumentException)
         {
             return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomNotFound);
+        }
+
+        // Per-room-code rate limit before the room lock (docs/security.md
+        // §5: 10 joins/hr per code). Complements the per-IP middleware
+        // policy on the controller — together they keep a leaked invite
+        // link from being machine-joined from a botnet and a single IP
+        // from cycling room codes.
+        if (!await _rateLimiter.TryAcquireAsync(
+                JoinRateLimitPolicies.ByCode, code.Value, ct))
+        {
+            return AppResult<JoinRoomResult>.Fail(PlatformErrors.RateExceeded);
         }
 
         try
