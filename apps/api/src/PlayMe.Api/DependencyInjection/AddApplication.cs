@@ -11,6 +11,7 @@ using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Games.Connect4;
 using PlayMe.Application.Games.TicTacToe3x3;
 using PlayMe.Application.Games.TicTacToe6x6;
+using PlayMe.Application.Games.TicTacToe9x9;
 using PlayMe.Application.Queries.GetRoom;
 using PlayMe.Application.Time;
 
@@ -44,6 +45,7 @@ public static class ApplicationServiceCollectionExtensions
         // Per-game move parsers.
         services.AddSingleton<IGameMoveParser, TicTacToeMoveParser>();
         services.AddSingleton<IGameMoveParser, TicTacToe6x6MoveParser>();
+        services.AddSingleton<IGameMoveParser, TicTacToe9x9MoveParser>();
         services.AddSingleton<IGameMoveParser, Connect4MoveParser>();
 
         return services;

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Domain.Games.Connect4;
 using PlayMe.Domain.Games.TicTacToe3x3;
 using PlayMe.Domain.Games.TicTacToe6x6;
+using PlayMe.Domain.Games.TicTacToe9x9;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Api.DependencyInjection;
@@ -17,6 +18,7 @@ public static class DomainServiceCollectionExtensions
     {
         services.AddSingleton<IGameModule, TicTacToe3x3GameModule>();
         services.AddSingleton<IGameModule, TicTacToe6x6GameModule>();
+        services.AddSingleton<IGameModule, TicTacToe9x9GameModule>();
         services.AddSingleton<IGameModule, Connect4GameModule>();
         return services;
     }

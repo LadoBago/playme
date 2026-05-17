@@ -32,6 +32,11 @@ export const en = {
     'Bigger board, longer lines. First to align four Xs or Os wins.',
   'games.tictactoe-6x6.rules':
     'Players alternate placing X and O on a 6×6 grid. The first to align at least four of their marks horizontally, vertically, or diagonally wins — a run of five or six in a row also wins. If the board fills with no line, the game is a draw. X always moves first.',
+  'games.tictactoe-9x9.name': 'Tic-Tac-Toe 9×9',
+  'games.tictactoe-9x9.shortDescription':
+    'Five-in-a-row on a 9×9 grid. Place Xs and Os; first to align at least five wins.',
+  'games.tictactoe-9x9.rules':
+    'Players alternate placing X and O on a 9×9 grid. The first to align at least five of their marks consecutively — horizontally, vertically, or diagonally — wins. Longer runs (six, seven, eight, or nine in a row) also count as a single win. If the board fills with no line, the game is a draw. X always moves first.',
   'games.tictactoe.sideX': 'X (moves first)',
   'games.tictactoe.sideO': 'O',
   'games.tictactoe.shortSideX': 'X',
