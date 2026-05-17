@@ -1,6 +1,7 @@
 import type { GameModule, GameView } from './types';
 import { Connect4View, connect4SideLabel } from './connect4/view';
 import { TicTacToe3x3View, tttSideLabel } from './tictactoe-3x3/view';
+import { TicTacToe6x6View, tictactoe6x6SideLabel } from './tictactoe-6x6/view';
 
 /**
  * Game-id → module. Adding a new game (Sprints 3–4) is one line here
@@ -11,6 +12,7 @@ import { TicTacToe3x3View, tttSideLabel } from './tictactoe-3x3/view';
  */
 const MODULES = new Map<string, GameModule>([
   ['tictactoe-3x3', { View: TicTacToe3x3View, getSideLabel: tttSideLabel }],
+  ['tictactoe-6x6', { View: TicTacToe6x6View, getSideLabel: tictactoe6x6SideLabel }],
   ['connect4', { View: Connect4View, getSideLabel: connect4SideLabel }],
 ]);
 

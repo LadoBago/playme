@@ -21,6 +21,15 @@ describe('findGame', () => {
     expect(entry?.defaultHostSide).toBe('red');
   });
 
+  it('finds Tic-Tac-Toe 6×6 by its id with X/O sides on a 6×6 board', () => {
+    const entry = findGame('tictactoe-6x6');
+    expect(entry).toBeDefined();
+    expect(entry?.rows).toBe(6);
+    expect(entry?.cols).toBe(6);
+    expect(entry?.sides.map((s) => s.id)).toEqual(['x', 'o']);
+    expect(entry?.defaultHostSide).toBe('x');
+  });
+
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });
