@@ -30,6 +30,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     private readonly IConnectionMultiplexer _redis;
     private readonly IGameModuleRegistry _games;
     private readonly IClock _clock;
+    private readonly IRoomCodeRedactor _redactor;
     private readonly ILogger<RedisRoomRepository> _logger;
     private readonly JsonSerializerOptions _json;
 
@@ -37,11 +38,13 @@ public sealed partial class RedisRoomRepository : IRoomRepository
         IConnectionMultiplexer redis,
         IGameModuleRegistry games,
         IClock clock,
+        IRoomCodeRedactor redactor,
         ILogger<RedisRoomRepository> logger)
     {
         _redis = redis;
         _games = games;
         _clock = clock;
+        _redactor = redactor;
         _logger = logger;
         _json = PlayMeJsonOptions.CreateDefault();
     }
@@ -109,7 +112,11 @@ public sealed partial class RedisRoomRepository : IRoomRepository
 
         if (!await TryAcquireAsync(db, lockKey, lockToken, acquireWait, _clock, ct))
         {
-            LogRoomLockAcquireTimeout(_logger, code.Value, acquireWait.TotalMilliseconds);
+            // Redact the room code before logging (docs/security.md §8).
+            // Pre-computing the string keeps CA1873 happy; lock-acquire
+            // timeouts are rare, so the SHA-256 cost is negligible.
+            var roomRef = _redactor.Redact(code.Value);
+            LogRoomLockAcquireTimeout(_logger, roomRef, acquireWait.TotalMilliseconds);
             throw new LockTimeoutException(code.Value);
         }
 
@@ -177,7 +184,7 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     [LoggerMessage(
         EventId = 1000,
         Level = LogLevel.Warning,
-        Message = "RoomLock acquire timeout for {RoomCode} after {BudgetMs}ms")]
+        Message = "RoomLock acquire timeout for {RoomRef} after {BudgetMs}ms")]
     private static partial void LogRoomLockAcquireTimeout(
-        ILogger logger, string roomCode, double budgetMs);
+        ILogger logger, string roomRef, double budgetMs);
 }

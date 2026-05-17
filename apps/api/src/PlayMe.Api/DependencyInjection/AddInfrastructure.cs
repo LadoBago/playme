@@ -40,6 +40,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddSingleton<IRoomRepository, RedisRoomRepository>();
         services.AddSingleton<IRoomCodeGenerator, RoomCodeGenerator>();
+        services.AddSingleton<IRoomCodeRedactor, RoomCodeRedactor>();
         services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
