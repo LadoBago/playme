@@ -768,11 +768,24 @@ function ShareLink({ url }: { url: string }) {
 
   const handleShare = () => {
     void (async () => {
+      // Recipient apps disagree about the Web Share API payload. Viber,
+      // for example, reads only the `url` field and silently drops
+      // `title` / `text`. Embedding the URL inside the `text` field and
+      // omitting the standalone `url` keeps the invite message intact
+      // across recipients (Viber, Mail, Telegram, WhatsApp, iOS Messages
+      // all auto-link URLs they find inside text).
+      const variants: I18nKey[] = [
+        'join.shareLink.shareText.1',
+        'join.shareLink.shareText.2',
+        'join.shareLink.shareText.3',
+        'join.shareLink.shareText.4',
+      ];
+      // Math.random is intentional — UI variety, not security.
+      const key = variants[Math.floor(Math.random() * variants.length)] as I18nKey;
       try {
         await navigator.share({
           title: t('join.shareLink.shareTitle'),
-          text: t('join.shareLink.shareText'),
-          url,
+          text: `${t(key)} ${url}`,
         });
       } catch (e) {
         // User dismissed the sheet — AbortError is expected; no other
