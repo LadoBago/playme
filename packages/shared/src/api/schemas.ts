@@ -15,6 +15,7 @@ import type {
   ProblemDetailsResponse,
   RoomDto,
   RoomSessionDto,
+  ScoreDto,
 } from './types';
 
 export const RoleSchema = z.enum(['host', 'challenger']);
@@ -67,6 +68,12 @@ export const MatchSchema = z.object({
   outcome: OutcomeSchema.optional(),
 });
 
+export const ScoreSchema = z.object({
+  host: z.number().int().nonnegative(),
+  challenger: z.number().int().nonnegative(),
+  draws: z.number().int().nonnegative(),
+});
+
 export const RoomSchema = z.object({
   code: z.string(),
   gameId: z.string(),
@@ -78,6 +85,7 @@ export const RoomSchema = z.object({
   challengerConnected: z.boolean(),
   currentMatch: MatchSchema.optional(),
   createdAt: z.string(),
+  score: ScoreSchema,
 });
 
 export const RoomSessionSchema = z.object({
@@ -104,6 +112,7 @@ type _AssertOutcome = z.infer<typeof OutcomeSchema> extends OutcomeDto ? true : 
 type _AssertPlayer = z.infer<typeof PlayerSchema> extends PlayerDto ? true : false;
 type _AssertClock = z.infer<typeof ClockSnapshotSchema> extends ClockSnapshotDto ? true : false;
 type _AssertMatch = z.infer<typeof MatchSchema> extends MatchDto ? true : false;
+type _AssertScore = z.infer<typeof ScoreSchema> extends ScoreDto ? true : false;
 type _AssertRoom = z.infer<typeof RoomSchema> extends RoomDto ? true : false;
 type _AssertRoomSession = z.infer<typeof RoomSessionSchema> extends RoomSessionDto ? true : false;
 type _AssertMove = z.infer<typeof MoveSchema> extends MoveDto ? true : false;
@@ -117,6 +126,7 @@ export type _SchemaDriftGuards = [
   _AssertPlayer,
   _AssertClock,
   _AssertMatch,
+  _AssertScore,
   _AssertRoom,
   _AssertRoomSession,
   _AssertMove,

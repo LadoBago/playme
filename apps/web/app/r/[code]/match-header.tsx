@@ -1,6 +1,6 @@
 'use client';
 
-import { type RoomDto, type Role, t } from '@playme/shared';
+import { type RoomDto, type Role, t, tf } from '@playme/shared';
 import { findGameModule } from '@/features/games/registry';
 
 interface MatchHeaderProps {
@@ -21,6 +21,12 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
   const opponentSideLabel =
     opponentPlayer?.side != null ? (getSideLabel?.(opponentPlayer.side) ?? null) : null;
 
+  // Score is always rendered from the viewer's perspective so the left
+  // number sits under the left card. When role is null (initial hydrate)
+  // we fall back to host-on-left.
+  const myWins = role === 'challenger' ? room.score.challenger : room.score.host;
+  const opponentWins = role === 'challenger' ? room.score.host : room.score.challenger;
+
   return (
     <div className="match-meta">
       <PlayerCard
@@ -28,11 +34,39 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
         name={myPlayer?.displayName ?? '?'}
         sideLabel={mySideLabel}
       />
+      <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={room.score.draws} />
       <PlayerCard
         label={t('match.opponent')}
         name={opponentPlayer?.displayName ?? '…'}
         sideLabel={opponentSideLabel}
       />
+    </div>
+  );
+}
+
+function SeriesScore({
+  myWins,
+  opponentWins,
+  draws,
+}: {
+  myWins: number;
+  opponentWins: number;
+  draws: number;
+}) {
+  return (
+    <div className="match-score" aria-label={t('match.score.label')}>
+      <span className="match-score__counts">
+        {myWins}
+        <span className="match-score__dash" aria-hidden="true">
+          {' – '}
+        </span>
+        {opponentWins}
+      </span>
+      {draws > 0 ? (
+        <span className="match-score__draws">
+          {draws === 1 ? t('match.score.draws.one') : tf('match.score.draws.other', { count: draws })}
+        </span>
+      ) : null}
     </div>
   );
 }

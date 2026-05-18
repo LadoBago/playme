@@ -306,6 +306,33 @@ textarea {
   font-weight: 600;
 }
 
+/* Centred series scoreboard between the two player cards. Reads from
+ * the viewer's perspective: left number = you, right number = opponent.
+ * Draws subtitle only appears when draws > 0 so the slot doesn't dilute
+ * a zero-draw series. */
+.match-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 4.5rem;
+}
+
+.match-score__counts {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-score__dash {
+  color: var(--fg-muted);
+  margin: 0 0.15rem;
+}
+
+.match-score__draws {
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+
 .match-turn {
   font-size: 0.95rem;
   padding: 0.4rem 0.8rem;
