@@ -114,4 +114,23 @@ public sealed class Match
 
         Outcome = new Resign(resigningSide);
     }
+
+    /// <summary>
+    /// End the match because the reconnect-grace hard cutoff elapsed
+    /// (docs/platform-and-games.md §1 #7). Records which side lost so the
+    /// outcome reads correctly for both clients.
+    /// </summary>
+    public void ApplyDisconnect(string losingSide, DateTimeOffset now)
+    {
+        if (IsEnded)
+        {
+            throw new DomainException("Cannot apply a disconnect to a finished match.");
+        }
+
+        // Mirror ApplyTimeout in advancing the clock to `now` so the
+        // frozen snapshot rendered post-match shows the abandon moment,
+        // not an earlier last-move timestamp.
+        Clock = Clock.AfterTimeout(now);
+        Outcome = new Disconnect(losingSide);
+    }
 }

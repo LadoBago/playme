@@ -126,7 +126,6 @@ Semantic index of all Hub methods. **Literal C# signatures live in `RoomHub.cs`*
 | `JoinRoom` | On SignalR connect; room in `WaitingForOpponent`, `InProgress`, `Ended`, or `AwaitingRematch` | Registers presence; reattaches via session cookie | `OpponentJoined` (challenger's first join), `OpponentReconnected` (reconnect during `InProgress`) |
 | `SubmitMove` | Room `InProgress`; caller is active player; effective clock > 0 | Validates move via Domain rules; applies; flips turn; reschedules timeout | `MoveAccepted` (both), `MoveRejected` (caller only), `MatchEnded` if win/draw |
 | `Resign` | Room `InProgress`; caller is in the match | Ends match | `MatchEnded(Outcome.Resign(caller))` |
-| `ClaimVictory` | Room `InProgress`; opponent disconnected; reconnect grace expired | Ends match | `MatchEnded(Outcome.Disconnect(opponent))` |
 | `OfferRematch` | Room `Ended` (creates offer) OR `AwaitingRematch` from responder (implicit accept) | Records offer or starts new match | `RematchOffered`, or `MatchStarted` on implicit accept |
 | `AcceptRematch` | Room `AwaitingRematch`; caller is responder (not offerer) | Starts new match with swapped sides | `MatchStarted` |
 | `RejectRematch` | Room `AwaitingRematch`; caller is responder | Closes the room; rejector auto-routed | `RematchDeclined` to offerer |

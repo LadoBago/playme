@@ -35,13 +35,14 @@ export const SideSelectionModeSchema = z.enum([
   'challengerPicks',
 ]);
 
-export const OutcomeKindSchema = z.enum(['win', 'draw', 'resign', 'timeout']);
+export const OutcomeKindSchema = z.enum(['win', 'draw', 'resign', 'timeout', 'disconnect']);
 
 export const OutcomeSchema = z.object({
   kind: OutcomeKindSchema,
   winningSide: z.string().optional(),
   resigningSide: z.string().optional(),
   timedOutSide: z.string().optional(),
+  losingSide: z.string().optional(),
 });
 
 export const PlayerSchema = z.object({

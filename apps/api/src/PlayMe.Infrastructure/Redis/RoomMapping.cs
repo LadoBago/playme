@@ -86,6 +86,7 @@ internal static class RoomMapping
         Draw => new OutcomeRecord("draw", WinningSide: null, ResigningSide: null, TimedOutSide: null),
         Resign r => new OutcomeRecord("resign", WinningSide: null, ResigningSide: r.ResigningSide, TimedOutSide: null),
         Domain.Platform.Timeout t => new OutcomeRecord("timeout", WinningSide: null, ResigningSide: null, TimedOutSide: t.TimedOutSide),
+        Disconnect d => new OutcomeRecord("disconnect", WinningSide: null, ResigningSide: null, TimedOutSide: null, LosingSide: d.LosingSide),
         _ => throw new InvalidOperationException($"Unsupported outcome '{outcome.GetType().Name}'."),
     };
 
@@ -98,6 +99,8 @@ internal static class RoomMapping
             record.ResigningSide ?? throw new InvalidOperationException("Resign outcome missing resigningSide.")),
         "timeout" => new Domain.Platform.Timeout(
             record.TimedOutSide ?? throw new InvalidOperationException("Timeout outcome missing timedOutSide.")),
+        "disconnect" => new Disconnect(
+            record.LosingSide ?? throw new InvalidOperationException("Disconnect outcome missing losingSide.")),
         _ => throw new InvalidOperationException($"Unknown outcome kind '{record.Kind}'."),
     };
 }

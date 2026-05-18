@@ -19,13 +19,14 @@ export type Role = 'host' | 'challenger';
 
 export type SideSelectionMode = 'hostPicksSpecific' | 'random' | 'challengerPicks';
 
-export type OutcomeKind = 'win' | 'draw' | 'resign' | 'timeout';
+export type OutcomeKind = 'win' | 'draw' | 'resign' | 'timeout' | 'disconnect';
 
 export interface OutcomeDto {
   kind: OutcomeKind;
   winningSide?: string;
   resigningSide?: string;
   timedOutSide?: string;
+  losingSide?: string;
 }
 
 export interface PlayerDto {

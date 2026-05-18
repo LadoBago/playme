@@ -99,6 +99,8 @@ export const en = {
   'match.result.opponentTimedOut': 'Opponent ran out of time.',
   'match.result.youResigned': 'You resigned.',
   'match.result.opponentResigned': 'Opponent resigned.',
+  'match.result.youDisconnected': 'You were disconnected.',
+  'match.result.opponentDisconnected': 'Opponent was disconnected.',
   'match.resign.button': 'Resign',
   'match.resign.confirm.title': 'Resign this match?',
   'match.resign.confirm.body': "You'll lose this match.",

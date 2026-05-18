@@ -106,6 +106,13 @@ public static class RoomMapper
             ResigningSide: null,
             TimedOutSide: t.TimedOutSide),
 
+        Disconnect d => new OutcomeDto(
+            Kind: "disconnect",
+            WinningSide: null,
+            ResigningSide: null,
+            TimedOutSide: null,
+            LosingSide: d.LosingSide),
+
         _ => throw new InvalidOperationException(
             $"Unsupported outcome type {outcome.GetType().Name}."),
     };

@@ -74,8 +74,14 @@ public sealed class PresenceHandlerTests
     }
 
     [Fact]
-    public async Task ReleasePresence_during_InProgress_schedules_grace_and_signals_notification()
+    public async Task ReleasePresence_during_InProgress_signals_disconnect_no_grace_for_OneMin_tier()
     {
+        // TTT 3x3 has DefaultClockBudget = 60s, which sits in the
+        // "≤ 1 min → no grace tier" bucket per docs/platform-and-games.md
+        // §1 #7. The handler must still emit OpponentDisconnected so the
+        // opponent's UI shows the transient banner — but the abandon
+        // grace stays unscheduled (the chess-clock timeout catches the
+        // abandon as Timeout instead).
         var clock = new FakeClock();
         var rooms = new FakeRoomRepository();
         var graces = new RecordingGraceScheduler();
@@ -92,12 +98,7 @@ public sealed class PresenceHandlerTests
 
         result.Succeeded.Should().BeTrue();
         result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
-
-        graces.Scheduled.Should().ContainSingle()
-            .Which.Should().Match<(string Code, Role Role, DateTimeOffset Deadline)>(g =>
-                g.Code == RoomFactory.RoomCodeValue &&
-                g.Role == Role.Host &&
-                g.Deadline == clock.UtcNow + PlatformConstants.DisconnectGrace);
+        graces.Scheduled.Should().BeEmpty();
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
         saved!.HostConnected.Should().BeFalse();

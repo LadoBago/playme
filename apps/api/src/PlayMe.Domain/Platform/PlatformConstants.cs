@@ -10,11 +10,21 @@ namespace PlayMe.Domain.Platform;
 public static class PlatformConstants
 {
     /// <summary>
-    /// Grace window before a SignalR disconnect is treated as an abandon
-    /// (state.md §2.3 / platform-and-games.md §1 #7). The clock keeps
-    /// running through this window — disconnecting does not pause it.
-    /// Sprint 2 schedules the entry; Sprint 5 wires the <c>OpponentAbandoned</c>
-    /// / <c>ClaimVictory</c> reaction on top.
+    /// Tiered abandon-grace window by per-side clock budget
+    /// (docs/platform-and-games.md §1 #7). Returns <c>null</c> for very
+    /// short games where a grace would be a meaningful fraction of the
+    /// clock itself — the chess-clock timeout sweeper catches the abandon
+    /// naturally and emits <c>Outcome.Timeout</c> instead.
+    ///
+    /// Mapping today rests on <see cref="IGameModule.DefaultClockBudget"/>
+    /// since host-selected time limits aren't plumbed through yet. When
+    /// per-room time limits land, callers should switch to the room's
+    /// stored budget; the tier rule itself stays identical.
     /// </summary>
-    public static readonly TimeSpan DisconnectGrace = TimeSpan.FromSeconds(30);
+    public static TimeSpan? GraceForBudget(TimeSpan budget)
+    {
+        if (budget <= TimeSpan.FromMinutes(1)) return null;
+        if (budget <= TimeSpan.FromMinutes(5)) return TimeSpan.FromSeconds(60);
+        return TimeSpan.FromSeconds(90);
+    }
 }

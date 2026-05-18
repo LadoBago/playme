@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PlayMe.Application;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 using PlayMe.Domain.Platform;
@@ -13,17 +14,17 @@ namespace PlayMe.Infrastructure.Scheduling;
 /// <summary>
 /// Mirror of <see cref="RedisTimeoutSweeperService"/> for the
 /// <c>playme:grace</c> sorted set. Each entry encodes
-/// <c>{roomCode}:{role}</c> via <see cref="GraceMemberKey"/>. The
-/// Sprint 2 consumer (<c>AdjudicateDisconnectGraceHandler</c>) is a stub
-/// that logs only — Sprint 5 will replace it with the
-/// <c>OpponentAbandoned</c> emit and the <c>ClaimVictory</c> unlock.
-/// Wiring is in place now so Sprint 5 is a pure addition.
+/// <c>{roomCode}:{role}</c> via <see cref="GraceMemberKey"/>. Fires the
+/// <c>AdjudicateDisconnectGraceHandler</c> under the room lock per
+/// docs/platform-and-games.md §1 #7 and broadcasts <c>MatchEnded</c>
+/// when the handler ended the match.
 /// </summary>
 public sealed partial class RedisDisconnectGraceSweeperService : BackgroundService
 {
     private readonly IConnectionMultiplexer _redis;
     private readonly IServiceScopeFactory _scopes;
     private readonly IRoomRepository _rooms;
+    private readonly IRoomNotifier _notifier;
     private readonly IClock _clock;
     private readonly SweeperOptions _options;
     private readonly ILogger<RedisDisconnectGraceSweeperService> _logger;
@@ -32,6 +33,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         IConnectionMultiplexer redis,
         IServiceScopeFactory scopes,
         IRoomRepository rooms,
+        IRoomNotifier notifier,
         IClock clock,
         IOptions<SweeperOptions> options,
         ILogger<RedisDisconnectGraceSweeperService> logger)
@@ -40,6 +42,7 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         _redis = redis;
         _scopes = scopes;
         _rooms = rooms;
+        _notifier = notifier;
         _clock = clock;
         _options = options.Value;
         _logger = logger;
@@ -120,9 +123,10 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
             return;
         }
 
+        AppResult<AdjudicateDisconnectGraceResult>? result = null;
         try
         {
-            await _rooms.WithLockAsync(
+            result = await _rooms.WithLockAsync(
                 code,
                 _options.LockAcquireBudget,
                 async () =>
@@ -142,6 +146,11 @@ public sealed partial class RedisDisconnectGraceSweeperService : BackgroundServi
         }
 
         await db.SortedSetRemoveAsync(PlayMe.Infrastructure.Redis.RedisKeys.Grace, memberValue);
+
+        if (result is { Succeeded: true, Value: { MatchEnded: true, Room: { } room } })
+        {
+            await _notifier.BroadcastMatchEndedAsync(code, room, ct);
+        }
     }
 
     [LoggerMessage(

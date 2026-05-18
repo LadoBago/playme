@@ -94,7 +94,7 @@ Broadcast to both clients via SignalR unless noted:
 | `RematchAccepted` | `AwaitingRematch` → `InProgress` (new match) | (followed by `MatchStarted`) |
 | `RematchDeclined` | `AwaitingRematch` → `Closed` | sent to the offerer; the rejector is auto-routed to the lobby |
 | `OpponentDisconnected` | a player's SignalR connection drops | sent to the still-connected player |
-| `OpponentAbandoned` | reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7, default 30 s) elapses without reconnect | sent to the still-connected player; unlocks `ClaimVictory()` on their UI |
+| ~~`OpponentAbandoned`~~ | *(removed)* The reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7) is a **hard cutoff**: when it elapses the server auto-ends the match with `Outcome.Disconnect(disconnectedSide)` and emits `MatchEnded` directly — there is no intermediate notice to the still-connected player. |
 | `OpponentReconnected` | dropped player rejoins (before *or after* grace, while match is still `InProgress`) | sent to the still-connected player |
 | `OpponentExited` | a player leaves the room while in `Ended` or `AwaitingRematch` (explicit `ExitRoom()` call or tab-close disconnect — both treated identically) | sent to the still-present player; their UI shows "opponent left" + a manual "Back to lobby" button. Room transitions to `Closed`. |
 | `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | reason |
@@ -105,5 +105,5 @@ Broadcast to both clients via SignalR unless noted:
 - A move is only accepted in `InProgress`.
 - A rematch offer is only accepted in `Ended` and transitions to `AwaitingRematch`.
 - The clock keeps running during `OpponentDisconnected` (platform rule [`platform-and-games.md`](platform-and-games.md) §1 #7).
-- `ClaimVictory()` is valid only when (a) the room is `InProgress`, (b) the opponent is currently disconnected, and (c) the [`platform-and-games.md`](platform-and-games.md) §1 #7 grace has expired (i.e. `OpponentAbandoned` has been emitted). It transitions the match to `Ended` with `Outcome.Disconnect(opponent)`.
+- The reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7) is a server-side hard cutoff: when it elapses, `AdjudicateDisconnectGraceHandler` ends the match with `Outcome.Disconnect(disconnectedSide)`. No client-driven `ClaimVictory` affordance exists.
 - `ExitRoom()` is valid only in `Ended` or `AwaitingRematch`. It transitions the room directly to `Closed` and emits `OpponentExited` to the still-present player. **A tab-close / SignalR disconnect from `Ended` or `AwaitingRematch` is treated identically** — same transition, same event. There is no post-match reconnect grace; the clock isn't running, so there's no fairness reason to wait. (The [`platform-and-games.md`](platform-and-games.md) §1 #7 grace applies only to `InProgress`.) Once `Closed`, the room is non-joinable, all subsequent Hub calls return `ErrorCode.RoomClosed`, and the post-`Ended` TTL (5 min per §1) eventually deletes the Redis state.
