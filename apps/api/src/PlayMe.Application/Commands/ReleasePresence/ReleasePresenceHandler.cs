@@ -1,3 +1,4 @@
+using PlayMe.Application.Abandon;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
@@ -90,16 +91,26 @@ public sealed class ReleasePresenceHandler
                 room.MarkDisconnected(cmd.CallerRole);
                 await _rooms.SaveAsync(room, ct);
 
-                // Schedule the 30s grace check — Sprint 2 just logs on
-                // expiry; Sprint 5 hangs OpponentAbandoned / ClaimVictory
-                // off this same path.
-                if (notifyOpponent)
+                // Conditional abandon-grace per docs/platform-and-games.md §1 #7:
+                // only schedule when (a) it's the disconnected player's turn at
+                // the disconnect moment (mirrors the lazy chess clock — no point
+                // ticking grace when the game is waiting on the still-connected
+                // player), and (b) the disconnected player's effective remaining
+                // clock is strictly greater than the grace window (otherwise the
+                // chess-clock timeout sweeper already catches the abandon as a
+                // Timeout outcome).
+                if (notifyOpponent && room.CurrentMatch is not null
+                    && room.CurrentMatch.Clock.ActivePlayer == cmd.CallerRole)
                 {
-                    await _graces.ScheduleAsync(
-                        code,
-                        cmd.CallerRole,
-                        _clock.UtcNow + PlatformConstants.DisconnectGrace,
-                        ct);
+                    var module = _games.GetModule(room.GameId);
+                    var now = _clock.UtcNow;
+                    var remaining = room.CurrentMatch.Clock.EffectiveRemaining(cmd.CallerRole, now);
+                    var deadline = GraceSchedulingPolicy.ComputeDeadline(
+                        module.DefaultClockBudget, remaining, now);
+                    if (deadline is not null)
+                    {
+                        await _graces.ScheduleAsync(code, cmd.CallerRole, deadline.Value, ct);
+                    }
                 }
 
                 return Effect(

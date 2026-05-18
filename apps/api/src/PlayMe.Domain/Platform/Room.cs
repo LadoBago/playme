@@ -366,6 +366,7 @@ public sealed class Room
         Win w => score.WithWin(RoleForSide(w.WinningSide)),
         Resign r => score.WithWin(OtherRole(RoleForSide(r.ResigningSide))),
         Timeout t => score.WithWin(OtherRole(RoleForSide(t.TimedOutSide))),
+        Disconnect d => score.WithWin(OtherRole(RoleForSide(d.LosingSide))),
         Draw => score.WithDraw(),
         _ => throw new DomainException(
             $"Unsupported outcome type '{outcome.GetType().Name}' for scoring."),

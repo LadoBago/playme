@@ -727,6 +727,16 @@ function OutcomeBanner({
       </div>
     );
   }
+  if (outcome.kind === 'disconnect') {
+    const youLost = mySide != null && outcome.losingSide === mySide;
+    return (
+      <div className={`banner ${youLost ? '' : 'banner--win'}`}>
+        {youLost
+          ? t('match.result.youDisconnected')
+          : t('match.result.opponentDisconnected')}
+      </div>
+    );
+  }
   return null;
 }
 

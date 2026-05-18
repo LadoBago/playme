@@ -100,6 +100,8 @@ export const ka: Record<EnKey, string> = {
   'match.result.opponentTimedOut': 'მოწინააღმდეგის დრო ამოიწურა.',
   'match.result.youResigned': 'შენ დანებდი.',
   'match.result.opponentResigned': 'მოწინააღმდეგე დაგნებდა.',
+  'match.result.youDisconnected': 'შენი კავშირი დაიკარგა.',
+  'match.result.opponentDisconnected': 'მოწინააღმდეგის კავშირი დაიკარგა.',
   'match.resign.button': 'დანებება',
   'match.resign.confirm.title': 'ნამდვილად გსურთ დანებება?',
   'match.resign.confirm.body': 'ამ მატჩს წააგებ.',

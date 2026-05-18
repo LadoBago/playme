@@ -1,3 +1,4 @@
+using PlayMe.Application.Abandon;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
@@ -25,6 +26,7 @@ public sealed class SubmitMoveHandler
     private readonly IClock _clock;
     private readonly IClockService _clockService;
     private readonly ITimeoutScheduler _timeouts;
+    private readonly IDisconnectGraceScheduler _graces;
     private readonly IRateLimiter _rateLimiter;
 
     public SubmitMoveHandler(
@@ -33,6 +35,7 @@ public sealed class SubmitMoveHandler
         IClock clock,
         IClockService clockService,
         ITimeoutScheduler timeouts,
+        IDisconnectGraceScheduler graces,
         IRateLimiter rateLimiter)
     {
         _rooms = rooms;
@@ -40,6 +43,7 @@ public sealed class SubmitMoveHandler
         _clock = clock;
         _clockService = clockService;
         _timeouts = timeouts;
+        _graces = graces;
         _rateLimiter = rateLimiter;
     }
 
@@ -140,6 +144,10 @@ public sealed class SubmitMoveHandler
                     room.EndCurrentMatch();
                     await _rooms.SaveAsync(room, ct);
                     await _timeouts.CancelAsync(code, ct);
+                    // Any pending abandon-grace entry for either role is
+                    // moot once the match has ended.
+                    await _graces.CancelAsync(code, cmd.CallerRole, ct);
+                    await _graces.CancelAsync(code, nextActive, ct);
                 }
                 else
                 {
@@ -150,6 +158,33 @@ public sealed class SubmitMoveHandler
                         code,
                         match.Clock.ActivePlayerDeadline(),
                         ct);
+
+                    // Abandon-grace tracks the active player's turn
+                    // (docs/platform-and-games.md §1 #7). The caller (who
+                    // just moved) is now inactive — drop any grace entry
+                    // standing against them. If the new active player is
+                    // offline, the grace timer now starts; schedule if
+                    // the tier policy allows.
+                    await _graces.CancelAsync(code, cmd.CallerRole, ct);
+
+                    var newActiveConnected = nextActive switch
+                    {
+                        Role.Host => room.HostConnected,
+                        Role.Challenger => room.ChallengerConnected,
+                        _ => true,
+                    };
+                    if (!newActiveConnected)
+                    {
+                        // Their turn just started — their stored remaining
+                        // is what they have for this turn.
+                        var remaining = match.Clock.EffectiveRemaining(nextActive, now);
+                        var deadline = GraceSchedulingPolicy.ComputeDeadline(
+                            module.DefaultClockBudget, remaining, now);
+                        if (deadline is not null)
+                        {
+                            await _graces.ScheduleAsync(code, nextActive, deadline.Value, ct);
+                        }
+                    }
                 }
 
                 return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(

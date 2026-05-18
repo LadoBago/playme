@@ -37,6 +37,7 @@ public sealed class SubmitMoveHandlerRateLimitTests
             clock,
             new ClockService(),
             timeouts,
+            new RecordingGraceScheduler(),
             rateLimiter);
 
         var result = await handler.HandleAsync(
@@ -73,6 +74,7 @@ public sealed class SubmitMoveHandlerRateLimitTests
             clock,
             new ClockService(),
             timeouts,
+            new RecordingGraceScheduler(),
             rateLimiter);
 
         await handler.HandleAsync(
