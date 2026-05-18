@@ -113,3 +113,13 @@ Intentionally unresolved — raise in PRs rather than choosing silently.
 - ~~**On-call channel.**~~ Resolved: email. Sentry and Azure Monitor both route to the address configured in `infra/provision.env` (`ALERT_EMAIL`). Documented in [`security.md`](security.md) §11. Revisit if/when a team forms — Slack or a paging service makes more sense above one operator.
 
 When a decision is made, update the relevant doc in the same PR.
+
+---
+
+## 3. Deferred polish / known follow-ups
+
+In-scope-for-v1 items that have been deliberately postponed but should be picked up before launch (or shortly after). Distinct from §2 "deferred to v2" — these are smaller polishes that don't change scope, just timing. Pick from this list when there's bandwidth between sprints.
+
+- **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform-and-games.md`](platform-and-games.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
+
+When picking up an item, move it under the relevant sprint header or open a feature branch directly.
