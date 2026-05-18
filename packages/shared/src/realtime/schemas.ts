@@ -13,6 +13,8 @@ import type {
   OpponentExitedPayload,
   OpponentJoinedPayload,
   OpponentReconnectedPayload,
+  RematchDeclinedPayload,
+  RematchOfferedPayload,
 } from './events';
 
 export const OpponentJoinedPayloadSchema = z.object({ room: RoomSchema });
@@ -29,6 +31,15 @@ export const OpponentReconnectedPayloadSchema = z.object({
 
 export const OpponentExitedPayloadSchema = z.object({
   role: RoleSchema,
+  room: RoomSchema,
+});
+
+export const RematchOfferedPayloadSchema = z.object({
+  offerer: RoleSchema,
+  room: RoomSchema,
+});
+
+export const RematchDeclinedPayloadSchema = z.object({
   room: RoomSchema,
 });
 
@@ -59,6 +70,16 @@ type _AssertOpponentExited = z.infer<
 > extends OpponentExitedPayload
   ? true
   : false;
+type _AssertRematchOffered = z.infer<
+  typeof RematchOfferedPayloadSchema
+> extends RematchOfferedPayload
+  ? true
+  : false;
+type _AssertRematchDeclined = z.infer<
+  typeof RematchDeclinedPayloadSchema
+> extends RematchDeclinedPayload
+  ? true
+  : false;
 
 export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentJoined,
@@ -68,4 +89,6 @@ export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentDisconnected,
   _AssertOpponentReconnected,
   _AssertOpponentExited,
+  _AssertRematchOffered,
+  _AssertRematchDeclined,
 ];

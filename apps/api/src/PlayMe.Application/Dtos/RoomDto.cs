@@ -19,4 +19,5 @@ public sealed record RoomDto(
     bool ChallengerConnected,
     MatchDto? CurrentMatch,
     DateTimeOffset CreatedAt,
-    ScoreDto Score);
+    ScoreDto Score,
+    Role? RematchOffererRole);
