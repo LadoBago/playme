@@ -98,7 +98,7 @@ Hard rules:
 - API ships with a Dockerfile from day one (local-dev / cloud parity, future container-platform portability).
 - SignalR uses a **Redis backplane** via `Microsoft.AspNetCore.SignalR.StackExchangeRedis`. **No** Azure SignalR Service.
 - Secrets via env vars in App Service / Vercel. Local dev: `appsettings.Development.json` + .NET user-secrets (API), `.env.local` gitignored (web).
-- Cloudflare fronts `api.playme.ge` because Azure App Service Managed Certificate silently fails to provision on `.ge` TLDs. See [`docs/deployment.md`](docs/deployment.md) §6 for the full set of operational gotchas we hit during the v1 cutover.
+- Cloudflare fronts `api.playme.ge` for clean WebSocket proxying (Vercel external rewrites returned 400 on the WS upgrade and broke SignalR) and Tbilisi-proximity edge POPs. CF→origin runs in **Full (strict)** against an Azure-managed cert bound to the hostname via SNI. The original reason for putting CF here — Azure managed cert silently failing on `.ge` TLDs — was resolved on 2026-05-18. See [`docs/deployment.md`](docs/deployment.md) §6 for the full set of operational gotchas we hit during the v1 cutover.
 
 ---
 
