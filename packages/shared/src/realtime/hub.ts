@@ -188,6 +188,18 @@ export class RoomHubClient {
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
+  /**
+   * Call Hub.Resign — voluntary in-progress concession
+   * (docs/platform-and-games.md §1 #8). Caller is expected to have
+   * collected an explicit confirmation before invoking. Resolves with
+   * the post-resign room state; rejects with i18n keys
+   * (errors.move.matchNotInProgress, errors.rate.exceeded, ...).
+   */
+  async resign(): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('Resign');
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
   get state(): signalR.HubConnectionState {
     return this._connection.state;
   }

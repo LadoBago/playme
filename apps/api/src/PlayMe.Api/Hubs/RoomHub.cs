@@ -3,6 +3,7 @@ using PlayMe.Api.Security;
 using PlayMe.Application;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.ReleasePresence;
+using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Dtos;
 using PlayMe.Application.Errors;
@@ -29,17 +30,20 @@ public sealed class RoomHub : Hub
     private readonly RegisterPresenceHandler _registerPresence;
     private readonly ReleasePresenceHandler _releasePresence;
     private readonly SubmitMoveHandler _submitMove;
+    private readonly ResignHandler _resign;
 
     public RoomHub(
         SessionCookieReader sessionReader,
         RegisterPresenceHandler registerPresence,
         ReleasePresenceHandler releasePresence,
-        SubmitMoveHandler submitMove)
+        SubmitMoveHandler submitMove,
+        ResignHandler resign)
     {
         _sessionReader = sessionReader;
         _registerPresence = registerPresence;
         _releasePresence = releasePresence;
         _submitMove = submitMove;
+        _resign = resign;
     }
 
     public override async Task OnConnectedAsync()
@@ -179,6 +183,34 @@ public sealed class RoomHub : Hub
                     new { room = value.Room },
                     Context.ConnectionAborted);
         }
+
+        return value.Room;
+    }
+
+    /// <summary>
+    /// Voluntary in-progress concession (docs/platform-and-games.md §1 #8).
+    /// The caller's confirmation step lives on the web — the server only
+    /// authorizes and applies. Always broadcasts <c>MatchEnded</c>; the
+    /// outcome payload distinguishes <c>resign</c> from a stale-clock
+    /// <c>timeout</c> conversion (see <c>ResignHandler</c>).
+    /// </summary>
+    public async Task<RoomDto> Resign()
+    {
+        var session = RequireSession();
+        var cmd = new ResignCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role);
+
+        var result = await _resign.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        await Clients.Group(GroupName(session.RoomCode.Value))
+            .SendAsync(RoomHubEvents.MatchEnded,
+                new { room = value.Room },
+                Context.ConnectionAborted);
 
         return value.Room;
     }

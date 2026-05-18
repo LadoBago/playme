@@ -13,4 +13,13 @@ public static class SessionRateLimitPolicies
     /// <summary>60 SubmitMove invocations per minute, sustained.</summary>
     public static readonly RateLimitPolicy SubmitMove =
         new("move", Limit: 60, Window: TimeSpan.FromMinutes(1));
+
+    /// <summary>
+    /// Resign is a one-shot action — the limit only exists to absorb
+    /// double-click bursts on the confirm button. The handler is
+    /// idempotent against an already-ended match, so a higher limit
+    /// would still be safe; this just keeps the floor tight.
+    /// </summary>
+    public static readonly RateLimitPolicy Resign =
+        new("resign", Limit: 3, Window: TimeSpan.FromSeconds(10));
 }
