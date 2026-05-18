@@ -51,10 +51,7 @@ public sealed class ReleasePresenceHandler
                 // rather than 401 — the room may have already cleaned the seat.
                 if (stored is null || stored.Id.Value != cmd.CallerPlayerId)
                 {
-                    return AppResult<ReleasePresenceResult>.Ok(
-                        new ReleasePresenceResult(
-                            RoomMapper.ToDto(room, _clock.UtcNow, _games),
-                            OpponentNotificationDue: false));
+                    return Effect(room, PresenceReleaseEffect.None);
                 }
 
                 // Defensive no-op: a SignalR disconnect for a role that's
@@ -73,10 +70,20 @@ public sealed class ReleasePresenceHandler
                 };
                 if (!wasConnected)
                 {
-                    return AppResult<ReleasePresenceResult>.Ok(
-                        new ReleasePresenceResult(
-                            RoomMapper.ToDto(room, _clock.UtcNow, _games),
-                            OpponentNotificationDue: false));
+                    return Effect(room, PresenceReleaseEffect.None);
+                }
+
+                // Tab-close from Ended / AwaitingRematch is identical to
+                // an explicit ExitRoom (state.md §2.4): transition straight
+                // to Closed and let the still-present player see
+                // OpponentExited. The clock isn't running here so there's
+                // no fairness reason to wait for a reconnect.
+                if (room.Status is RoomStatus.Ended or RoomStatus.AwaitingRematch)
+                {
+                    room.MarkDisconnected(cmd.CallerRole);
+                    room.Exit();
+                    await _rooms.SaveAsync(room, ct);
+                    return Effect(room, PresenceReleaseEffect.OpponentExited);
                 }
 
                 var notifyOpponent = room.Status == RoomStatus.InProgress;
@@ -95,10 +102,11 @@ public sealed class ReleasePresenceHandler
                         ct);
                 }
 
-                return AppResult<ReleasePresenceResult>.Ok(
-                    new ReleasePresenceResult(
-                        RoomMapper.ToDto(room, _clock.UtcNow, _games),
-                        OpponentNotificationDue: notifyOpponent));
+                return Effect(
+                    room,
+                    notifyOpponent
+                        ? PresenceReleaseEffect.OpponentDisconnected
+                        : PresenceReleaseEffect.None);
             }, ct);
         }
         catch (LockTimeoutException)
@@ -106,4 +114,10 @@ public sealed class ReleasePresenceHandler
             return AppResult<ReleasePresenceResult>.Fail(PlatformErrors.RoomBusy);
         }
     }
+
+    private AppResult<ReleasePresenceResult> Effect(Room room, PresenceReleaseEffect effect) =>
+        AppResult<ReleasePresenceResult>.Ok(
+            new ReleasePresenceResult(
+                RoomMapper.ToDto(room, _clock.UtcNow, _games),
+                effect));
 }

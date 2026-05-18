@@ -31,6 +31,7 @@ public static class PlatformErrors
     public const string RoomAlreadyJoined = "errors.room.alreadyJoined";
     public const string RoomNotJoinable = "errors.room.notJoinable";
     public const string RoomBusy = "errors.room.busy";
+    public const string ExitNotAllowed = "errors.exit.notAllowed";
 
     // --- Move-time (platform-level only — per-game reject keys live in
     //     each module's own constants class, e.g. TicTacToeErrors) ---

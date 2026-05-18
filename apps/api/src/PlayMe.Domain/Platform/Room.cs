@@ -202,6 +202,29 @@ public sealed class Room
         throw new DomainException($"Side '{side}' is not assigned in this room.");
     }
 
+    /// <summary>
+    /// Transition the room to <see cref="RoomStatus.Closed"/> from
+    /// <see cref="RoomStatus.Ended"/> or <see cref="RoomStatus.AwaitingRematch"/>
+    /// (docs/state.md §2.4). Idempotent on <see cref="RoomStatus.Closed"/> —
+    /// double-clicks of "Back to lobby" / racey tab-close-after-exit both land
+    /// the room in the same place. Returns true if this call performed the
+    /// transition so the caller knows whether to broadcast <c>OpponentExited</c>.
+    /// </summary>
+    public bool Exit()
+    {
+        if (Status == RoomStatus.Closed)
+        {
+            return false;
+        }
+        if (Status is not (RoomStatus.Ended or RoomStatus.AwaitingRematch))
+        {
+            throw new DomainException(
+                $"Cannot exit a room in status {Status}; expected Ended or AwaitingRematch.");
+        }
+        Status = RoomStatus.Closed;
+        return true;
+    }
+
     /// <summary>End the current match and transition the room to Ended.
     /// Updates the series scoreboard from the just-concluded match's outcome
     /// (docs/platform-and-games.md §1 #13).</summary>

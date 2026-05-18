@@ -106,6 +106,7 @@ export const ka: Record<EnKey, string> = {
   'match.resign.confirm.yes': 'დანებება',
   'match.resign.confirm.cancel': 'გაუქმება',
   'match.backToLobby': 'მთავარ გვერდზე დაბრუნება',
+  'match.opponentLeft': 'მოწინააღმდეგე გავიდა.',
   'match.score.label': 'ანგარიში',
   'match.score.draws.one': '1 ფრე',
   'match.score.draws.other': '{count} ფრე',
@@ -150,4 +151,5 @@ export const ka: Record<EnKey, string> = {
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',
   'errors.rate.exceeded': 'მეტისმეტად სწრაფად ცდილობ. დაიცადე და სცადე თავიდან.',
+  'errors.exit.notAllowed': 'ახლა გასვლა შეუძლებელია.',
 };

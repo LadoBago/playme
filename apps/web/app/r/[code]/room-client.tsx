@@ -92,6 +92,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       },
       onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
+      onOpponentExited: ({ room: r }) => setRoom(r),
       onReconnecting: () => setConnectionStatus('reconnecting'),
       onReconnected: () => {
         // Transport is back — re-call JoinRoom so the server records the
@@ -206,6 +207,22 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     }
   }, []);
 
+  // ExitRoom is idempotent server-side (already-Closed returns success).
+  // If the hub call fails for some other reason — bad state, rate limit —
+  // we surface the error and stay; the user can retry. The Promise is
+  // returned so MatchView can await before its router.push.
+  const handleExit = useCallback(async (): Promise<void> => {
+    setError(null);
+    try {
+      const updated = await hubRef.current?.exitRoom();
+      if (updated) setRoom(updated);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'errors.unknown';
+      setError(t(message as I18nKey));
+      throw e;
+    }
+  }, []);
+
   if (!game) {
     return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
   }
@@ -237,6 +254,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       role={role}
       onSubmitMove={handleSubmitMove}
       onResign={handleResign}
+      onExit={handleExit}
       error={error}
       connectionStatus={connectionStatus}
     />
@@ -248,6 +266,7 @@ interface MatchViewProps {
   role: Role | null;
   onSubmitMove: (payload: unknown) => void;
   onResign: () => Promise<void>;
+  onExit: () => Promise<void>;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
 }
@@ -257,6 +276,7 @@ function MatchView({
   role,
   onSubmitMove,
   onResign,
+  onExit,
   error,
   connectionStatus,
 }: MatchViewProps) {
@@ -271,6 +291,7 @@ function MatchView({
 
   const [confirmResignOpen, setConfirmResignOpen] = useState(false);
   const [resignPending, setResignPending] = useState(false);
+  const [exitPending, setExitPending] = useState(false);
 
   const handleConfirmResign = useCallback(() => {
     setResignPending(true);
@@ -285,6 +306,22 @@ function MatchView({
       }
     })();
   }, [onResign]);
+
+  // Back to lobby: tell the server we're leaving (so the other player
+  // gets OpponentExited cleanly and the room moves to Closed) before
+  // navigating away. If the hub call fails, the error banner surfaces;
+  // we don't navigate in that case so the user can retry.
+  const handleBackToLobby = useCallback(() => {
+    setExitPending(true);
+    void (async () => {
+      try {
+        await onExit();
+        router.push('/');
+      } catch {
+        setExitPending(false);
+      }
+    })();
+  }, [onExit, router]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
@@ -363,12 +400,17 @@ function MatchView({
         </div>
       ) : null}
 
+      {room.status === 'closed' ? (
+        <div className="banner">{t('match.opponentLeft')}</div>
+      ) : null}
+
       {matchEnded ? (
         <div className="match-controls">
           <button
             type="button"
             className="button-ghost"
-            onClick={() => router.push('/')}
+            onClick={handleBackToLobby}
+            disabled={exitPending}
           >
             {t('match.backToLobby')}
           </button>

@@ -4,6 +4,7 @@ using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 using PlayMe.Application.Commands.AdjudicateTimeout;
 using PlayMe.Application.Commands.CreateRoom;
+using PlayMe.Application.Commands.ExitRoom;
 using PlayMe.Application.Commands.JoinRoom;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.ReleasePresence;
@@ -35,6 +36,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ReleasePresenceHandler>();
         services.AddScoped<SubmitMoveHandler>();
         services.AddScoped<ResignHandler>();
+        services.AddScoped<ExitRoomHandler>();
         services.AddScoped<AdjudicateTimeoutHandler>();
         services.AddScoped<AdjudicateDisconnectGraceHandler>();
 

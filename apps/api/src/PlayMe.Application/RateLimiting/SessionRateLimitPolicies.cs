@@ -22,4 +22,11 @@ public static class SessionRateLimitPolicies
     /// </summary>
     public static readonly RateLimitPolicy Resign =
         new("resign", Limit: 3, Window: TimeSpan.FromSeconds(10));
+
+    /// <summary>
+    /// ExitRoom is one-shot ("Back to lobby" click). Idempotent against an
+    /// already-Closed room, but the limit keeps a flood off the lock path.
+    /// </summary>
+    public static readonly RateLimitPolicy ExitRoom =
+        new("exit", Limit: 3, Window: TimeSpan.FromSeconds(10));
 }
