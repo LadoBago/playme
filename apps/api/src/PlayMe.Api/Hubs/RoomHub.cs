@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.Security;
 using PlayMe.Application;
+using PlayMe.Application.Commands.ExitRoom;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
@@ -31,19 +32,22 @@ public sealed class RoomHub : Hub
     private readonly ReleasePresenceHandler _releasePresence;
     private readonly SubmitMoveHandler _submitMove;
     private readonly ResignHandler _resign;
+    private readonly ExitRoomHandler _exitRoom;
 
     public RoomHub(
         SessionCookieReader sessionReader,
         RegisterPresenceHandler registerPresence,
         ReleasePresenceHandler releasePresence,
         SubmitMoveHandler submitMove,
-        ResignHandler resign)
+        ResignHandler resign,
+        ExitRoomHandler exitRoom)
     {
         _sessionReader = sessionReader;
         _registerPresence = registerPresence;
         _releasePresence = releasePresence;
         _submitMove = submitMove;
         _resign = resign;
+        _exitRoom = exitRoom;
     }
 
     public override async Task OnConnectedAsync()
@@ -84,12 +88,26 @@ public sealed class RoomHub : Hub
             var cmd = new ReleasePresenceCommand(
                 session.RoomCode.Value, session.PlayerId.Value, session.Role);
             var result = await _releasePresence.HandleAsync(cmd, CancellationToken.None);
-            if (result.Succeeded && result.Value!.OpponentNotificationDue)
+            if (result.Succeeded)
             {
-                await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-                    .SendAsync(RoomHubEvents.OpponentDisconnected,
-                        new { role = session.Role.ToString() },
-                        CancellationToken.None);
+                var value = result.Value!;
+                switch (value.Effect)
+                {
+                    case PresenceReleaseEffect.OpponentDisconnected:
+                        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                            .SendAsync(RoomHubEvents.OpponentDisconnected,
+                                new { role = session.Role },
+                                CancellationToken.None);
+                        break;
+                    case PresenceReleaseEffect.OpponentExited:
+                        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                            .SendAsync(RoomHubEvents.OpponentExited,
+                                new { role = session.Role, room = value.Room },
+                                CancellationToken.None);
+                        break;
+                    case PresenceReleaseEffect.None:
+                        break;
+                }
             }
         }
         await base.OnDisconnectedAsync(exception);
@@ -141,7 +159,7 @@ public sealed class RoomHub : Hub
         {
             await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
                 .SendAsync(RoomHubEvents.OpponentReconnected,
-                    new { role = session.Role.ToString(), room = value.Room },
+                    new { role = session.Role, room = value.Room },
                     Context.ConnectionAborted);
         }
 
@@ -211,6 +229,39 @@ public sealed class RoomHub : Hub
             .SendAsync(RoomHubEvents.MatchEnded,
                 new { room = value.Room },
                 Context.ConnectionAborted);
+
+        return value.Room;
+    }
+
+    /// <summary>
+    /// Voluntary post-match exit (docs/state.md §2.4). Valid in
+    /// <see cref="Domain.Platform.RoomStatus.Ended"/> or
+    /// <see cref="Domain.Platform.RoomStatus.AwaitingRematch"/>; moves the
+    /// room to <see cref="Domain.Platform.RoomStatus.Closed"/> and notifies
+    /// the still-present player via <c>OpponentExited</c>. Idempotent on
+    /// <c>Closed</c> (no broadcast) so the "Back to lobby" button is safe
+    /// to click after the opponent already exited.
+    /// </summary>
+    public async Task<RoomDto> ExitRoom()
+    {
+        var session = RequireSession();
+        var cmd = new ExitRoomCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role);
+
+        var result = await _exitRoom.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        if (value.Transitioned)
+        {
+            await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                .SendAsync(RoomHubEvents.OpponentExited,
+                    new { role = session.Role, room = value.Room },
+                    Context.ConnectionAborted);
+        }
 
         return value.Room;
     }

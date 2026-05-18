@@ -105,6 +105,7 @@ export const en = {
   'match.resign.confirm.yes': 'Resign',
   'match.resign.confirm.cancel': 'Cancel',
   'match.backToLobby': 'Back to lobby',
+  'match.opponentLeft': 'Opponent left.',
   'match.score.label': 'Series',
   'match.score.draws.one': '1 draw',
   'match.score.draws.other': '{count} draws',
@@ -149,6 +150,7 @@ export const en = {
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',
   'errors.rate.exceeded': 'You’re going too fast. Wait a moment and try again.',
+  'errors.exit.notAllowed': "Can't exit right now.",
 } as const;
 
 export type EnKey = keyof typeof en;

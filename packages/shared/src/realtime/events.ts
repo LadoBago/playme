@@ -11,6 +11,7 @@ export const RoomHubEvent = {
   ClockTick: 'ClockTick',
   OpponentDisconnected: 'OpponentDisconnected',
   OpponentReconnected: 'OpponentReconnected',
+  OpponentExited: 'OpponentExited',
 } as const;
 
 export type RoomHubEventName = (typeof RoomHubEvent)[keyof typeof RoomHubEvent];
@@ -36,6 +37,11 @@ export interface OpponentDisconnectedPayload {
 }
 
 export interface OpponentReconnectedPayload {
+  role: Role;
+  room: RoomDto;
+}
+
+export interface OpponentExitedPayload {
   role: Role;
   room: RoomDto;
 }

@@ -5,6 +5,7 @@ import type {
   MatchStartedPayload,
   MoveAcceptedPayload,
   OpponentDisconnectedPayload,
+  OpponentExitedPayload,
   OpponentJoinedPayload,
   OpponentReconnectedPayload,
 } from './events';
@@ -14,6 +15,7 @@ import {
   MatchStartedPayloadSchema,
   MoveAcceptedPayloadSchema,
   OpponentDisconnectedPayloadSchema,
+  OpponentExitedPayloadSchema,
   OpponentJoinedPayloadSchema,
   OpponentReconnectedPayloadSchema,
 } from './schemas';
@@ -38,6 +40,7 @@ export interface RoomHubHandlers {
   onMatchEnded?: (payload: MatchEndedPayload) => void;
   onOpponentDisconnected?: (payload: OpponentDisconnectedPayload) => void;
   onOpponentReconnected?: (payload: OpponentReconnectedPayload) => void;
+  onOpponentExited?: (payload: OpponentExitedPayload) => void;
   /** Fires when the SignalR transport drops and is retrying. */
   onReconnecting?: (error: Error | undefined) => void;
   /** Fires when SignalR has re-established the transport. */
@@ -103,6 +106,11 @@ export class RoomHubClient {
       RoomHubEvent.OpponentReconnected,
       OpponentReconnectedPayloadSchema,
       handlers.onOpponentReconnected,
+    );
+    this._bindEvent(
+      RoomHubEvent.OpponentExited,
+      OpponentExitedPayloadSchema,
+      handlers.onOpponentExited,
     );
     if (handlers.onReconnecting) {
       this._connection.onreconnecting((err) => handlers.onReconnecting!(err ?? undefined));
@@ -197,6 +205,17 @@ export class RoomHubClient {
    */
   async resign(): Promise<RoomDto> {
     const raw = await this._connection.invoke<unknown>('Resign');
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.ExitRoom — voluntary post-match exit (docs/state.md §2.4).
+   * Valid in Ended / AwaitingRematch; idempotent on Closed (resolves
+   * silently). Resolves with the post-exit room state; rejects with
+   * errors.exit.notAllowed for invalid states.
+   */
+  async exitRoom(): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('ExitRoom');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 

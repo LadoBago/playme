@@ -91,7 +91,7 @@ public sealed class PresenceHandlerTests
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
-        result.Value!.OpponentNotificationDue.Should().BeTrue();
+        result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
 
         graces.Scheduled.Should().ContainSingle()
             .Which.Should().Match<(string Code, Role Role, DateTimeOffset Deadline)>(g =>
@@ -101,6 +101,39 @@ public sealed class PresenceHandlerTests
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
         saved!.HostConnected.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReleasePresence_from_Ended_closes_room_and_signals_OpponentExited()
+    {
+        // Tab-close from Ended is identical to an explicit ExitRoom
+        // (state.md §2.4). The handler must transition Ended → Closed
+        // and report OpponentExited so the Hub broadcasts the right
+        // event to the still-present player.
+        var clock = new FakeClock();
+        var rooms = new FakeRoomRepository();
+        var graces = new RecordingGraceScheduler();
+        var seed = RoomFactory.InProgress(clock.UtcNow, Budget);
+        seed.CurrentMatch!.Resign(TicTacToeSides.X);
+        seed.EndCurrentMatch();
+        rooms.Seed(seed);
+
+        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
+
+        var result = await handler.HandleAsync(
+            new ReleasePresenceCommand(
+                RoomFactory.RoomCodeValue,
+                RoomFactory.HostPlayerId,
+                Role.Host),
+            CancellationToken.None);
+
+        result.Succeeded.Should().BeTrue();
+        result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentExited);
+
+        var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
+        saved!.Status.Should().Be(RoomStatus.Closed);
+        saved.HostConnected.Should().BeFalse();
+        graces.Scheduled.Should().BeEmpty();
     }
 
     [Fact]
@@ -127,7 +160,7 @@ public sealed class PresenceHandlerTests
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
-        result.Value!.OpponentNotificationDue.Should().BeFalse();
+        result.Value!.Effect.Should().Be(PresenceReleaseEffect.None);
         graces.Scheduled.Should().BeEmpty();
     }
 

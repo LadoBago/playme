@@ -18,4 +18,5 @@ public static class RoomHubEvents
     public const string ClockTick = "ClockTick";
     public const string OpponentDisconnected = "OpponentDisconnected";
     public const string OpponentReconnected = "OpponentReconnected";
+    public const string OpponentExited = "OpponentExited";
 }
