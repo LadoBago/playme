@@ -26,6 +26,12 @@ public sealed class Room
     public bool HostConnected { get; private set; }
     public bool ChallengerConnected { get; private set; }
 
+    /// <summary>Session-only series scoreboard. Survives across rematches
+    /// in the same room (docs/platform-and-games.md §1 #13). Resets only
+    /// when the room reaches <see cref="RoomStatus.Closed"/> /
+    /// <see cref="RoomStatus.Expired"/> (i.e. when the room itself dies).</summary>
+    public SeriesScore SeriesScore { get; private set; }
+
     private Room(
         RoomCode code,
         GameId gameId,
@@ -36,7 +42,8 @@ public sealed class Room
         RoomStatus status,
         Match? currentMatch,
         bool hostConnected,
-        bool challengerConnected)
+        bool challengerConnected,
+        SeriesScore seriesScore)
     {
         Code = code;
         GameId = gameId;
@@ -48,6 +55,7 @@ public sealed class Room
         CurrentMatch = currentMatch;
         HostConnected = hostConnected;
         ChallengerConnected = challengerConnected;
+        SeriesScore = seriesScore;
     }
 
     /// <summary>
@@ -76,7 +84,8 @@ public sealed class Room
             status: RoomStatus.WaitingForOpponent,
             currentMatch: null,
             hostConnected: false,
-            challengerConnected: false);
+            challengerConnected: false,
+            seriesScore: SeriesScore.Zero);
     }
 
     /// <summary>
@@ -93,9 +102,10 @@ public sealed class Room
         RoomStatus status,
         Match? currentMatch,
         bool hostConnected,
-        bool challengerConnected) =>
+        bool challengerConnected,
+        SeriesScore seriesScore) =>
         new(code, gameId, sideSelectionMode, createdAt, host, challenger,
-            status, currentMatch, hostConnected, challengerConnected);
+            status, currentMatch, hostConnected, challengerConnected, seriesScore);
 
     /// <summary>
     /// Register the challenger via the join-onboarding endpoint
@@ -192,15 +202,43 @@ public sealed class Room
         throw new DomainException($"Side '{side}' is not assigned in this room.");
     }
 
-    /// <summary>End the current match and transition the room to Ended.</summary>
+    /// <summary>End the current match and transition the room to Ended.
+    /// Updates the series scoreboard from the just-concluded match's outcome
+    /// (docs/platform-and-games.md §1 #13).</summary>
     public void EndCurrentMatch()
     {
         if (CurrentMatch is null || !CurrentMatch.IsEnded)
         {
             throw new DomainException("Cannot end a room whose match isn't finished.");
         }
+        SeriesScore = ApplyOutcomeToScore(SeriesScore, CurrentMatch.Outcome!);
         Status = RoomStatus.Ended;
     }
+
+    /// <summary>
+    /// Translate a terminal outcome into a score update. Wins go to the
+    /// winning side's role; resigns and timeouts give the point to the
+    /// opposite role of the side that resigned / timed out; draws bump the
+    /// shared draw counter. Unknown outcome types throw rather than silently
+    /// skipping the update — future outcome subtypes must be wired here
+    /// explicitly.
+    /// </summary>
+    private SeriesScore ApplyOutcomeToScore(SeriesScore score, Outcome outcome) => outcome switch
+    {
+        Win w => score.WithWin(RoleForSide(w.WinningSide)),
+        Resign r => score.WithWin(OtherRole(RoleForSide(r.ResigningSide))),
+        Timeout t => score.WithWin(OtherRole(RoleForSide(t.TimedOutSide))),
+        Draw => score.WithDraw(),
+        _ => throw new DomainException(
+            $"Unsupported outcome type '{outcome.GetType().Name}' for scoring."),
+    };
+
+    private static Role OtherRole(Role role) => role switch
+    {
+        Role.Host => Role.Challenger,
+        Role.Challenger => Role.Host,
+        _ => throw new DomainException($"Unknown role '{role}'."),
+    };
 
     private string ResolveChallengerSide(string? challengerPickedSide, IGameModule module)
     {

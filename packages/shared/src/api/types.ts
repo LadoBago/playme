@@ -61,6 +61,18 @@ export interface MatchDto {
   outcome?: OutcomeDto;
 }
 
+/**
+ * Session-only series scoreboard. Counts roll up across rematches in the
+ * same room and reset only when the room itself dies. Win = 1 point;
+ * Draw = 0 points but `draws` is tracked for display context.
+ * See docs/platform-and-games.md §1 #13.
+ */
+export interface ScoreDto {
+  host: number;
+  challenger: number;
+  draws: number;
+}
+
 export interface RoomDto {
   code: string;
   gameId: string;
@@ -72,6 +84,7 @@ export interface RoomDto {
   challengerConnected: boolean;
   currentMatch?: MatchDto;
   createdAt: string;
+  score: ScoreDto;
 }
 
 /**

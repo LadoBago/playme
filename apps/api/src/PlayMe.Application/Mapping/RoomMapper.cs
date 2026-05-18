@@ -30,7 +30,8 @@ public static class RoomMapper
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected,
         CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch, now, games),
-        CreatedAt: room.CreatedAt);
+        CreatedAt: room.CreatedAt,
+        Score: new ScoreDto(room.SeriesScore.Host, room.SeriesScore.Challenger, room.SeriesScore.Draws));
 
     public static PlayerDto ToPlayerDto(Player player) =>
         new(player.DisplayName.Value, player.Side);

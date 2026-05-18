@@ -291,11 +291,21 @@ function MatchView({
   const GameView = findGameView(room.gameId);
 
   if (room.status === 'waitingForOpponent') {
+    // Challenger inside this branch means the server has registered them
+    // but the room hasn't flipped to InProgress yet — typically because
+    // the host's SignalR isn't currently connected (tab backgrounded,
+    // transient blip). Showing them the invite link would read as
+    // "share this with someone" even though they ARE the someone. Hide
+    // the share affordance and surface a neutral "starting" message;
+    // MatchStarted will swap this view out once the host reconnects.
+    const isChallenger = role === 'challenger';
     return (
       <div className="stack">
         <MatchHeader room={room} role={role} />
-        <ShareLink url={shareUrl} />
-        <p style={{ color: 'var(--fg-muted)' }}>{t('join.waiting')}</p>
+        {isChallenger ? null : <ShareLink url={shareUrl} />}
+        <p style={{ color: 'var(--fg-muted)' }}>
+          {isChallenger ? t('join.waitingForStart') : t('join.waiting')}
+        </p>
       </div>
     );
   }
