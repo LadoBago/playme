@@ -41,7 +41,8 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
 | Redis | **Azure Cache for Redis** | Basic C0 (~$15/mo) | West Europe | TLS-only, port 6380. State store + SignalR backplane. |
 | Container registry | **GitHub Container Registry (GHCR)** | free, **public package** | n/a | `ghcr.io/ladobago/playme-api`. App Service pulls anonymously — no PAT to rotate. |
 | DNS authority | **Cloudflare** | free | n/a | Moved from Vercel's nameservers during the v1 cutover (see §6 below). |
-| TLS — `api.playme.ge` | **Cloudflare Universal SSL** (Let's Encrypt) | free | edge | Cloudflare terminates; CF→origin uses "Full" mode (origin presents its valid `*.azurewebsites.net` cert, CF skips strict hostname check). |
+| TLS — `api.playme.ge` (edge) | **Cloudflare Universal SSL** (Let's Encrypt) | free | edge | Cloudflare terminates TLS at the edge. |
+| TLS — `api.playme.ge` (origin) | **Azure App Service Managed Certificate** (DigiCert) | free | West Europe | Bound to the App Service via SNI. CF→origin runs in **Full (strict)** — CF validates the origin hostname against this cert. |
 | TLS — `www.playme.ge` / apex | **Vercel** (Let's Encrypt) | free | edge | Vercel issues automatically against the domain claim. |
 | Error monitoring | **Sentry Cloud** | free | EU | One project for web, one for API. |
 | Product analytics | **PostHog Cloud** | free | EU | Web only in v1. |
@@ -58,7 +59,7 @@ Cloudflare is the authoritative DNS for `playme.ge`. Records currently in the zo
 | CNAME | `api` | `playme-api-prod.azurewebsites.net` | Proxied (orange) | API. Cloudflare terminates TLS for `api.playme.ge`. |
 | A | `playme.ge` (apex) | Vercel edge IPs | Proxied | Apex domain — Vercel redirects to `www`. |
 | A | `www` | Vercel edge IPs | Proxied | Web. |
-| CAA | `playme.ge` | `letsencrypt.org`, `pki.goog`, `sectigo.com` | DNS-only | Restricts which CAs may issue certs (Cloudflare = Google/Sectigo, Vercel = Let's Encrypt). |
+| CAA | `playme.ge` | `letsencrypt.org`, `pki.goog`, `sectigo.com`, `comodoca.com`, `digicert.com`, `ssl.com` (issue + issuewild, minus `sectigo.com` on issuewild) | DNS-only | Restricts which CAs may issue certs. Covers the actual issuers in use: Let's Encrypt (Vercel apex/www), Google/Sectigo (Cloudflare edge), DigiCert (Azure managed cert for `api`). |
 
 The Azure App Service has `api.playme.ge` bound as a custom hostname even though TLS is terminated at Cloudflare — App Service routes by `Host` header, so the binding must exist or it returns "404 Web Site not found".
 
@@ -98,13 +99,20 @@ All three notify via the `playme-oncall` action group (email).
 
 These are the things we lost real time to during the v1 cutover. Pinning them here so the next person (likely future-you) doesn't.
 
-### 6.1 Cloudflare in front of the API, not just "Azure with a custom domain"
+### 6.1 Cloudflare in front of the API
 
-The original plan in [`CLAUDE.md`](../CLAUDE.md) §4 had the API at `api.playme.ge` via an Azure App Service Managed Certificate — the standard free-TLS path. **The managed-cert pipeline silently fails on `.ge` ccTLDs** in both Italy North and West Europe. The PUT returns `202 Accepted` with an operation ID, the resource never materialises, the Portal also fails with "unknown error", and there's no way to escalate without a paid support plan.
+The original plan in [`CLAUDE.md`](../CLAUDE.md) §4 had the API at `api.playme.ge` via an Azure App Service Managed Certificate — the standard free-TLS path. For most of v1's life this didn't work: **the managed-cert pipeline silently failed on `.ge` ccTLDs** in both Italy North and West Europe. The PUT returned `202 Accepted` with an operation ID, the resource never materialised, the Portal also failed with "unknown error", and there was no escalation path without a paid support plan.
 
-Cloudflare is the pragmatic workaround: it proxies `api.playme.ge` to Azure, terminating TLS itself with a Let's Encrypt cert that covers `*.playme.ge`. Cost: free. **Side benefit**: Cloudflare has POPs much closer to Tbilisi than Vercel/Azure West Europe, and proxies WebSocket cleanly (Vercel external rewrites don't — see §6.2).
+Azure quietly fixed this on the West Europe side. We re-tried on **2026-05-18** and provisioning succeeded on first attempt — the cert is DigiCert-issued, bound to `api.playme.ge` via SNI, and CF→origin now runs in **Full (strict)** mode (it validates the origin hostname against the managed cert instead of accepting any `*.azurewebsites.net` cert).
 
-If the managed cert ever starts working on `.ge`, we can switch back without code changes — just flip the Cloudflare CNAME proxy off and bind a real cert in Azure.
+That removed the **original** reason for Cloudflare. But CF stays in front of the API for two reasons that haven't changed:
+
+- **WebSocket proxying.** Vercel's external rewrites returned HTTP 400 on the WS upgrade and broke SignalR (see §6.2). CF proxies WS cleanly.
+- **POP proximity to Tbilisi.** Cloudflare has edge POPs much closer to Georgian users than Azure West Europe — real latency win for the realtime path.
+
+So the topology is unchanged; what changed is that the origin now presents a valid hostname cert and strict mode is on.
+
+If we ever do want to drop CF entirely (cost, simplification, or because realtime moves to a different transport), the path is clean now: flip the CF CNAME to DNS-only and you're hitting Azure directly with a valid cert. Cost of leaving: lose WS proxying for Vercel-style rewrites (irrelevant if DNS is direct) and the Tbilisi POPs.
 
 ### 6.2 Vercel external rewrites don't proxy WebSocket
 
@@ -154,7 +162,7 @@ These aren't blocking launch but each is on the list:
 
 - ~~**Persist Data Protection keys to Redis.**~~ Done. `Microsoft.AspNetCore.DataProtection.StackExchangeRedis` is wired in `AddApi.cs` against the shared `IConnectionMultiplexer`; keys live at `playme:dp-keys` in the same Redis we use for state + the SignalR backplane. `SetApplicationName("playme-api")` namespaces them. Session cookies survive container restarts/redeploys; the key ring is also implicitly shared if we ever horizontally scale.
 - ~~**Re-create the Sensitive-flagged Vercel env vars.**~~ Done — `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` are now inlined into the client bundle.
-- **Revisit Azure App Service Managed Certificate** later. If Azure fixes `.ge`-TLD provisioning, we can drop the Cloudflare layer and serve TLS directly from App Service — fewer hops, same architecture as originally designed.
+- ~~**Revisit Azure App Service Managed Certificate.**~~ Done on 2026-05-18 — `.ge` provisioning now works, cert is bound to `api.playme.ge` via SNI, CF→origin upgraded to **Full (strict)**. CF stays in front for WebSocket proxying (§6.2) and Tbilisi-POP latency, not for TLS termination. Path to dropping CF entirely is now clean if we ever want it (see §6.1).
 - **Move on-call channel beyond email** when a team forms. See [`security.md`](security.md) §11 / [`roadmap.md`](roadmap.md) §2.
 - **Native-speaker pass over the rest of `packages/shared/src/i18n/ka.ts`.** Two real Georgian issues slipped past mechanical reviews; the remaining ~100 keys may have similar ones.
 
