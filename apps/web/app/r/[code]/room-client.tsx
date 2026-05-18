@@ -754,6 +754,39 @@ function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
 
 function ShareLink({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
+
+  // Web Share API is widely available on mobile (iOS Safari, Android
+  // Chrome) and on Chromium-based desktop, but absent on Firefox /
+  // desktop Safari. Feature-detect so the button doesn't appear on
+  // browsers where the call would be a no-op. Memoising avoids a
+  // re-render flash where the button mounts post-hydration; SSR
+  // returns false consistently which is fine.
+  const canShare = useMemo(
+    () => typeof navigator !== 'undefined' && typeof navigator.share === 'function',
+    [],
+  );
+
+  const handleShare = () => {
+    void (async () => {
+      try {
+        await navigator.share({
+          title: t('join.shareLink.shareTitle'),
+          text: t('join.shareLink.shareText'),
+          url,
+        });
+      } catch (e) {
+        // User dismissed the sheet — AbortError is expected; no other
+        // error path is interesting enough to surface to the user.
+        if (e instanceof Error && e.name !== 'AbortError') {
+          // Other errors (e.g. NotAllowedError on insecure context)
+          // are silent failures here — Copy link is always available
+          // as the fallback path right next to this button.
+          console.warn('[ShareLink] navigator.share failed', e);
+        }
+      }
+    })();
+  };
+
   return (
     <div className="stack" style={{ gap: '0.4rem' }}>
       <span className="label">{t('join.shareLink.label')}</span>
@@ -772,6 +805,11 @@ function ShareLink({ url }: { url: string }) {
         >
           {copied ? t('join.shareLink.copied') : t('join.shareLink.copy')}
         </button>
+        {canShare ? (
+          <button type="button" className="button-ghost" onClick={handleShare}>
+            {t('join.shareLink.share')}
+          </button>
+        ) : null}
       </div>
     </div>
   );
