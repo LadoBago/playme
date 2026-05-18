@@ -75,6 +75,7 @@ export const ka: Record<EnKey, string> = {
   'join.submitting': 'შემოდიხარ…',
   'join.waiting': 'ველოდებით, სანამ მეგობარი ბმულს გახსნის…',
   'join.waitingForStart': 'ველოდებით მატჩის დაწყებას…',
+  'join.waitingForHost': 'ველოდებით მასპინძლის დაბრუნებას…',
   'join.shareLink.label': 'გააზიარე ეს ბმული',
   'join.shareLink.copy': 'ბმულის კოპირება',
   'join.shareLink.copied': 'დაკოპირდა!',

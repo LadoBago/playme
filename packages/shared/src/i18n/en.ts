@@ -74,6 +74,7 @@ export const en = {
   'join.submitting': 'Joining…',
   'join.waiting': 'Waiting for your friend to open the link…',
   'join.waitingForStart': 'Waiting for the match to start…',
+  'join.waitingForHost': 'Waiting for the host to reconnect…',
   'join.shareLink.label': 'Share this link with your friend',
   'join.shareLink.copy': 'Copy link',
   'join.shareLink.copied': 'Copied!',
