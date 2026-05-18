@@ -14,6 +14,7 @@ export default [
     files: [
       'app/**/*.{ts,tsx}',
       'features/**/*.{ts,tsx}',
+      'components/**/*.{ts,tsx}',
       'lib/**/*.{ts,tsx}',
       'instrumentation.ts',
       'instrumentation-client.ts',

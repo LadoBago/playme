@@ -600,3 +600,71 @@ textarea {
   background: rgba(176, 0, 32, 0.12);
   color: var(--danger);
 }
+
+/* Row of in-match / post-match buttons (resign while playing, back-to-
+ * lobby on Ended, rematch affordances landing in PR-4). Right-aligned so
+ * the eye finds the action without competing with the board. */
+.match-controls {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+/* Destructive action variant — resign, reject rematch. Same shape as
+ * .button-primary, swap the accent for the danger token so the colour
+ * carries the meaning. */
+.button-danger {
+  background: var(--danger);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+}
+
+.button-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* Native <dialog> modal — shared <ConfirmDialog>. The backdrop dim and
+ * the centred surface are both styled on this element + ::backdrop;
+ * focus trap and Esc-to-close come from the browser. */
+.confirm-dialog {
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  max-width: 28rem;
+  width: calc(100% - 2rem);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.confirm-dialog__body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.confirm-dialog__text {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}

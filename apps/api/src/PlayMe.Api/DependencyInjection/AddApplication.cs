@@ -7,6 +7,7 @@ using PlayMe.Application.Commands.CreateRoom;
 using PlayMe.Application.Commands.JoinRoom;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.ReleasePresence;
+using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Games.Connect4;
 using PlayMe.Application.Games.TicTacToe3x3;
@@ -33,6 +34,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<RegisterPresenceHandler>();
         services.AddScoped<ReleasePresenceHandler>();
         services.AddScoped<SubmitMoveHandler>();
+        services.AddScoped<ResignHandler>();
         services.AddScoped<AdjudicateTimeoutHandler>();
         services.AddScoped<AdjudicateDisconnectGraceHandler>();
 

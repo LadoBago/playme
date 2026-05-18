@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   findGame,
   PlaymeClient,
@@ -12,6 +13,8 @@ import {
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { findGameView } from '@/features/games/registry';
+import { track } from '@/lib/analytics';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { JoinForm } from './join-form';
 import { InviteSummary } from './invite-summary';
 import { Clock } from './clock';
@@ -73,7 +76,20 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onOpponentJoined: ({ room: r }) => setRoom(r),
       onMatchStarted: ({ room: r }) => setRoom(r),
       onMoveAccepted: ({ room: r }) => setRoom(r),
-      onMatchEnded: ({ room: r }) => setRoom(r),
+      onMatchEnded: ({ room: r }) => {
+        setRoom(r);
+        // Fires on both clients — sender and receiver. We don't dedupe
+        // server-side because PostHog already collapses by distinct_id
+        // in insight queries; doing it here would require a separate
+        // coordination event for no analytical benefit.
+        const outcome = r.currentMatch?.outcome;
+        if (outcome) {
+          track({
+            name: 'match_ended',
+            props: { gameId: r.gameId, reason: outcome.kind },
+          });
+        }
+      },
       onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
       onReconnecting: () => setConnectionStatus('reconnecting'),
@@ -174,6 +190,22 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     })();
   }, []);
 
+  // Resign throws if the hub call fails; MatchView shows the dialog
+  // while it's in flight and surfaces the error in the same banner the
+  // move pipeline uses. Promise-returning so the dialog can `await`
+  // before flipping its own pending state back off.
+  const handleResign = useCallback(async (): Promise<void> => {
+    setError(null);
+    try {
+      const updated = await hubRef.current?.resign();
+      if (updated) setRoom(updated);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'errors.unknown';
+      setError(t(message as I18nKey));
+      throw e;
+    }
+  }, []);
+
   if (!game) {
     return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
   }
@@ -204,6 +236,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       room={room}
       role={role}
       onSubmitMove={handleSubmitMove}
+      onResign={handleResign}
       error={error}
       connectionStatus={connectionStatus}
     />
@@ -214,6 +247,7 @@ interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
   onSubmitMove: (payload: unknown) => void;
+  onResign: () => Promise<void>;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
 }
@@ -222,14 +256,35 @@ function MatchView({
   room,
   role,
   onSubmitMove,
+  onResign,
   error,
   connectionStatus,
 }: MatchViewProps) {
+  const router = useRouter();
   const match = room.currentMatch;
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponent = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
   const mySide = myPlayer?.side ?? null;
   const isMyTurn = match != null && match.outcome == null && mySide != null && mySide === match.sideToMove;
+  const matchInProgress = match != null && match.outcome == null;
+  const matchEnded = match != null && match.outcome != null;
+
+  const [confirmResignOpen, setConfirmResignOpen] = useState(false);
+  const [resignPending, setResignPending] = useState(false);
+
+  const handleConfirmResign = useCallback(() => {
+    setResignPending(true);
+    void (async () => {
+      try {
+        await onResign();
+      } catch {
+        // Error already surfaced via the room-client error banner.
+      } finally {
+        setResignPending(false);
+        setConfirmResignOpen(false);
+      }
+    })();
+  }, [onResign]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
@@ -285,9 +340,45 @@ function MatchView({
         onSubmitMove={onSubmitMove}
       />
 
+      {matchInProgress ? (
+        <div className="match-controls">
+          <button
+            type="button"
+            className="button-ghost"
+            onClick={() => setConfirmResignOpen(true)}
+            disabled={resignPending}
+          >
+            {t('match.resign.button')}
+          </button>
+        </div>
+      ) : null}
+
+      {matchEnded ? (
+        <div className="match-controls">
+          <button
+            type="button"
+            className="button-ghost"
+            onClick={() => router.push('/')}
+          >
+            {t('match.backToLobby')}
+          </button>
+        </div>
+      ) : null}
+
       <ConnectionHint room={room} role={role} />
 
       {opponent ? null : <ShareLink url={shareUrl} />}
+
+      <ConfirmDialog
+        open={confirmResignOpen}
+        title={t('match.resign.confirm.title')}
+        body={t('match.resign.confirm.body')}
+        confirmLabel={t('match.resign.confirm.yes')}
+        cancelLabel={t('match.resign.confirm.cancel')}
+        tone="danger"
+        onConfirm={handleConfirmResign}
+        onCancel={() => setConfirmResignOpen(false)}
+      />
     </div>
   );
 }
@@ -316,6 +407,16 @@ function OutcomeBanner({
         {youTimedOut
           ? t('match.result.youTimedOut')
           : t('match.result.opponentTimedOut')}
+      </div>
+    );
+  }
+  if (outcome.kind === 'resign') {
+    const youResigned = mySide != null && outcome.resigningSide === mySide;
+    return (
+      <div className={`banner ${youResigned ? '' : 'banner--win'}`}>
+        {youResigned
+          ? t('match.result.youResigned')
+          : t('match.result.opponentResigned')}
       </div>
     );
   }
