@@ -1,13 +1,17 @@
 using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.Security;
 using PlayMe.Application;
+using PlayMe.Application.Commands.AcceptRematch;
 using PlayMe.Application.Commands.ExitRoom;
+using PlayMe.Application.Commands.OfferRematch;
 using PlayMe.Application.Commands.RegisterPresence;
+using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Dtos;
 using PlayMe.Application.Errors;
+using PlayMe.Domain.Platform;
 
 namespace PlayMe.Api.Hubs;
 
@@ -33,6 +37,9 @@ public sealed class RoomHub : Hub
     private readonly SubmitMoveHandler _submitMove;
     private readonly ResignHandler _resign;
     private readonly ExitRoomHandler _exitRoom;
+    private readonly OfferRematchHandler _offerRematch;
+    private readonly AcceptRematchHandler _acceptRematch;
+    private readonly RejectRematchHandler _rejectRematch;
 
     public RoomHub(
         SessionCookieReader sessionReader,
@@ -40,7 +47,10 @@ public sealed class RoomHub : Hub
         ReleasePresenceHandler releasePresence,
         SubmitMoveHandler submitMove,
         ResignHandler resign,
-        ExitRoomHandler exitRoom)
+        ExitRoomHandler exitRoom,
+        OfferRematchHandler offerRematch,
+        AcceptRematchHandler acceptRematch,
+        RejectRematchHandler rejectRematch)
     {
         _sessionReader = sessionReader;
         _registerPresence = registerPresence;
@@ -48,6 +58,9 @@ public sealed class RoomHub : Hub
         _submitMove = submitMove;
         _resign = resign;
         _exitRoom = exitRoom;
+        _offerRematch = offerRematch;
+        _acceptRematch = acceptRematch;
+        _rejectRematch = rejectRematch;
     }
 
     public override async Task OnConnectedAsync()
@@ -262,6 +275,97 @@ public sealed class RoomHub : Hub
                     new { role = session.Role, room = value.Room },
                     Context.ConnectionAborted);
         }
+
+        return value.Room;
+    }
+
+    /// <summary>
+    /// First step of the rematch handshake (docs/platform-and-games.md §1 #10).
+    /// From <c>Ended</c> the call records the offer and broadcasts
+    /// <c>RematchOffered</c> to both clients. A near-simultaneous offer
+    /// from the opposite role lands as an implicit accept — the room
+    /// flips to <c>InProgress</c> and we broadcast <c>MatchStarted</c>
+    /// instead. The room lock serializes the two cases.
+    /// </summary>
+    public async Task<RoomDto> OfferRematch()
+    {
+        var session = RequireSession();
+        var cmd = new OfferRematchCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role);
+
+        var result = await _offerRematch.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        switch (value.Effect)
+        {
+            case RematchOfferResult.OfferRecorded:
+                await Clients.Group(GroupName(session.RoomCode.Value))
+                    .SendAsync(RoomHubEvents.RematchOffered,
+                        new { offerer = session.Role, room = value.Room },
+                        Context.ConnectionAborted);
+                break;
+            case RematchOfferResult.ImplicitlyAccepted:
+                await Clients.Group(GroupName(session.RoomCode.Value))
+                    .SendAsync(RoomHubEvents.MatchStarted,
+                        new { room = value.Room },
+                        Context.ConnectionAborted);
+                break;
+        }
+
+        return value.Room;
+    }
+
+    /// <summary>
+    /// Responder accept (docs/platform-and-games.md §1 #10 / #15).
+    /// Swaps sides, starts a fresh match, broadcasts <c>MatchStarted</c>.
+    /// </summary>
+    public async Task<RoomDto> AcceptRematch()
+    {
+        var session = RequireSession();
+        var cmd = new AcceptRematchCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role);
+
+        var result = await _acceptRematch.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        await Clients.Group(GroupName(session.RoomCode.Value))
+            .SendAsync(RoomHubEvents.MatchStarted,
+                new { room = value.Room },
+                Context.ConnectionAborted);
+
+        return value.Room;
+    }
+
+    /// <summary>
+    /// Responder reject (docs/platform-and-games.md §1 #10). Closes the
+    /// room and broadcasts <c>RematchDeclined</c> to the offerer; the
+    /// rejector auto-routes via the returned room state.
+    /// </summary>
+    public async Task<RoomDto> RejectRematch()
+    {
+        var session = RequireSession();
+        var cmd = new RejectRematchCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role);
+
+        var result = await _rejectRematch.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+            .SendAsync(RoomHubEvents.RematchDeclined,
+                new { room = value.Room },
+                Context.ConnectionAborted);
 
         return value.Room;
     }

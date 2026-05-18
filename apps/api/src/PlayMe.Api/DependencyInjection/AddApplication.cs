@@ -1,12 +1,15 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
+using PlayMe.Application.Commands.AcceptRematch;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 using PlayMe.Application.Commands.AdjudicateTimeout;
 using PlayMe.Application.Commands.CreateRoom;
 using PlayMe.Application.Commands.ExitRoom;
 using PlayMe.Application.Commands.JoinRoom;
+using PlayMe.Application.Commands.OfferRematch;
 using PlayMe.Application.Commands.RegisterPresence;
+using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
@@ -37,6 +40,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<SubmitMoveHandler>();
         services.AddScoped<ResignHandler>();
         services.AddScoped<ExitRoomHandler>();
+        services.AddScoped<OfferRematchHandler>();
+        services.AddScoped<AcceptRematchHandler>();
+        services.AddScoped<RejectRematchHandler>();
         services.AddScoped<AdjudicateTimeoutHandler>();
         services.AddScoped<AdjudicateDisconnectGraceHandler>();
 

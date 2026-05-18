@@ -59,6 +59,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   const [connectionStatus, setConnectionStatus] = useState<
     'live' | 'reconnecting' | 'lost'
   >('live');
+  // True after the opponent declined a rematch — distinguishes the
+  // "Opponent declined" notice from the generic "Opponent left" banner.
+  // Both end the room in `closed`, so the room status alone can't say which.
+  const [declined, setDeclined] = useState(false);
   const hubRef = useRef<RoomHubClient | null>(null);
 
   // URL room code — passed to hub.joinRoom() so the server can reject a
@@ -93,6 +97,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
       onOpponentExited: ({ room: r }) => setRoom(r),
+      onRematchOffered: ({ room: r }) => setRoom(r),
+      onRematchDeclined: ({ room: r }) => {
+        setRoom(r);
+        setDeclined(true);
+      },
       onReconnecting: () => setConnectionStatus('reconnecting'),
       onReconnected: () => {
         // Transport is back — re-call JoinRoom so the server records the
@@ -223,6 +232,51 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     }
   }, []);
 
+  const handleOfferRematch = useCallback(async (): Promise<void> => {
+    setError(null);
+    try {
+      const updated = await hubRef.current?.offerRematch();
+      if (updated) {
+        setRoom(updated);
+        track({ name: 'rematch_offered', props: { gameId: updated.gameId } });
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'errors.unknown';
+      setError(t(message as I18nKey));
+      throw e;
+    }
+  }, []);
+
+  const handleAcceptRematch = useCallback(async (): Promise<void> => {
+    setError(null);
+    try {
+      const updated = await hubRef.current?.acceptRematch();
+      if (updated) {
+        setRoom(updated);
+        track({ name: 'rematch_accepted', props: { gameId: updated.gameId } });
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'errors.unknown';
+      setError(t(message as I18nKey));
+      throw e;
+    }
+  }, []);
+
+  const handleRejectRematch = useCallback(async (): Promise<void> => {
+    setError(null);
+    try {
+      const updated = await hubRef.current?.rejectRematch();
+      if (updated) {
+        setRoom(updated);
+        track({ name: 'rematch_rejected', props: { gameId: updated.gameId } });
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'errors.unknown';
+      setError(t(message as I18nKey));
+      throw e;
+    }
+  }, []);
+
   if (!game) {
     return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
   }
@@ -252,9 +306,13 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     <MatchView
       room={room}
       role={role}
+      declined={declined}
       onSubmitMove={handleSubmitMove}
       onResign={handleResign}
       onExit={handleExit}
+      onOfferRematch={handleOfferRematch}
+      onAcceptRematch={handleAcceptRematch}
+      onRejectRematch={handleRejectRematch}
       error={error}
       connectionStatus={connectionStatus}
     />
@@ -264,9 +322,13 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
+  declined: boolean;
   onSubmitMove: (payload: unknown) => void;
   onResign: () => Promise<void>;
   onExit: () => Promise<void>;
+  onOfferRematch: () => Promise<void>;
+  onAcceptRematch: () => Promise<void>;
+  onRejectRematch: () => Promise<void>;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
 }
@@ -274,9 +336,13 @@ interface MatchViewProps {
 function MatchView({
   room,
   role,
+  declined,
   onSubmitMove,
   onResign,
   onExit,
+  onOfferRematch,
+  onAcceptRematch,
+  onRejectRematch,
   error,
   connectionStatus,
 }: MatchViewProps) {
@@ -287,11 +353,13 @@ function MatchView({
   const mySide = myPlayer?.side ?? null;
   const isMyTurn = match != null && match.outcome == null && mySide != null && mySide === match.sideToMove;
   const matchInProgress = match != null && match.outcome == null;
-  const matchEnded = match != null && match.outcome != null;
 
   const [confirmResignOpen, setConfirmResignOpen] = useState(false);
   const [resignPending, setResignPending] = useState(false);
   const [exitPending, setExitPending] = useState(false);
+  const [offerPending, setOfferPending] = useState(false);
+  const [acceptPending, setAcceptPending] = useState(false);
+  const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
 
   const handleConfirmResign = useCallback(() => {
     setResignPending(true);
@@ -322,6 +390,45 @@ function MatchView({
       }
     })();
   }, [onExit, router]);
+
+  const handleOfferClick = useCallback(() => {
+    setOfferPending(true);
+    void (async () => {
+      try {
+        await onOfferRematch();
+      } catch {
+        // Error surfaced via the error banner.
+      } finally {
+        setOfferPending(false);
+      }
+    })();
+  }, [onOfferRematch]);
+
+  const handleAcceptClick = useCallback(() => {
+    setAcceptPending(true);
+    void (async () => {
+      try {
+        await onAcceptRematch();
+      } catch {
+        // Error surfaced via the error banner.
+      } finally {
+        setAcceptPending(false);
+      }
+    })();
+  }, [onAcceptRematch]);
+
+  // Reject auto-routes per §1 #10 asymmetric exit — the rejector goes
+  // home, the offerer stays in the room with the decline notice.
+  const handleConfirmReject = useCallback(() => {
+    void (async () => {
+      try {
+        await onRejectRematch();
+        router.push('/');
+      } catch {
+        setConfirmRejectOpen(false);
+      }
+    })();
+  }, [onRejectRematch, router]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
@@ -379,6 +486,8 @@ function MatchView({
         </span>
       )}
 
+      <PostMatchStatus room={room} role={role} declined={declined} />
+
       <GameView
         matchState={match.state}
         callerSide={mySide}
@@ -400,22 +509,17 @@ function MatchView({
         </div>
       ) : null}
 
-      {room.status === 'closed' ? (
-        <div className="banner">{t('match.opponentLeft')}</div>
-      ) : null}
-
-      {matchEnded ? (
-        <div className="match-controls">
-          <button
-            type="button"
-            className="button-ghost"
-            onClick={handleBackToLobby}
-            disabled={exitPending}
-          >
-            {t('match.backToLobby')}
-          </button>
-        </div>
-      ) : null}
+      <PostMatchPanel
+        room={room}
+        role={role}
+        offerPending={offerPending}
+        acceptPending={acceptPending}
+        exitPending={exitPending}
+        onOffer={handleOfferClick}
+        onAccept={handleAcceptClick}
+        onRejectClick={() => setConfirmRejectOpen(true)}
+        onBackToLobby={handleBackToLobby}
+      />
 
       <ConnectionHint room={room} role={role} />
 
@@ -431,8 +535,159 @@ function MatchView({
         onConfirm={handleConfirmResign}
         onCancel={() => setConfirmResignOpen(false)}
       />
+
+      <ConfirmDialog
+        open={confirmRejectOpen}
+        title={t('match.rematch.confirmReject.title')}
+        body={t('match.rematch.confirmReject.body')}
+        confirmLabel={t('match.rematch.confirmReject.yes')}
+        cancelLabel={t('match.rematch.confirmReject.cancel')}
+        tone="danger"
+        onConfirm={handleConfirmReject}
+        onCancel={() => setConfirmRejectOpen(false)}
+      />
     </div>
   );
+}
+
+/**
+ * Post-match panel — branches on room status + offerer role. Per
+ * docs/platform-and-games.md §1 #10 the rematch handshake's asymmetric
+ * exit lives entirely on the client side: the rejector auto-routes (via
+ * the parent's handleConfirmReject) and the offerer stays here with the
+ * decline notice + a manual "Back to lobby" button.
+ */
+function PostMatchPanel({
+  room,
+  role,
+  offerPending,
+  acceptPending,
+  exitPending,
+  onOffer,
+  onAccept,
+  onRejectClick,
+  onBackToLobby,
+}: {
+  room: RoomDto;
+  role: Role | null;
+  offerPending: boolean;
+  acceptPending: boolean;
+  exitPending: boolean;
+  onOffer: () => void;
+  onAccept: () => void;
+  onRejectClick: () => void;
+  onBackToLobby: () => void;
+}) {
+  const matchEnded = room.currentMatch != null && room.currentMatch.outcome != null;
+  const isResponder =
+    room.status === 'awaitingRematch' &&
+    room.rematchOffererRole != null &&
+    role != null &&
+    room.rematchOffererRole !== role;
+  const isOfferer =
+    room.status === 'awaitingRematch' &&
+    room.rematchOffererRole != null &&
+    role != null &&
+    room.rematchOffererRole === role;
+
+  if (!matchEnded && room.status !== 'awaitingRematch' && room.status !== 'closed') {
+    return null;
+  }
+
+  if (isResponder) {
+    return (
+      <div className="match-controls">
+        <button
+          type="button"
+          className="button-ghost"
+          onClick={onRejectClick}
+        >
+          {t('match.rematch.reject.button')}
+        </button>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={onAccept}
+          disabled={acceptPending}
+        >
+          {t('match.rematch.accept.button')}
+        </button>
+      </div>
+    );
+  }
+
+  if (isOfferer) {
+    return (
+      <div className="match-controls">
+        <button
+          type="button"
+          className="button-ghost"
+          onClick={onBackToLobby}
+          disabled={exitPending}
+        >
+          {t('match.backToLobby')}
+        </button>
+      </div>
+    );
+  }
+
+  // Ended (no offer yet) or Closed (after decline / opponent exit).
+  const canOffer = room.status === 'ended';
+  return (
+    <div className="match-controls">
+      <button
+        type="button"
+        className="button-ghost"
+        onClick={onBackToLobby}
+        disabled={exitPending}
+      >
+        {t('match.backToLobby')}
+      </button>
+      {canOffer ? (
+        <button
+          type="button"
+          className="button-primary"
+          onClick={onOffer}
+          disabled={offerPending}
+        >
+          {t('match.rematch.offer.button')}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Inline post-match status text — renders above the board so the player
+ * sees every match-status update in the same visual band as the outcome
+ * banner (rather than discovering some messages above the board and
+ * others below).
+ */
+function PostMatchStatus({
+  room,
+  role,
+  declined,
+}: {
+  room: RoomDto;
+  role: Role | null;
+  declined: boolean;
+}) {
+  if (room.status === 'closed') {
+    return (
+      <div className="banner">
+        {declined ? t('match.rematch.declined') : t('match.opponentLeft')}
+      </div>
+    );
+  }
+  if (room.status === 'awaitingRematch' && role != null && room.rematchOffererRole != null) {
+    const isOfferer = room.rematchOffererRole === role;
+    return (
+      <div className="banner">
+        {isOfferer ? t('match.rematch.waiting') : t('match.rematch.offered')}
+      </div>
+    );
+  }
+  return null;
 }
 
 function OutcomeBanner({

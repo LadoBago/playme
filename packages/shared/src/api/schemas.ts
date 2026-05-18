@@ -86,6 +86,7 @@ export const RoomSchema = z.object({
   currentMatch: MatchSchema.optional(),
   createdAt: z.string(),
   score: ScoreSchema,
+  rematchOffererRole: RoleSchema.optional(),
 });
 
 export const RoomSessionSchema = z.object({

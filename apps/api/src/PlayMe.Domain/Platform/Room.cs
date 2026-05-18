@@ -32,6 +32,12 @@ public sealed class Room
     /// <see cref="RoomStatus.Expired"/> (i.e. when the room itself dies).</summary>
     public SeriesScore SeriesScore { get; private set; }
 
+    /// <summary>The role that offered the current rematch — set when the
+    /// room enters <see cref="RoomStatus.AwaitingRematch"/>, cleared on
+    /// transition out. The opposite role is the responder authorised to
+    /// accept or reject (docs/platform-and-games.md §1 #10).</summary>
+    public Role? RematchOffererRole { get; private set; }
+
     private Room(
         RoomCode code,
         GameId gameId,
@@ -43,7 +49,8 @@ public sealed class Room
         Match? currentMatch,
         bool hostConnected,
         bool challengerConnected,
-        SeriesScore seriesScore)
+        SeriesScore seriesScore,
+        Role? rematchOffererRole)
     {
         Code = code;
         GameId = gameId;
@@ -56,6 +63,7 @@ public sealed class Room
         HostConnected = hostConnected;
         ChallengerConnected = challengerConnected;
         SeriesScore = seriesScore;
+        RematchOffererRole = rematchOffererRole;
     }
 
     /// <summary>
@@ -85,7 +93,8 @@ public sealed class Room
             currentMatch: null,
             hostConnected: false,
             challengerConnected: false,
-            seriesScore: SeriesScore.Zero);
+            seriesScore: SeriesScore.Zero,
+            rematchOffererRole: null);
     }
 
     /// <summary>
@@ -103,9 +112,11 @@ public sealed class Room
         Match? currentMatch,
         bool hostConnected,
         bool challengerConnected,
-        SeriesScore seriesScore) =>
+        SeriesScore seriesScore,
+        Role? rematchOffererRole) =>
         new(code, gameId, sideSelectionMode, createdAt, host, challenger,
-            status, currentMatch, hostConnected, challengerConnected, seriesScore);
+            status, currentMatch, hostConnected, challengerConnected, seriesScore,
+            rematchOffererRole);
 
     /// <summary>
     /// Register the challenger via the join-onboarding endpoint
@@ -223,6 +234,110 @@ public sealed class Room
         }
         Status = RoomStatus.Closed;
         return true;
+    }
+
+    /// <summary>
+    /// First-offer / implicit-accept dispatch for rematch (docs/platform-and-games.md
+    /// §1 #10). From <see cref="RoomStatus.Ended"/> the caller is recorded
+    /// as the offerer and the room transitions to <see cref="RoomStatus.AwaitingRematch"/>.
+    /// From <see cref="RoomStatus.AwaitingRematch"/> with a different
+    /// caller, the call is treated as an implicit accept (near-simultaneous
+    /// dual offer — second one resolves the handshake under the room lock).
+    /// A duplicate offer from the original offerer throws; cancelling your
+    /// own offer is not a v1 feature.
+    /// </summary>
+    public RematchOfferResult OfferRematch(Role caller, IGameModule module, DateTimeOffset now)
+    {
+        if (Status == RoomStatus.Ended)
+        {
+            RematchOffererRole = caller;
+            Status = RoomStatus.AwaitingRematch;
+            return RematchOfferResult.OfferRecorded;
+        }
+        if (Status == RoomStatus.AwaitingRematch)
+        {
+            if (RematchOffererRole == caller)
+            {
+                throw new DomainException("Offer already recorded for this role.");
+            }
+            AcceptRematchInternal(module, now);
+            return RematchOfferResult.ImplicitlyAccepted;
+        }
+        throw new DomainException(
+            $"Cannot offer a rematch in status {Status}; expected Ended or AwaitingRematch.");
+    }
+
+    /// <summary>
+    /// Responder-side accept (docs/platform-and-games.md §1 #10 / #15).
+    /// Valid only in <see cref="RoomStatus.AwaitingRematch"/> when the
+    /// caller is not the original offerer. Swaps host/challenger sides
+    /// deterministically and starts a fresh match — the platform skeleton
+    /// has no idea about the per-game first-mover; the game module's
+    /// <see cref="IGameModule.FirstMoveSide"/> resolves which (now-swapped)
+    /// role moves first.
+    /// </summary>
+    public void AcceptRematch(Role caller, IGameModule module, DateTimeOffset now)
+    {
+        if (Status != RoomStatus.AwaitingRematch)
+        {
+            throw new DomainException(
+                $"Cannot accept a rematch in status {Status}; expected AwaitingRematch.");
+        }
+        if (RematchOffererRole is null || RematchOffererRole == caller)
+        {
+            throw new DomainException("Only the responder may accept a rematch.");
+        }
+        AcceptRematchInternal(module, now);
+    }
+
+    /// <summary>
+    /// Responder-side reject. Valid only in <see cref="RoomStatus.AwaitingRematch"/>
+    /// when the caller is not the original offerer (docs/platform-and-games.md
+    /// §1 #10). Transitions directly to <see cref="RoomStatus.Closed"/>;
+    /// the rejector's UI auto-routes to the lobby while the offerer stays
+    /// with a manual exit and a "declined" notice.
+    /// </summary>
+    public void RejectRematch(Role caller)
+    {
+        if (Status != RoomStatus.AwaitingRematch)
+        {
+            throw new DomainException(
+                $"Cannot reject a rematch in status {Status}; expected AwaitingRematch.");
+        }
+        if (RematchOffererRole is null || RematchOffererRole == caller)
+        {
+            throw new DomainException("Only the responder may reject a rematch.");
+        }
+        RematchOffererRole = null;
+        Status = RoomStatus.Closed;
+    }
+
+    private void AcceptRematchInternal(IGameModule module, DateTimeOffset now)
+    {
+        if (Challenger is null || Host.Side is null || Challenger.Side is null)
+        {
+            throw new DomainException(
+                "Both players' sides must already be resolved before a rematch can accept.");
+        }
+
+        // Deterministic side swap per §1 #15: whoever had X plays O, etc.
+        // Works regardless of how sides were originally chosen at room
+        // creation — both sides are always resolved by the time we reach
+        // AwaitingRematch.
+        Host = Host with { Side = module.OtherSide(Host.Side) };
+        Challenger = Challenger with { Side = module.OtherSide(Challenger.Side) };
+
+        var firstMover = RoleForSide(module.FirstMoveSide);
+        CurrentMatch = Match.Start(
+            GameId,
+            module.NewMatch(),
+            module.FirstMoveSide,
+            firstMover,
+            module.DefaultClockBudget,
+            now);
+
+        RematchOffererRole = null;
+        Status = RoomStatus.InProgress;
     }
 
     /// <summary>End the current match and transition the room to Ended.

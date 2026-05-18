@@ -33,6 +33,10 @@ public static class PlatformErrors
     public const string RoomBusy = "errors.room.busy";
     public const string ExitNotAllowed = "errors.exit.notAllowed";
 
+    // --- Rematch handshake (docs/platform-and-games.md §1 #10) ---
+    public const string RematchInvalidState = "errors.rematch.invalidState";
+    public const string RematchNotResponder = "errors.rematch.notResponder";
+
     // --- Move-time (platform-level only — per-game reject keys live in
     //     each module's own constants class, e.g. TicTacToeErrors) ---
     public const string MoveNotYourTurn = "errors.move.notYourTurn";

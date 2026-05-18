@@ -8,6 +8,8 @@ import type {
   OpponentExitedPayload,
   OpponentJoinedPayload,
   OpponentReconnectedPayload,
+  RematchDeclinedPayload,
+  RematchOfferedPayload,
 } from './events';
 import { RoomHubEvent } from './events';
 import {
@@ -18,6 +20,8 @@ import {
   OpponentExitedPayloadSchema,
   OpponentJoinedPayloadSchema,
   OpponentReconnectedPayloadSchema,
+  RematchDeclinedPayloadSchema,
+  RematchOfferedPayloadSchema,
 } from './schemas';
 import { RoomSchema, RoomSessionSchema } from '../api/schemas';
 import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
@@ -41,6 +45,8 @@ export interface RoomHubHandlers {
   onOpponentDisconnected?: (payload: OpponentDisconnectedPayload) => void;
   onOpponentReconnected?: (payload: OpponentReconnectedPayload) => void;
   onOpponentExited?: (payload: OpponentExitedPayload) => void;
+  onRematchOffered?: (payload: RematchOfferedPayload) => void;
+  onRematchDeclined?: (payload: RematchDeclinedPayload) => void;
   /** Fires when the SignalR transport drops and is retrying. */
   onReconnecting?: (error: Error | undefined) => void;
   /** Fires when SignalR has re-established the transport. */
@@ -111,6 +117,16 @@ export class RoomHubClient {
       RoomHubEvent.OpponentExited,
       OpponentExitedPayloadSchema,
       handlers.onOpponentExited,
+    );
+    this._bindEvent(
+      RoomHubEvent.RematchOffered,
+      RematchOfferedPayloadSchema,
+      handlers.onRematchOffered,
+    );
+    this._bindEvent(
+      RoomHubEvent.RematchDeclined,
+      RematchDeclinedPayloadSchema,
+      handlers.onRematchDeclined,
     );
     if (handlers.onReconnecting) {
       this._connection.onreconnecting((err) => handlers.onReconnecting!(err ?? undefined));
@@ -216,6 +232,37 @@ export class RoomHubClient {
    */
   async exitRoom(): Promise<RoomDto> {
     const raw = await this._connection.invoke<unknown>('ExitRoom');
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.OfferRematch — first step of the rematch handshake
+   * (docs/platform-and-games.md §1 #10). Returns the room post-call;
+   * resolves with status `awaitingRematch` on the first offer, or with
+   * status `inProgress` if a simultaneous offer from the opposite role
+   * raced this one (implicit accept).
+   */
+  async offerRematch(): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('OfferRematch');
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.AcceptRematch — responder side. Swaps sides and starts a
+   * fresh match.
+   */
+  async acceptRematch(): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('AcceptRematch');
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.RejectRematch — responder side. Closes the room; the
+   * caller's UI should route back to the lobby (asymmetric exit per
+   * §1 #10).
+   */
+  async rejectRematch(): Promise<RoomDto> {
+    const raw = await this._connection.invoke<unknown>('RejectRematch');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 

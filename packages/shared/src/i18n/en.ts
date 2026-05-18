@@ -106,6 +106,16 @@ export const en = {
   'match.resign.confirm.cancel': 'Cancel',
   'match.backToLobby': 'Back to lobby',
   'match.opponentLeft': 'Opponent left.',
+  'match.rematch.offer.button': 'Offer rematch',
+  'match.rematch.accept.button': 'Accept rematch',
+  'match.rematch.reject.button': 'Reject rematch',
+  'match.rematch.waiting': 'Waiting for opponent…',
+  'match.rematch.offered': 'Your opponent wants a rematch.',
+  'match.rematch.declined': 'Opponent declined rematch.',
+  'match.rematch.confirmReject.title': 'Reject this rematch?',
+  'match.rematch.confirmReject.body': "You'll return to the lobby.",
+  'match.rematch.confirmReject.yes': 'Reject',
+  'match.rematch.confirmReject.cancel': 'Cancel',
   'match.score.label': 'Series',
   'match.score.draws.one': '1 draw',
   'match.score.draws.other': '{count} draws',
@@ -151,6 +161,8 @@ export const en = {
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',
   'errors.rate.exceeded': 'You’re going too fast. Wait a moment and try again.',
   'errors.exit.notAllowed': "Can't exit right now.",
+  'errors.rematch.invalidState': "Can't offer a rematch right now.",
+  'errors.rematch.notResponder': 'Only your opponent can accept or reject.',
 } as const;
 
 export type EnKey = keyof typeof en;

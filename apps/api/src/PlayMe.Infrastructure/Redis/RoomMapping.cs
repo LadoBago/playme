@@ -24,7 +24,8 @@ internal static class RoomMapping
             : ToMatchRecord(room.CurrentMatch, games.GetModule(room.GameId)),
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected,
-        SeriesScore: ToSeriesScoreRecord(room.SeriesScore));
+        SeriesScore: ToSeriesScoreRecord(room.SeriesScore),
+        RematchOffererRole: room.RematchOffererRole);
 
     public static Room FromRecord(RoomRecord record, IGameModuleRegistry games) => Room.Rehydrate(
         code: record.Code,
@@ -39,7 +40,8 @@ internal static class RoomMapping
             : FromMatchRecord(record.CurrentMatch, games.GetModule(record.GameId)),
         hostConnected: record.HostConnected,
         challengerConnected: record.ChallengerConnected,
-        seriesScore: FromSeriesScoreRecord(record.SeriesScore));
+        seriesScore: FromSeriesScoreRecord(record.SeriesScore),
+        rematchOffererRole: record.RematchOffererRole);
 
     private static SeriesScoreRecord ToSeriesScoreRecord(SeriesScore score) =>
         new(score.Host, score.Challenger, score.Draws);

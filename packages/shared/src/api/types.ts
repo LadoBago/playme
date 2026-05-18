@@ -85,6 +85,9 @@ export interface RoomDto {
   currentMatch?: MatchDto;
   createdAt: string;
   score: ScoreDto;
+  /** Role that offered the current rematch — set while status is
+   * `awaitingRematch`, null otherwise. See docs/platform-and-games.md §1 #10. */
+  rematchOffererRole?: Role;
 }
 
 /**

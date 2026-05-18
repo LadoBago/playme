@@ -29,4 +29,10 @@ public static class SessionRateLimitPolicies
     /// </summary>
     public static readonly RateLimitPolicy ExitRoom =
         new("exit", Limit: 3, Window: TimeSpan.FromSeconds(10));
+
+    /// <summary>Rematch handshake calls — one click apiece, double-click
+    /// absorbing limit. Shared policy across Offer/Accept/Reject keeps the
+    /// floor tight without partitioning quota per sub-action.</summary>
+    public static readonly RateLimitPolicy Rematch =
+        new("rematch", Limit: 5, Window: TimeSpan.FromSeconds(10));
 }

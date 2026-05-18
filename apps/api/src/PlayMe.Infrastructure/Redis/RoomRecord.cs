@@ -21,6 +21,9 @@ internal sealed record RoomRecord(
     // Nullable for forward compat — rooms persisted before §1 #13 landed
     // come back without this field. Round-trip restores SeriesScore.Zero
     // in that case so the in-flight migration is invisible to gameplay.
-    SeriesScoreRecord? SeriesScore = null);
+    SeriesScoreRecord? SeriesScore = null,
+    // Null outside RoomStatus.AwaitingRematch; nullable for forward compat
+    // with rooms persisted before §1 #10 landed.
+    Role? RematchOffererRole = null);
 
 internal sealed record SeriesScoreRecord(int Host, int Challenger, int Draws);

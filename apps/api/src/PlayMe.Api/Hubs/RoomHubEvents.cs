@@ -19,4 +19,6 @@ public static class RoomHubEvents
     public const string OpponentDisconnected = "OpponentDisconnected";
     public const string OpponentReconnected = "OpponentReconnected";
     public const string OpponentExited = "OpponentExited";
+    public const string RematchOffered = "RematchOffered";
+    public const string RematchDeclined = "RematchDeclined";
 }
