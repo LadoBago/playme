@@ -79,7 +79,7 @@ The recommended construction sequence. Each sprint should land an **end-to-end v
 
 - Rate-limit policies on hot endpoints ([`security.md`](security.md) §5).
 - Security headers (CSP, HSTS, X-Frame-Options, etc.) — target A+ on `securityheaders.com`.
-- PostHog instrumentation for every event from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2.
+- PostHog instrumentation for the remaining events from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2 (`room_created`, `room_joined`, `room_expired`, `match_started`, `move_made`). The `match_ended` + `rematch_*` events were absorbed into Sprint 5 PRs when the relevant code paths landed; this sprint also re-homes the authoritative match-end / room-expiry events to the API server-side per §1.2.
 - Localized error codes ([`observability-and-i18n.md`](observability-and-i18n.md) §2) end-to-end; friendly 404 / expired-room pages.
 - Basic load test (~hundreds of concurrent rooms). Verify the API and Redis hold up.
 - Production deploy with monitoring alerts wired to the on-call channel. Wired via `infra/provision.sh` (Azure CLI script) + `.github/workflows/deploy-api.yml` (GitHub Actions, OIDC → Azure, GHCR image). Alerts route to email; see [`security.md`](security.md) §11.

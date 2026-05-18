@@ -11,11 +11,12 @@
 ### 1.2 Product analytics — PostHog
 
 - Anonymous, cookie-based event tracking. No PII.
-- Baseline event set to instrument from day one:
-  - `room_created`, `room_joined`, `room_expired`
-  - `match_started`, `move_made`, `match_ended` (with `reason`: `win` | `draw` | `resign` | `timeout` | `disconnect`)
-  - `rematch_offered`, `rematch_accepted`, `rematch_rejected`
-- Events fire from the **web client** for user-facing actions and from the **API** for authoritative outcomes (match end, room expiry). The API uses PostHog's .NET SDK; events tagged `source: server` vs `source: web`.
+- Baseline event set:
+  - `room_created`, `room_joined`, `room_expired` — *pending (Sprint 7)*
+  - `match_started`, `move_made` — *pending (Sprint 7)*
+  - `match_ended` (with `reason`: `win` | `draw` | `resign` | `timeout` | `disconnect`) — **wired in Sprint 5** (fires from `room-client`'s `onMatchEnded` subscription; the `reason` discriminant comes from `outcome.kind`).
+  - `rematch_offered`, `rematch_accepted`, `rematch_rejected` — **wired in Sprint 5** (fires from the action sites in `room-client`, not from broadcast subscriptions, so each user action counts once).
+- Events fire from the **web client** for user-facing actions and from the **API** for authoritative outcomes (match end, room expiry). The API uses PostHog's .NET SDK; events tagged `source: server` vs `source: web`. The Sprint 5 events all currently fire from the web; moving the authoritative match-end / room-expiry events to the API server-side is a Sprint 7 sub-task.
 
 ### 1.3 Logging — Serilog
 
