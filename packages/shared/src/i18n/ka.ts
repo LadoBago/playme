@@ -143,6 +143,11 @@ export const ka: Record<EnKey, string> = {
   'games.connect4.cell.discYellow': 'ყვითელი დისკი',
   'games.connect4.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}',
 
+  // --- Theme toggle (Sprint 6) ---
+  'theme.toggle.next.dark': 'გადართე მუქ თემაზე',
+  'theme.toggle.next.system': 'გადართე სისტემურ თემაზე',
+  'theme.toggle.next.light': 'გადართე ნათელ თემაზე',
+
   // --- App-level error / not-found chrome ---
   'errors.boundary.title': 'რაღაც შეცდომა მოხდა.',
   'errors.boundary.retry': 'სცადე თავიდან',

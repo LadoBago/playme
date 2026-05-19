@@ -28,8 +28,29 @@
   --c4-yellow-inner-shadow: rgba(180, 130, 0, 0.55);
 }
 
+/* Dark-mode tokens. Two selectors so the manual theme toggle (Sprint 6)
+ * and the OS-preference fallback both reach the same values:
+ *   1. Explicit override: `<html data-theme="dark">` set by the toggle.
+ *   2. System mode: no attribute or `data-theme="system"` — the media
+ *      query then defers to the OS. The `:not()` chain matches both
+ *      absence (current default before the toggle ships) and the
+ *      explicit "system" value, so this refactor is a no-op for
+ *      existing visitors.
+ */
+:root[data-theme='dark'] {
+  --bg: #0e0e10;
+  --bg-elevated: #1a1a1c;
+  --fg: #ececec;
+  --fg-muted: #a0a0a0;
+  --border: rgba(255, 255, 255, 0.14);
+  --highlight: rgba(99, 158, 255, 0.24);
+  --win-highlight: rgba(74, 222, 128, 0.36);
+  --win-stroke: rgb(74, 222, 128);
+  --win-glow: rgba(74, 222, 128, 0.5);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
     --bg: #0e0e10;
     --bg-elevated: #1a1a1c;
     --fg: #ececec;
@@ -98,6 +119,44 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+/* --- Theme toggle (Sprint 6) ---
+ * Floating top-right cycling button (light → dark → system → light).
+ * Fixed positioning keeps it reachable while scrolling on the match
+ * page; circular shape + currentColor SVGs let the icon take whatever
+ * the theme's foreground color is. */
+
+.theme-toggle {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  background: var(--highlight);
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* --- Layout primitives --- */
