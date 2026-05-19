@@ -75,6 +75,17 @@ The recommended construction sequence. Each sprint should land an **end-to-end v
 
 **Exit criteria:** Lighthouse green (perf, a11y, SEO, best practices) on landing in both locales and both themes.
 
+**Status:** Shipped 2026-05-20. Lighthouse desktop on `next start`:
+
+| URL | Theme | Perf | A11y | Best Practices | SEO |
+|---|---|---:|---:|---:|---:|
+| `/` (ka) | light | 98 | 100 | 92 | 100 |
+| `/` (ka) | dark | 100 | 100 | 92 | 100 |
+| `/en` | light | 100 | 100 | 96 | 100 |
+| `/en` | dark | 100 | 100 | 96 | 100 |
+
+All four categories ≥ 90 across both locales and both themes. The Best Practices delta on the ka pages (92 vs 96) traces to `errors-in-console` / `inspector-issues` audits — not investigated; if anyone wants to push everything to 100, that's the lead.
+
 **Sprint 7 — Hardening for launch (~1 week).**
 
 - Rate-limit policies on hot endpoints ([`security.md`](security.md) §5).
