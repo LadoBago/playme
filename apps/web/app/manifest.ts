@@ -49,5 +49,26 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'maskable',
       },
     ],
+    // Screenshots feed Chrome's richer install dialog. One per
+    // form_factor is the minimum to unlock the wide-card UI on
+    // desktop and the carousel UI on mobile. 2× DPI is fine — Chrome
+    // scales them down for the prompt; sizes here must match the
+    // actual file pixels or the browser drops them silently.
+    screenshots: [
+      {
+        src: '/screenshot-wide.png',
+        sizes: '2560x1440',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'PlayMe landing page',
+      },
+      {
+        src: '/screenshot-narrow.png',
+        sizes: '1440x2560',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'PlayMe landing page',
+      },
+    ],
   };
 }
