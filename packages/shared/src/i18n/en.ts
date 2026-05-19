@@ -151,12 +151,11 @@ export const en = {
   'pwa.install.dismiss': 'Dismiss',
 
   // --- Locale toggle (Sprint 6) ---
-  // The visible labels are the static "KA" / "EN" 2-letter codes set in
-  // features/locale/locale-toggle.tsx; these strings only feed
-  // aria-label / aria-labelledby for screen readers.
-  'locale.toggle.label': 'Language',
-  'locale.name.ka': 'Georgian',
-  'locale.name.en': 'English',
+  // The visible label is the static 2-letter code; this string feeds
+  // the aria-label, which describes the *next* state (the click's
+  // effect) — same pattern as the theme toggle.
+  'locale.switch.toKa': 'Switch to Georgian',
+  'locale.switch.toEn': 'Switch to English',
 
   // --- Theme toggle (Sprint 6) ---
   // The aria-label describes the *next* state because the button cycles
