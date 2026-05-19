@@ -14,6 +14,11 @@ import { DEFAULT_LOCALE, t } from '@playme/shared';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    // Explicit id pins the app's identity to '/' regardless of any
+    // future start_url change (renaming the homepage path would
+    // otherwise look like a different app to the browser, splitting
+    // install state across users' devices).
+    id: '/',
     name: t('site.title'),
     short_name: 'PlayMe',
     description: t('site.tagline'),
