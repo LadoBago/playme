@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { GAME_CATALOG, t } from '@playme/shared';
+import { InstallPrompt } from '@/features/pwa/install-prompt';
 
 // SSR + indexable (CLAUDE.md §2.5 SEO). Full SEO surface (hreflang,
 // sitemap, JSON-LD) lands in Sprint 6.
@@ -7,6 +8,8 @@ import { GAME_CATALOG, t } from '@playme/shared';
 export default function HomePage() {
   return (
     <main className="container stack" style={{ gap: '2.5rem' }}>
+      <InstallPrompt />
+
       <section className="stack" style={{ gap: '0.5rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2.5rem' }}>PlayMe</h1>
         <p style={{ color: 'var(--fg-muted)', margin: 0 }}>{t('site.tagline')}</p>

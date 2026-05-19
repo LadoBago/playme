@@ -144,6 +144,11 @@ export const ka: Record<EnKey, string> = {
   'games.connect4.cell.discYellow': 'ყვითელი დისკი',
   'games.connect4.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}',
 
+  // --- PWA install prompt (Sprint 6) ---
+  'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',
+  'pwa.install.cta': 'დაყენება',
+  'pwa.install.dismiss': 'დახურვა',
+
   // --- Theme toggle (Sprint 6) ---
   'theme.toggle.next.dark': 'გადართე მუქ თემაზე',
   'theme.toggle.next.system': 'გადართე სისტემურ თემაზე',
