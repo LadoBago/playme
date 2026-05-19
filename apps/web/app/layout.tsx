@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { DEFAULT_LOCALE, t } from '@playme/shared';
+import { ServiceWorkerRegister } from '@/features/pwa/sw-register';
 import { themeFoucScript } from '@/features/theme/fouc-script';
 import { ThemeToggle } from '@/features/theme/theme-toggle';
 import { AnalyticsBoot } from '@/lib/analytics-boot';
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           dangerouslySetInnerHTML={{ __html: themeFoucScript }}
         />
         <AnalyticsBoot />
+        <ServiceWorkerRegister />
         <ThemeToggle />
         {children}
       </body>

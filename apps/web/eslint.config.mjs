@@ -27,4 +27,23 @@ export default [
       },
     },
   },
+  // The PWA service worker runs in ServiceWorkerGlobalScope, not the
+  // browser window — it needs the worker-specific globals and a few
+  // Fetch API globals that `js.configs.recommended` doesn't include by
+  // default. Scoped narrowly to public/sw.js so the rest of public/
+  // (static assets) stays unlinted.
+  {
+    files: ['public/sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        clients: 'readonly',
+        fetch: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
 ];
