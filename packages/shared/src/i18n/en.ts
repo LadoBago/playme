@@ -142,6 +142,14 @@ export const en = {
   'games.connect4.cell.discYellow': 'Yellow disc',
   'games.connect4.cell.empty': 'Empty cell row {row}',
 
+  // --- Theme toggle (Sprint 6) ---
+  // The aria-label describes the *next* state because the button cycles
+  // light → dark → system → light. Sighted users see the current state
+  // via the icon (sun / moon / monitor); the label is for screen readers.
+  'theme.toggle.next.dark': 'Switch to dark theme',
+  'theme.toggle.next.system': 'Use system theme',
+  'theme.toggle.next.light': 'Switch to light theme',
+
   // --- App-level error / not-found chrome ---
   'errors.boundary.title': 'Something went wrong.',
   'errors.boundary.retry': 'Try again',
