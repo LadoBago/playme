@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { DEFAULT_LOCALE, t } from '@playme/shared';
+import { themeFoucScript } from '@/features/theme/fouc-script';
 import { AnalyticsBoot } from '@/lib/analytics-boot';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
@@ -66,13 +68,34 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   // Default locale is ka (CLAUDE.md §1). The /en route split lands in
   // Sprint 6; until then DEFAULT_LOCALE governs both <html lang> and the
   // OG locale tag.
+  //
+  // `suppressHydrationWarning` on <html> covers the data-theme attribute
+  // that the FOUC script writes before React hydrates. The script's
+  // payload is a compile-time string literal (features/theme/fouc-
+  // script.ts), so it's safe to inline; the per-request CSP nonce from
+  // middleware.ts is attached so 'strict-dynamic' admits it.
+  //
+  // suppressHydrationWarning on the <script> itself covers a separate,
+  // expected mismatch: browsers strip the `nonce` attribute from the
+  // DOM after parse (the value lives on the internal IDL property for
+  // CSP enforcement only). The server-rendered tree carries the nonce;
+  // the post-parse DOM reports it as "". The script has already
+  // executed by the time React hydrates, so the difference is purely
+  // cosmetic — but loud in the console without this flag.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
-    <html lang={DEFAULT_LOCALE}>
+    <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
       <body>
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: themeFoucScript }}
+        />
         <AnalyticsBoot />
         {children}
       </body>
