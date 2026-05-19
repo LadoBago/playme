@@ -108,8 +108,13 @@ function getSnapshot(): Snapshot {
   return snapshot;
 }
 
+// Stable reference required by useSyncExternalStore — returning a
+// fresh object each call trips React's "infinite loop" guard during
+// SSR / hydration.
+const SERVER_SNAPSHOT: Snapshot = { promptable: false };
+
 function getServerSnapshot(): Snapshot {
-  return { promptable: false };
+  return SERVER_SNAPSHOT;
 }
 
 export function useInstallStatus(): Snapshot {
