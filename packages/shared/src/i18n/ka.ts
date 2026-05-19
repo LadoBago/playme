@@ -7,6 +7,7 @@ import type { EnKey } from './en';
 export const ka: Record<EnKey, string> = {
   // --- Site chrome ---
   'site.title': 'PlayMe — ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება',
+  'site.titleShort': 'PlayMe — ითამაშე მეგობართან',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',
   'site.ogImageAlt': 'PlayMe — ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',

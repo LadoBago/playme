@@ -19,7 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
     // otherwise look like a different app to the browser, splitting
     // install state across users' devices).
     id: '/',
-    name: t('site.title'),
+    name: t('site.titleShort'),
     short_name: 'PlayMe',
     description: t('site.tagline'),
     start_url: '/',
