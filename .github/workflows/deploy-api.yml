@@ -90,3 +90,17 @@ jobs:
           done
           echo "::error::API failed health check after deploy"
           exit 1
+
+      # Runs only when the smoke check passes — we never prune the
+      # previous image version until we know the new one is healthy
+      # in production, so rollback to one of the last `min-versions-to-keep`
+      # SHA tags is always available. Conservative cap matched to the
+      # GHCR free-tier private-repo storage budget (500 MB) — ~5 deploys
+      # of the .NET aspnet image fit comfortably after layer dedup. See
+      # .github/workflows/prune-ghcr.yml for an on-demand variant.
+      - name: Prune old GHCR versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: playme-api
+          package-type: container
+          min-versions-to-keep: 5
