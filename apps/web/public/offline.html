@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ka">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <title>კავშირი არ არის — PlayMe</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fafafa;
+        --fg: #1a1a1a;
+        --fg-muted: #5a5a5a;
+        --accent: #2a6df4;
+        --accent-fg: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e0e10;
+          --fg: #ececec;
+          --fg-muted: #a0a0a0;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px / 1.5 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 600;
+      }
+      p {
+        margin: 0;
+        max-width: 32rem;
+        color: var(--fg-muted);
+      }
+      a.retry {
+        font: inherit;
+        text-decoration: none;
+        background: var(--accent);
+        color: var(--accent-fg);
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>კავშირი არ არის</h1>
+    <p>
+      PlayMe რეალურ დროში მუშაობს, ამიტომ თამაშის გასაგრძელებლად კავშირი
+      გჭირდება.
+    </p>
+    <a class="retry" href="/">სცადე თავიდან</a>
+  </body>
+</html>
