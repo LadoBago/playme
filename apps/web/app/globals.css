@@ -193,48 +193,42 @@ textarea {
 }
 
 /* --- Locale toggle (Sprint 6) ---
- * Pill switcher (KA | EN). The visible glyphs are static 2-letter codes
- * set in features/locale/locale-toggle.tsx (the i18n catalog feeds
- * aria-labels only). aria-pressed conveys the active state to screen
- * readers; the colour swap conveys it visually. */
+ * Same circular shape as .theme-toggle so the two toolbar affordances
+ * read as siblings. Shows the *active* locale's 2-letter code; click
+ * switches to the other (only two states, so cycle = switch). The
+ * i18n catalog feeds the aria-label only — the visible label is the
+ * static 2-letter code set in features/locale/locale-toggle.tsx. */
 
 .locale-toggle {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--bg-elevated);
+  width: 2.25rem;
   height: 2.25rem;
-}
-
-.locale-toggle__button {
-  border: none;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
   color: var(--fg-muted);
-  padding: 0 0.7rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition:
     color 0.15s ease,
-    background-color 0.15s ease;
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-.locale-toggle__button:hover:not(:disabled):not(.locale-toggle__button--active) {
+.locale-toggle:hover:not(:disabled) {
   background: var(--highlight);
   color: var(--fg);
+  border-color: var(--accent);
 }
 
-.locale-toggle__button--active {
-  background: var(--accent);
-  color: var(--accent-fg);
-  cursor: default;
-}
-
-.locale-toggle__button:focus-visible {
+.locale-toggle:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 /* --- Theme toggle (Sprint 6) ---
