@@ -1,0 +1,34 @@
+name: prune-ghcr
+
+# Manual cleanup of old GHCR image versions for the API.
+#
+# The deploy-api workflow prunes automatically after every successful
+# deploy (keeps the last 5 versions); this workflow is for the one-off
+# case where the backlog grew large under public-repo conditions and
+# needs trimming before the repo flips to private (the free private
+# GHCR quota is 500 MB and a single .NET aspnet image is ~270 MB).
+#
+# Trigger manually from the Actions tab. The `keep` input lets you
+# choose a tighter or looser retention than the default.
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: 'How many recent image versions to keep'
+        required: false
+        default: '5'
+
+permissions:
+  packages: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prune old GHCR versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: playme-api
+          package-type: container
+          min-versions-to-keep: ${{ inputs.keep }}
