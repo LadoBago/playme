@@ -149,6 +149,11 @@ export const ka: Record<EnKey, string> = {
   'pwa.install.cta': 'დაყენება',
   'pwa.install.dismiss': 'დახურვა',
 
+  // --- Locale toggle (Sprint 6) ---
+  'locale.toggle.label': 'ენა',
+  'locale.name.ka': 'ქართული',
+  'locale.name.en': 'ინგლისური',
+
   // --- Theme toggle (Sprint 6) ---
   'theme.toggle.next.dark': 'გადართე მუქ თემაზე',
   'theme.toggle.next.system': 'გადართე სისტემურ თემაზე',

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { createTranslator } from '@playme/shared';
+import { LocaleToggle } from '@/features/locale/locale-toggle';
 import { InstallPromptInit } from '@/features/pwa/install-prompt-init';
 import { ServiceWorkerRegister } from '@/features/pwa/sw-register';
 import { themeFoucScript } from '@/features/theme/fouc-script';
@@ -113,7 +114,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <AnalyticsBoot />
         <ServiceWorkerRegister />
         <InstallPromptInit />
-        <ThemeToggle />
+        <div className="toolbar">
+          <LocaleToggle />
+          <ThemeToggle />
+        </div>
         {children}
       </body>
     </html>
