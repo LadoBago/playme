@@ -145,6 +145,11 @@ export const en = {
   'games.connect4.cell.discYellow': 'Yellow disc',
   'games.connect4.cell.empty': 'Empty cell row {row}',
 
+  // --- PWA install prompt (Sprint 6) ---
+  'pwa.install.title': 'Install PlayMe as an app',
+  'pwa.install.cta': 'Install',
+  'pwa.install.dismiss': 'Dismiss',
+
   // --- Theme toggle (Sprint 6) ---
   // The aria-label describes the *next* state because the button cycles
   // light → dark → system → light. Sighted users see the current state
