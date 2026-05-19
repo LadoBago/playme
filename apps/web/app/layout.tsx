@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
-import { DEFAULT_LOCALE, t } from '@playme/shared';
+import { createTranslator } from '@playme/shared';
 import { InstallPromptInit } from '@/features/pwa/install-prompt-init';
 import { ServiceWorkerRegister } from '@/features/pwa/sw-register';
 import { themeFoucScript } from '@/features/theme/fouc-script';
 import { ThemeToggle } from '@/features/theme/theme-toggle';
 import { AnalyticsBoot } from '@/lib/analytics-boot';
+import { getServerLocale } from '@/lib/locale';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
@@ -43,65 +44,66 @@ export const viewport: Viewport = {
 };
 
 // Public-page SEO surface (CLAUDE.md §7, docs/frontend.md §2). Per-page
-// `metadata` exports inherit this and override the fields they care
-// about. The hreflang alternates are wired now so the Sprint 6 /en
-// route split is a URL-table swap, not a metadata refactor; the `en`
-// entries 404 until that route lands (Google ignores broken
-// alternates) and the source of truth becomes a single map.
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: t('site.title'),
-    template: `%s ${t('site.titleSuffix')}`,
-  },
-  description: t('site.tagline'),
-  applicationName: 'PlayMe',
-  robots: { index: true, follow: true },
-  alternates: {
-    canonical: '/',
-    languages: {
-      ka: '/',
-      en: '/en',
-      'x-default': '/',
+// metadata inherits this and overrides what it cares about. The locale
+// flips here based on the middleware-supplied x-locale header — both
+// the human-readable strings and the og:locale tag track it.
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const { t } = createTranslator(locale);
+  const canonical = locale === 'ka' ? '/' : '/en';
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: t('site.title'),
+      template: `%s ${t('site.titleSuffix')}`,
     },
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'PlayMe',
-    title: t('site.title'),
     description: t('site.tagline'),
-    url: '/',
-    locale: DEFAULT_LOCALE,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: t('site.title'),
-    description: t('site.tagline'),
-  },
-};
+    applicationName: 'PlayMe',
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical,
+      languages: {
+        ka: '/',
+        en: '/en',
+        'x-default': '/',
+      },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'PlayMe',
+      title: t('site.title'),
+      description: t('site.tagline'),
+      url: canonical,
+      locale: locale === 'ka' ? 'ka_GE' : 'en_US',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('site.title'),
+      description: t('site.tagline'),
+    },
+  };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Default locale is ka (CLAUDE.md §1). The /en route split lands in
-  // Sprint 6; until then DEFAULT_LOCALE governs both <html lang> and the
-  // OG locale tag.
+  // The locale and CSP nonce both ride in on request headers set by
+  // middleware.ts. We need them at the root so <html lang> matches the
+  // route and the inline theme-FOUC script carries the per-request
+  // nonce required by 'strict-dynamic'.
   //
-  // `suppressHydrationWarning` on <html> covers the data-theme attribute
-  // that the FOUC script writes before React hydrates. The script's
-  // payload is a compile-time string literal (features/theme/fouc-
-  // script.ts), so it's safe to inline; the per-request CSP nonce from
-  // middleware.ts is attached so 'strict-dynamic' admits it.
+  // suppressHydrationWarning on <html> covers the data-theme attribute
+  // that the theme FOUC script writes before React hydrates.
   //
-  // suppressHydrationWarning on the <script> itself covers a separate,
-  // expected mismatch: browsers strip the `nonce` attribute from the
-  // DOM after parse (the value lives on the internal IDL property for
-  // CSP enforcement only). The server-rendered tree carries the nonce;
-  // the post-parse DOM reports it as "". The script has already
-  // executed by the time React hydrates, so the difference is purely
-  // cosmetic — but loud in the console without this flag.
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  // suppressHydrationWarning on the <script> covers a separate, expected
+  // mismatch: browsers strip the `nonce` attribute from the DOM after
+  // parse (the value lives on the internal IDL property for CSP
+  // enforcement only). The server-rendered tree carries the nonce; the
+  // post-parse DOM reports it as "".
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get('x-nonce') ?? undefined;
+  const locale = await getServerLocale();
 
   return (
-    <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
         <script
           nonce={nonce}

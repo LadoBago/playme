@@ -1,11 +1,17 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { PlaymeClient, type RoomDto } from '@playme/shared';
+import { PlaymeClient, type RoomDto, localeFromString } from '@playme/shared';
 import { ssrApiBase } from '@/lib/api-base';
 import { RoomClient } from './room-client';
 
+// The [locale] segment in the URL is what flips translations; this
+// page itself doesn't need to thread the locale value through — the
+// client tree below picks it up via useTranslator() (which reads
+// useParams().locale). We still validate it server-side so a bogus
+// `/de/r/<code>` 404s instead of falling through to the catch-all.
+
 interface PageProps {
-  params: Promise<{ code: string }>;
+  params: Promise<{ locale: string; code: string }>;
 }
 
 // CLAUDE.md §2.5: room URLs are private/ephemeral — noindex always.
@@ -23,11 +29,10 @@ async function fetchRoomSsr(code: string): Promise<RoomDto | null> {
 }
 
 export default async function RoomPage({ params }: PageProps) {
-  const { code } = await params;
+  const { locale: localeRaw, code } = await params;
+  if (!localeFromString(localeRaw)) notFound();
   const room = await fetchRoomSsr(code);
-  if (!room) {
-    notFound();
-  }
+  if (!room) notFound();
 
   return (
     <main className="container">

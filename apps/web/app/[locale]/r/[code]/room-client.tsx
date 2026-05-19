@@ -4,17 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   findGame,
+  localizedHref,
   PlaymeClient,
   RoomHubClient,
   type I18nKey,
   type RoomDto,
   type Role,
-  t,
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { findGameView } from '@/features/games/registry';
 import { track } from '@/lib/analytics';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { useTranslator } from '@/lib/use-locale';
 import { JoinForm } from './join-form';
 import { InviteSummary } from './invite-summary';
 import { Clock } from './clock';
@@ -52,6 +53,7 @@ async function silentStop(hub: RoomHubClient | null | undefined): Promise<void> 
  * (no cookie / not authorized) we render the join form.
  */
 export function RoomClient({ initialRoom }: RoomClientProps) {
+  const { t } = useTranslator();
   const [room, setRoom] = useState<RoomDto>(initialRoom);
   const [role, setRole] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -347,6 +349,7 @@ function MatchView({
   connectionStatus,
 }: MatchViewProps) {
   const router = useRouter();
+  const { t, locale } = useTranslator();
   const match = room.currentMatch;
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponent = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
@@ -384,7 +387,7 @@ function MatchView({
     void (async () => {
       try {
         await onExit();
-        router.push('/');
+        router.push(localizedHref('/', locale));
       } catch {
         setExitPending(false);
       }
@@ -423,7 +426,7 @@ function MatchView({
     void (async () => {
       try {
         await onRejectRematch();
-        router.push('/');
+        router.push(localizedHref('/', locale));
       } catch {
         setConfirmRejectOpen(false);
       }
@@ -582,6 +585,7 @@ function PostMatchPanel({
   onRejectClick: () => void;
   onBackToLobby: () => void;
 }) {
+  const { t } = useTranslator();
   const matchEnded = room.currentMatch != null && room.currentMatch.outcome != null;
   const isResponder =
     room.status === 'awaitingRematch' &&
@@ -676,6 +680,7 @@ function PostMatchStatus({
   role: Role | null;
   declined: boolean;
 }) {
+  const { t } = useTranslator();
   if (room.status === 'closed') {
     return (
       <div className="banner">
@@ -701,6 +706,7 @@ function OutcomeBanner({
   outcome: NonNullable<RoomDto['currentMatch']>['outcome'];
   mySide: string | null;
 }) {
+  const { t } = useTranslator();
   if (!outcome) return null;
   if (outcome.kind === 'draw') return <div className="banner banner--win">{t('match.result.draw')}</div>;
   if (outcome.kind === 'win') {
@@ -745,6 +751,7 @@ function OutcomeBanner({
 }
 
 function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
+  const { t } = useTranslator();
   if (!role) return null;
   const opponentConnected = role === 'host' ? room.challengerConnected : room.hostConnected;
   const opponentRegistered = role === 'host' ? room.challenger != null : true;
@@ -753,6 +760,7 @@ function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
 }
 
 function ShareLink({ url }: { url: string }) {
+  const { t } = useTranslator();
   const [copied, setCopied] = useState(false);
 
   // Web Share API is widely available on mobile (iOS Safari, Android

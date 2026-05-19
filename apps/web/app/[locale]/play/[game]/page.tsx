@@ -1,27 +1,39 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { DEFAULT_LOCALE, findGame, t } from '@playme/shared';
+import {
+  createTranslator,
+  findGame,
+  localeFromString,
+  localizedHref,
+} from '@playme/shared';
 import { ConfigureForm } from './configure-form';
 
 interface PageProps {
-  params: Promise<{ game: string }>;
+  params: Promise<{ locale: string; game: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { game: slug } = await params;
+  const { locale: localeRaw, game: slug } = await params;
+  const locale = localeFromString(localeRaw);
+  if (!locale) return {};
   const game = findGame(slug);
   if (!game) return {};
+
+  const { t } = createTranslator(locale);
   const path = `/play/${game.slug}`;
+  const kaPath = localizedHref(path, 'ka');
+  const enPath = localizedHref(path, 'en');
+  const canonical = localizedHref(path, locale);
   return {
     title: t(game.nameKey),
     description: t(game.shortDescriptionKey),
     robots: { index: true, follow: true },
     alternates: {
-      canonical: path,
+      canonical,
       languages: {
-        ka: path,
-        en: `/en${path}`,
-        'x-default': path,
+        ka: kaPath,
+        en: enPath,
+        'x-default': kaPath,
       },
     },
     openGraph: {
@@ -29,8 +41,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: 'PlayMe',
       title: t(game.nameKey),
       description: t(game.shortDescriptionKey),
-      url: path,
-      locale: DEFAULT_LOCALE,
+      url: canonical,
+      locale: locale === 'ka' ? 'ka_GE' : 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
@@ -41,12 +53,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ConfigurePage({ params }: PageProps) {
-  const { game: slug } = await params;
+  const { locale: localeRaw, game: slug } = await params;
+  const locale = localeFromString(localeRaw);
+  if (!locale) notFound();
   const game = findGame(slug);
-  if (!game) {
-    notFound();
-  }
+  if (!game) notFound();
 
+  const { t } = createTranslator(locale);
   const name = t(game.nameKey);
   const rules = t(game.rulesKey);
 

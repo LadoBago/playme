@@ -48,4 +48,42 @@ export function tf(
   /* eslint-enable security/detect-object-injection */
 }
 
+/**
+ * Returns a translator bound to a single locale — sugar for routes
+ * that resolve the locale once at the top and want to call `t(key)` /
+ * `tf(key, params)` without threading the locale through every site.
+ */
+export function createTranslator(locale: Locale): {
+  t: (key: I18nKey) => string;
+  tf: (key: I18nKey, params: Readonly<Record<string, string | number>>) => string;
+} {
+  return {
+    t: (key) => t(key, locale),
+    tf: (key, params) => tf(key, params, locale),
+  };
+}
+
+/**
+ * Prefixes a path with the locale segment for non-default locales.
+ * `/foo` stays `/foo` for ka; becomes `/en/foo` for en. Used wherever
+ * we generate internal hrefs so the language-toggle round-trip works.
+ */
+export function localizedHref(path: string, locale: Locale): string {
+  if (locale === DEFAULT_LOCALE) return path;
+  const normalized = path === '/' ? '' : path.startsWith('/') ? path : `/${path}`;
+  return `/${locale}${normalized}`;
+}
+
+const VALID_LOCALES: ReadonlySet<string> = new Set<Locale>(['ka', 'en']);
+
+/**
+ * Narrows a runtime string (e.g. `params.locale` from a dynamic
+ * segment) to a `Locale`. Returns null for unknown values — the
+ * caller decides whether to 404 or fall back.
+ */
+export function localeFromString(value: unknown): Locale | null {
+  if (typeof value !== 'string') return null;
+  return VALID_LOCALES.has(value) ? (value as Locale) : null;
+}
+
 export { en, ka };

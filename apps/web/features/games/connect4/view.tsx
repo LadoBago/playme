@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { t, tf } from '@playme/shared';
+import { t, type Locale } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 import type { GameView, GameViewProps } from '../types';
 import { Connect4BoardStateSchema, type Connect4BoardState } from './schema';
 
@@ -10,9 +11,9 @@ import { Connect4BoardStateSchema, type Connect4BoardState } from './schema';
  * card. Side vocab stays inside this module (CLAUDE.md §7 "Platform
  * thinness"); the platform calls through `GameModule.getSideLabel`.
  */
-export function connect4SideLabel(side: string): string | null {
-  if (side === 'red') return t('games.connect4.shortSideRed');
-  if (side === 'yellow') return t('games.connect4.shortSideYellow');
+export function connect4SideLabel(side: string, locale: Locale): string | null {
+  if (side === 'red') return t('games.connect4.shortSideRed', locale);
+  if (side === 'yellow') return t('games.connect4.shortSideYellow', locale);
   return null;
 }
 
@@ -56,6 +57,7 @@ export const Connect4View: GameView = ({
   matchEnded,
   onSubmitMove,
 }: GameViewProps) => {
+  const { t, tf } = useTranslator();
   const board = useMemo(() => parseConnect4State(matchState), [matchState]);
 
   const winningSet = useMemo(() => {

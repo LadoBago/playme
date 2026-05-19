@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { t, tf } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 
 interface BoardProps {
   rows: number;
@@ -39,6 +39,7 @@ export function Board({
   onCellClick,
   renderCell,
 }: BoardProps) {
+  const { t, tf } = useTranslator();
   return (
     <div
       className="board"

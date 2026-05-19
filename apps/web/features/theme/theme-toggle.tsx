@@ -1,6 +1,7 @@
 'use client';
 
-import { t, type I18nKey } from '@playme/shared';
+import { type I18nKey } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 import type { Theme } from './theme-storage';
 import { useTheme } from './use-theme';
 
@@ -27,6 +28,7 @@ function ariaKeyForNext(current: Theme): I18nKey {
 }
 
 export function ThemeToggle() {
+  const { t } = useTranslator();
   const { theme, setTheme } = useTheme();
 
   // Pre-mount: render nothing. The toggle is position: fixed so its

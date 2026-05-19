@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { t } from '@playme/shared';
+import { t, type Locale } from '@playme/shared';
 import type { GameView, GameViewProps } from '../types';
 import { Board } from '../board';
 import { Ttt9x9BoardStateSchema, type Ttt9x9BoardState } from './schema';
@@ -14,9 +14,9 @@ import { Ttt9x9BoardStateSchema, type Ttt9x9BoardState } from './schema';
  * vocabulary; that's acceptable composition within the family, not a
  * platform-level shared concept.
  */
-export function tictactoe9x9SideLabel(side: string): string | null {
-  if (side === 'x') return t('games.tictactoe.shortSideX');
-  if (side === 'o') return t('games.tictactoe.shortSideO');
+export function tictactoe9x9SideLabel(side: string, locale: Locale): string | null {
+  if (side === 'x') return t('games.tictactoe.shortSideX', locale);
+  if (side === 'o') return t('games.tictactoe.shortSideO', locale);
   return null;
 }
 

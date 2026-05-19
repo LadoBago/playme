@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { t } from '@playme/shared';
+import { t, type Locale } from '@playme/shared';
 import type { GameView, GameViewProps } from '../types';
 import { Board } from '../board';
 import { Ttt6x6BoardStateSchema, type Ttt6x6BoardState } from './schema';
@@ -14,9 +14,9 @@ import { Ttt6x6BoardStateSchema, type Ttt6x6BoardState } from './schema';
  * the same X/O glyphs — acceptable composition within the TTT family
  * (the per-game *vocab constants* are still independent on the API side).
  */
-export function tictactoe6x6SideLabel(side: string): string | null {
-  if (side === 'x') return t('games.tictactoe.shortSideX');
-  if (side === 'o') return t('games.tictactoe.shortSideO');
+export function tictactoe6x6SideLabel(side: string, locale: Locale): string | null {
+  if (side === 'x') return t('games.tictactoe.shortSideX', locale);
+  if (side === 'o') return t('games.tictactoe.shortSideO', locale);
   return null;
 }
 

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ClockSnapshotDto, Role } from '@playme/shared';
-import { t } from '@playme/shared';
 import { extrapolateClock, formatClock } from '@/lib/clock';
+import { useTranslator } from '@/lib/use-locale';
 
 interface ClockProps {
   snapshot: ClockSnapshotDto;
@@ -34,6 +34,7 @@ interface ClockProps {
  * <c>lastTickAt</c> directly.
  */
 export function Clock({ snapshot, callerRole, isFinal }: ClockProps) {
+  const { t } = useTranslator();
   const receivedAtRef = useRef<number>(Date.now());
   // Reset the local reference whenever a new snapshot reference comes in.
   // We can't use snapshot.serverNowAt directly — it's the server's wall

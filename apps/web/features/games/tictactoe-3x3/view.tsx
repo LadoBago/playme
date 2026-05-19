@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { t } from '@playme/shared';
+import { t, type Locale } from '@playme/shared';
 import type { GameView, GameViewProps } from '../types';
 import { Board } from '../board';
 import { TttBoardStateSchema, type TttBoardState } from './schema';
@@ -11,9 +11,9 @@ import { TttBoardStateSchema, type TttBoardState } from './schema';
  * Side vocab stays inside this module (CLAUDE.md §7 "Platform thinness");
  * the platform calls through `GameModule.getSideLabel`.
  */
-export function tttSideLabel(side: string): string | null {
-  if (side === 'x') return t('games.tictactoe.shortSideX');
-  if (side === 'o') return t('games.tictactoe.shortSideO');
+export function tttSideLabel(side: string, locale: Locale): string | null {
+  if (side === 'x') return t('games.tictactoe.shortSideX', locale);
+  if (side === 'o') return t('games.tictactoe.shortSideO', locale);
   return null;
 }
 
