@@ -1,7 +1,8 @@
 'use client';
 
-import { type RoomDto, type Role, t, tf } from '@playme/shared';
+import { type RoomDto, type Role } from '@playme/shared';
 import { findGameModule } from '@/features/games/registry';
+import { useTranslator } from '@/lib/use-locale';
 
 interface MatchHeaderProps {
   room: RoomDto;
@@ -9,6 +10,7 @@ interface MatchHeaderProps {
 }
 
 export function MatchHeader({ room, role }: MatchHeaderProps) {
+  const { t, locale } = useTranslator();
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponentPlayer = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
 
@@ -17,9 +19,9 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
   // "Platform thinness"). Unknown game → no side label, never the raw
   // identifier.
   const getSideLabel = findGameModule(room.gameId)?.getSideLabel;
-  const mySideLabel = myPlayer?.side != null ? (getSideLabel?.(myPlayer.side) ?? null) : null;
+  const mySideLabel = myPlayer?.side != null ? (getSideLabel?.(myPlayer.side, locale) ?? null) : null;
   const opponentSideLabel =
-    opponentPlayer?.side != null ? (getSideLabel?.(opponentPlayer.side) ?? null) : null;
+    opponentPlayer?.side != null ? (getSideLabel?.(opponentPlayer.side, locale) ?? null) : null;
 
   // Score is always rendered from the viewer's perspective so the left
   // number sits under the left card. When role is null (initial hydrate)
@@ -53,6 +55,7 @@ function SeriesScore({
   opponentWins: number;
   draws: number;
 }) {
+  const { t, tf } = useTranslator();
   return (
     <div className="match-score" aria-label={t('match.score.label')}>
       <span className="match-score__counts">

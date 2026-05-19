@@ -100,9 +100,42 @@ function buildCsp(nonce: string): string {
   ].join('; ');
 }
 
+// Paths that live outside the [locale] segment in app/ — these are
+// static assets or file-route handlers (manifest.ts / sw.js / icons /
+// offline page). We still want CSP on them, but never the locale
+// rewrite — rewriting /icon.svg to /ka/icon.svg would 404.
+function isAssetPath(pathname: string): boolean {
+  if (pathname === '/manifest.webmanifest') return true;
+  if (pathname === '/icon.svg') return true;
+  if (pathname === '/apple-icon.png') return true;
+  if (pathname === '/offline.html') return true;
+  if (pathname === '/sw.js') return true;
+  if (pathname.startsWith('/icon-')) return true;
+  if (pathname.startsWith('/screenshot-')) return true;
+  return false;
+}
+
+// Map a request path to { locale, internalPath } for the [locale]
+// segment routing. /en[...] keeps its prefix; everything else gets
+// rewritten to /ka[...] so the file-system route resolves while the
+// user's URL bar stays clean.
+function resolveLocaleRewrite(pathname: string): {
+  locale: 'ka' | 'en';
+  internalPath: string;
+} {
+  if (pathname === '/en' || pathname.startsWith('/en/')) {
+    return { locale: 'en', internalPath: pathname };
+  }
+  return {
+    locale: 'ka',
+    internalPath: pathname === '/' ? '/ka' : `/ka${pathname}`,
+  };
+}
+
 export function middleware(request: NextRequest) {
   const nonce = generateNonce();
   const csp = buildCsp(nonce);
+  const pathname = request.nextUrl.pathname;
 
   // Pass the nonce through to the page via the request headers. Next.js
   // looks up `x-nonce` and applies it to its framework-injected scripts
@@ -111,9 +144,25 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
 
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  // Static assets — no rewrite, but still attach CSP.
+  if (isAssetPath(pathname)) {
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    response.headers.set('Content-Security-Policy', csp);
+    return response;
+  }
+
+  const { locale, internalPath } = resolveLocaleRewrite(pathname);
+  requestHeaders.set('x-locale', locale);
+
+  let response;
+  if (internalPath === pathname) {
+    response = NextResponse.next({ request: { headers: requestHeaders } });
+  } else {
+    const url = request.nextUrl.clone();
+    url.pathname = internalPath;
+    response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  }
+
   response.headers.set('Content-Security-Policy', csp);
   return response;
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { type GameCatalogEntry, t } from '@playme/shared';
+import { type GameCatalogEntry } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 
 interface InviteSummaryProps {
   hostDisplayName: string;
@@ -8,6 +9,7 @@ interface InviteSummaryProps {
 }
 
 export function InviteSummary({ hostDisplayName, game }: InviteSummaryProps) {
+  const { t } = useTranslator();
   return (
     <div className="card stack invite-summary">
       <span className="label">{t('join.invite.headline')}</span>

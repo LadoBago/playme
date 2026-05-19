@@ -1,11 +1,20 @@
 import Link from 'next/link';
-import { GAME_CATALOG, t } from '@playme/shared';
+import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
+import { resolveLocale } from '@/lib/locale';
 
-// SSR + indexable (CLAUDE.md §2.5 SEO). Full SEO surface (hreflang,
-// sitemap, JSON-LD) lands in Sprint 6.
+// SSR + indexable (CLAUDE.md §2.5 SEO). /en/ and / (ka) both route
+// through this segment; the active locale comes from params.locale,
+// set by middleware.ts for the default-locale rewrite.
 
-export default function HomePage() {
+interface PageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function HomePage({ params }: PageProps) {
+  const locale = await resolveLocale(params);
+  const { t } = createTranslator(locale);
+
   return (
     <main className="container stack" style={{ gap: '2.5rem' }}>
       <InstallPrompt />
@@ -19,7 +28,11 @@ export default function HomePage() {
         <h2 style={{ fontSize: '1.4rem' }}>{t('site.catalog.title')}</h2>
         <div className="catalog-grid">
           {GAME_CATALOG.map((game) => (
-            <Link key={game.id} href={`/play/${game.slug}`} className="game-card">
+            <Link
+              key={game.id}
+              href={localizedHref(`/play/${game.slug}`, locale)}
+              className="game-card"
+            >
               <BoardPreview rows={game.rows} cols={game.cols} />
               <span className="game-card__title">{t(game.nameKey)}</span>
               <span className="game-card__desc">{t(game.shortDescriptionKey)}</span>

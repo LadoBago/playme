@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { type I18nKey, type PlaymeClient, type RoomDto, t } from '@playme/shared';
+import { type I18nKey, type PlaymeClient, type RoomDto } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 
 interface JoinFormProps {
   room: RoomDto;
@@ -11,6 +12,7 @@ interface JoinFormProps {
 }
 
 export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
+  const { t } = useTranslator();
   const [displayName, setDisplayName] = useState('');
   const [side, setSide] = useState<string>('');
   const [error, setError] = useState<string | null>(null);

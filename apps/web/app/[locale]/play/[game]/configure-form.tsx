@@ -5,10 +5,11 @@ import { useState } from 'react';
 import {
   PlaymeClient,
   type SideSelectionMode,
-  t,
   type I18nKey,
+  localizedHref,
 } from '@playme/shared';
 import { browserApiBase } from '@/lib/api-base';
+import { useTranslator } from '@/lib/use-locale';
 
 interface SideOption {
   id: string;
@@ -29,6 +30,7 @@ const SIDE_MODE_OPTIONS: readonly { value: SideSelectionMode; labelKey: I18nKey 
 
 export function ConfigureForm({ gameId, sides, defaultHostSide }: ConfigureFormProps) {
   const router = useRouter();
+  const { t, locale } = useTranslator();
   const [displayName, setDisplayName] = useState('');
   const [sideMode, setSideMode] = useState<SideSelectionMode>('hostPicksSpecific');
   const [hostSide, setHostSide] = useState<string>(defaultHostSide);
@@ -53,7 +55,7 @@ export function ConfigureForm({ gameId, sides, defaultHostSide }: ConfigureFormP
       return;
     }
 
-    router.push(`/r/${result.value.code}`);
+    router.push(localizedHref(`/r/${result.value.code}`, locale));
   }
 
   return (

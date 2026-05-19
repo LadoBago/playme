@@ -1,3 +1,4 @@
+import type { Locale } from '@playme/shared';
 import type { ReactNode } from 'react';
 
 /**
@@ -39,5 +40,5 @@ export type GameView = (props: GameViewProps) => ReactNode;
  */
 export interface GameModule {
   readonly View: GameView;
-  readonly getSideLabel: (side: string) => string | null;
+  readonly getSideLabel: (side: string, locale: Locale) => string | null;
 }

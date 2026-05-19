@@ -1,6 +1,6 @@
 'use client';
 
-import { t } from '@playme/shared';
+import { useTranslator } from '@/lib/use-locale';
 import { dismiss, install, useInstallStatus } from './install-store';
 
 // Slim install banner. Renders only when the browser has fired
@@ -9,6 +9,7 @@ import { dismiss, install, useInstallStatus } from './install-store';
 // native install dialog; the × dismisses the banner (per-localStorage,
 // so the choice persists across reloads).
 export function InstallPrompt() {
+  const { t } = useTranslator();
   const { promptable } = useInstallStatus();
   if (!promptable) return null;
 
