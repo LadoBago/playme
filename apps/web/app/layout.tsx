@@ -29,6 +29,15 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Browser chrome (Chrome / Safari address bar) tracks the page
+  // background per scheme, so the toolbar blends with the page
+  // instead of competing with it. The PWA manifest's theme_color
+  // stays brand-accent — that's only seen on the installed app
+  // splash / launcher, where brand recognition matters more.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e0e10' },
+  ],
 };
 
 // Public-page SEO surface (CLAUDE.md §7, docs/frontend.md §2). Per-page

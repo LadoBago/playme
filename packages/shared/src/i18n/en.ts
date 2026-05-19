@@ -6,6 +6,9 @@
 export const en = {
   // --- Site chrome ---
   'site.title': 'PlayMe — Play casual games with a friend, no signup',
+  // Shorter brand form used by surfaces with limited space (e.g. the PWA
+  // manifest `name`, shown on install prompts and the home screen).
+  'site.titleShort': 'PlayMe — Play casual games with a friend',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play casual games with a friend, no signup.',
   'site.ogImageAlt': 'PlayMe — play casual games with a friend, no signup.',
