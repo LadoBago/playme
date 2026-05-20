@@ -88,12 +88,17 @@ All four categories ≥ 90 across both locales and both themes. The Best Practic
 
 **Sprint 7 — Hardening for launch (~1 week).**
 
-- Rate-limit policies on hot endpoints ([`security.md`](security.md) §5).
-- Security headers (CSP, HSTS, X-Frame-Options, etc.) — target A+ on `securityheaders.com`.
-- PostHog instrumentation for the remaining events from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2 (`room_created`, `room_joined`, `room_expired`, `match_started`, `move_made`). The `match_ended` + `rematch_*` events were absorbed into Sprint 5 PRs when the relevant code paths landed; this sprint also re-homes the authoritative match-end / room-expiry events to the API server-side per §1.2.
-- Localized error codes ([`observability-and-i18n.md`](observability-and-i18n.md) §2) end-to-end; friendly 404 / expired-room pages.
-- Basic load test (~hundreds of concurrent rooms). Verify the API and Redis hold up.
+Shipped (as of 2026-05-20):
+
+- Rate-limit policies on hot endpoints ([`security.md`](security.md) §5) — `RoomsCreate` 10/min, `RoomsJoin` 5/min, `RoomsGet` 60/min, applied via `[EnableRateLimiting]` on the controllers; policies live in `apps/api/src/PlayMe.Api/RateLimiting/`.
+- Security headers (CSP, HSTS, X-Frame-Options, etc.) — API `SecurityHeadersMiddleware` + Next.js `headers()` in `next.config.js` + per-request CSP nonce (`'nonce-<random>' 'strict-dynamic'`) in `apps/web/middleware.ts`.
+- Localized error codes ([`observability-and-i18n.md`](observability-and-i18n.md) §2) — `errors.*` keys in `packages/shared/src/i18n/{ka,en}.ts`; friendly 404 / expired-room rendering via `apps/web/app/[locale]/not-found.tsx`.
 - Production deploy with monitoring alerts wired to the on-call channel. Wired via `infra/provision.sh` (Azure CLI script) + `.github/workflows/deploy-api.yml` (GitHub Actions, OIDC → Azure, GHCR image). Alerts route to email; see [`security.md`](security.md) §11.
+
+Remaining before launch:
+
+- PostHog instrumentation for the remaining events from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2. **Web-side events wired** (`room_created`, `room_joined`, `match_started`, `move_made`) in `configure-form.tsx`, `join-form.tsx`, and `room-client.tsx`. **Still pending:** `room_expired` (server-authoritative per §1.2) and re-homing `match_ended` from web → API server-side. Requires PostHog .NET SDK in the API + `IAnalyticsClient` abstraction. The `rematch_*` events stay on web (user actions, not authoritative outcomes).
+- Basic load test (~hundreds of concurrent rooms). Verify the API and Redis hold up. No scripts in `infra/` or `tests/` yet.
 
 **Exit criteria:** Public launch on playme.ge at the cost target from the deployment table in `CLAUDE.md` §4.
 

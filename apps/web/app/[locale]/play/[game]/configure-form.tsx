@@ -9,6 +9,7 @@ import {
   localizedHref,
 } from '@playme/shared';
 import { browserApiBase } from '@/lib/api-base';
+import { track } from '@/lib/analytics';
 import { useTranslator } from '@/lib/use-locale';
 
 interface SideOption {
@@ -55,6 +56,7 @@ export function ConfigureForm({ gameId, sides, defaultHostSide }: ConfigureFormP
       return;
     }
 
+    track({ name: 'room_created', props: { gameId } });
     router.push(localizedHref(`/r/${result.value.code}`, locale));
   }
 

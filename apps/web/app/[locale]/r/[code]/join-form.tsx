@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { type I18nKey, type PlaymeClient, type RoomDto } from '@playme/shared';
+import { track } from '@/lib/analytics';
 import { useTranslator } from '@/lib/use-locale';
 
 interface JoinFormProps {
@@ -35,6 +36,7 @@ export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
       return;
     }
 
+    track({ name: 'room_joined', props: { gameId: result.value.gameId } });
     onJoined(result.value);
   }
 
