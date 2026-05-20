@@ -10,6 +10,7 @@ import type {
   OpponentReconnectedPayload,
   RematchDeclinedPayload,
   RematchOfferedPayload,
+  RoomExpiredPayload,
 } from './events';
 import { RoomHubEvent } from './events';
 import {
@@ -22,6 +23,7 @@ import {
   OpponentReconnectedPayloadSchema,
   RematchDeclinedPayloadSchema,
   RematchOfferedPayloadSchema,
+  RoomExpiredPayloadSchema,
 } from './schemas';
 import { RoomSchema, RoomSessionSchema } from '../api/schemas';
 import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
@@ -47,6 +49,13 @@ export interface RoomHubHandlers {
   onOpponentExited?: (payload: OpponentExitedPayload) => void;
   onRematchOffered?: (payload: RematchOfferedPayload) => void;
   onRematchDeclined?: (payload: RematchDeclinedPayload) => void;
+  /**
+   * Fires when the server reaps a `WaitingForOpponent` room whose
+   * 30-minute deadline elapsed without a challenger joining. The
+   * room's Redis state is gone by the time this lands; the client
+   * should render an "expired" state rather than try to refetch.
+   */
+  onRoomExpired?: (payload: RoomExpiredPayload) => void;
   /** Fires when the SignalR transport drops and is retrying. */
   onReconnecting?: (error: Error | undefined) => void;
   /** Fires when SignalR has re-established the transport. */
@@ -127,6 +136,11 @@ export class RoomHubClient {
       RoomHubEvent.RematchDeclined,
       RematchDeclinedPayloadSchema,
       handlers.onRematchDeclined,
+    );
+    this._bindEvent(
+      RoomHubEvent.RoomExpired,
+      RoomExpiredPayloadSchema,
+      handlers.onRoomExpired,
     );
     if (handlers.onReconnecting) {
       this._connection.onreconnecting((err) => handlers.onReconnecting!(err ?? undefined));

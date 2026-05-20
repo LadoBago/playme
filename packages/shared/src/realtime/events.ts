@@ -14,6 +14,7 @@ export const RoomHubEvent = {
   OpponentExited: 'OpponentExited',
   RematchOffered: 'RematchOffered',
   RematchDeclined: 'RematchDeclined',
+  RoomExpired: 'RoomExpired',
 } as const;
 
 export type RoomHubEventName = (typeof RoomHubEvent)[keyof typeof RoomHubEvent];
@@ -56,3 +57,13 @@ export interface RematchOfferedPayload {
 export interface RematchDeclinedPayload {
   room: RoomDto;
 }
+
+/**
+ * Fired by the server when a `WaitingForOpponent` room reaches its
+ * 30-minute deadline without anyone joining (see docs/state.md §2.2
+ * and the `playme:expires` sorted set). Empty payload: the event
+ * itself is the signal that the room is gone. The web client renders
+ * a clean "this room has expired" state instead of waiting on a
+ * subsequent failure.
+ */
+export type RoomExpiredPayload = Record<string, never>;

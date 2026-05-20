@@ -15,6 +15,7 @@ import type {
   OpponentReconnectedPayload,
   RematchDeclinedPayload,
   RematchOfferedPayload,
+  RoomExpiredPayload,
 } from './events';
 
 export const OpponentJoinedPayloadSchema = z.object({ room: RoomSchema });
@@ -42,6 +43,11 @@ export const RematchOfferedPayloadSchema = z.object({
 export const RematchDeclinedPayloadSchema = z.object({
   room: RoomSchema,
 });
+
+// Empty payload — RoomExpired carries no data; the event name is the
+// signal. Future-proof against the server adding optional fields by
+// not pinning the schema to strict shape.
+export const RoomExpiredPayloadSchema = z.object({});
 
 type _AssertOpponentJoined = z.infer<typeof OpponentJoinedPayloadSchema> extends OpponentJoinedPayload
   ? true
@@ -80,6 +86,9 @@ type _AssertRematchDeclined = z.infer<
 > extends RematchDeclinedPayload
   ? true
   : false;
+type _AssertRoomExpired = z.infer<typeof RoomExpiredPayloadSchema> extends RoomExpiredPayload
+  ? true
+  : false;
 
 export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentJoined,
@@ -91,4 +100,5 @@ export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentExited,
   _AssertRematchOffered,
   _AssertRematchDeclined,
+  _AssertRoomExpired,
 ];
