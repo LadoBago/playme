@@ -97,4 +97,6 @@ Detailed specs live in [`docs/`](docs/). Read the relevant one before touching t
 
 Trunk-based. Branches `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, short-lived. Conventional Commits, squash-merged PRs, one logical change per PR. CI (lint + typecheck + `dotnet build` + `dotnet format --verify-no-changes` + tests) must be green.
 
+**Never commit or push directly to `main`** — including docs, README, and one-line fixes. Always branch, open a PR, squash-merge.
+
 The full working agreement — code style, SOLID expectations, platform thinness, what must not be done — is in [CLAUDE.md](CLAUDE.md). It applies to humans too.
