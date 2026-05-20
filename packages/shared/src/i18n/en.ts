@@ -71,6 +71,7 @@ export const en = {
   'configure.submit': 'Create room',
   'configure.submitting': 'Creating…',
   'configure.rules.title': 'How to play',
+  'configure.back': 'Back to lobby',
 
   // --- Room / join ---
   'join.title': 'Join the room',
