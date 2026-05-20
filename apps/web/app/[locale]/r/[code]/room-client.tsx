@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   findGame,
@@ -53,7 +54,7 @@ async function silentStop(hub: RoomHubClient | null | undefined): Promise<void> 
  * (no cookie / not authorized) we render the join form.
  */
 export function RoomClient({ initialRoom }: RoomClientProps) {
-  const { t } = useTranslator();
+  const { t, locale } = useTranslator();
   const [room, setRoom] = useState<RoomDto>(initialRoom);
   const [role, setRole] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +66,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // "Opponent declined" notice from the generic "Opponent left" banner.
   // Both end the room in `closed`, so the room status alone can't say which.
   const [declined, setDeclined] = useState(false);
+  // True after the server's RoomExpired SignalR event lands — the
+  // WaitingForOpponent room reached its 30-min deadline without anyone
+  // joining. Terminal UI; no recovery path other than "back to home".
+  const [expired, setExpired] = useState(false);
   const hubRef = useRef<RoomHubClient | null>(null);
 
   // URL room code — passed to hub.joinRoom() so the server can reject a
@@ -102,6 +107,15 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onRematchDeclined: ({ room: r }) => {
         setRoom(r);
         setDeclined(true);
+      },
+      onRoomExpired: () => {
+        // Server reaped the WaitingForOpponent room — its Redis state
+        // is already gone. Flip to the terminal "expired" view and tear
+        // down the hub; there's nothing to reconnect to. Auto-reconnect
+        // would otherwise loop on join failures.
+        setExpired(true);
+        void silentStop(hubRef.current);
+        hubRef.current = null;
       },
       onReconnecting: () => setConnectionStatus('reconnecting'),
       onReconnected: () => {
@@ -280,6 +294,28 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 
   if (!game) {
     return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
+  }
+
+  // Terminal: room expired (RoomExpired SignalR event). Wins over both
+  // authStatus and connectionStatus because there's nothing left to
+  // join or reconnect to.
+  if (expired) {
+    return (
+      <main
+        className="container stack"
+        style={{ textAlign: 'center', gap: '1rem' }}
+      >
+        <h1 style={{ fontSize: '1.75rem' }}>{t('room.expired.title')}</h1>
+        <p style={{ color: 'var(--fg-muted)' }}>{t('room.expired.body')}</p>
+        <Link
+          href={localizedHref('/', locale)}
+          className="button-primary"
+          style={{ alignSelf: 'center', textDecoration: 'none' }}
+        >
+          {t('room.expired.cta')}
+        </Link>
+      </main>
+    );
   }
 
   if (authStatus === 'pending') {
