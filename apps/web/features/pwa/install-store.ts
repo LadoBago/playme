@@ -11,6 +11,14 @@ import { useSyncExternalStore } from 'react';
 
 const DISMISS_KEY = 'playme:installDismissed';
 
+// Routes where `<InstallPrompt />` actually renders. Kept in sync with
+// where the component is mounted in app/[locale]/page.tsx. The locale
+// prefix on `/en` is the only non-root form — the default `ka` locale
+// stays at `/` per middleware.ts rewrite.
+function isLandingPath(pathname: string): boolean {
+  return pathname === '/' || pathname === '/en' || pathname === '/en/';
+}
+
 // The Web App Manifest spec hasn't formalised this event yet; declared
 // locally so we don't import a `@types/wicg-...` package.
 interface BeforeInstallPromptEvent extends Event {
@@ -52,8 +60,21 @@ export function initInstallStore(): void {
   }
 
   window.addEventListener('beforeinstallprompt', (e: Event) => {
-    // Suppress the browser's mini-infobar — we own the UI now.
-    e.preventDefault();
+    // Only suppress the browser's mini-infobar on routes where we
+    // actually render our own UI (`<InstallPrompt />`, landing only).
+    // On a deep-linked sub-page — /play/<game>, /r/<code> — calling
+    // preventDefault here would hide the native install icon AND
+    // leave the visitor with no affordance (since our banner doesn't
+    // render outside `/`), which is exactly the UX bug Chrome warns
+    // about: "Banner not shown: beforeinstallpromptevent.preventDefault()
+    // called. The page must call ... .prompt() to show the banner."
+    if (isLandingPath(window.location.pathname)) {
+      e.preventDefault();
+    }
+    // Cache regardless. If the visitor later navigates to landing,
+    // <InstallPrompt /> mounts and can still drive `prompt()` against
+    // the saved event — beforeinstallprompt only fires once per
+    // session in most browsers.
     cachedEvent = e as BeforeInstallPromptEvent;
     recompute();
   });
