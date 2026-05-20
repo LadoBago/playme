@@ -26,9 +26,11 @@ const nextConfig = {
   // doesn't follow the path.join(process.cwd(), 'lib/fonts/…') string,
   // so on Vercel the files would be stripped from the serverless
   // bundle and the runtime read would 500. This include keeps them
-  // bundled with the route.
+  // bundled with the route. The bracket segment is Next.js's
+  // internal name for the `generateImageMetadata` variant id, so
+  // both /opengraph-image/ka and /opengraph-image/en match.
   outputFileTracingIncludes: {
-    '/opengraph-image': ['./lib/fonts/*.woff'],
+    '/opengraph-image/[__metadata_id__]': ['./lib/fonts/*.woff'],
   },
   // Same-origin proxy for the API in local dev. Without this, the browser
   // sees :3000 and :5080 as different origins, and Safari's ITP partitions
