@@ -11,6 +11,10 @@ export const en = {
   'site.titleShort': 'PlayMe — Play casual games with a friend',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play casual games with a friend, no signup.',
+  // Short brand tagline used as the OG image kicker and the landing
+  // hero subtitle, where the descriptive tagline (above) is too long.
+  // Brand kit voice: short, punchy, board-game flavored.
+  'site.brandTagline': 'Your move.',
   'site.ogImageAlt': 'PlayMe — play casual games with a friend, no signup.',
   'site.howItWorks.title': 'How PlayMe works',
   'site.howItWorks.step1.title': 'Pick a game',

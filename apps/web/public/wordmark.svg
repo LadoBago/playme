@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <!-- Inter is used as a hint; falls back to system geometric sans on render -->
+  <text x="0" y="56"
+        font-family="'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif"
+        font-size="56"
+        font-weight="400"
+        fill="#1F1F1F"
+        letter-spacing="-1.5">play</text>
+  <text x="108" y="56"
+        font-family="'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif"
+        font-size="56"
+        font-weight="700"
+        fill="#1F1F1F"
+        letter-spacing="-1.5">me</text>
+  <text x="207" y="56"
+        font-family="'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif"
+        font-size="56"
+        font-weight="500"
+        fill="#E54B1C"
+        letter-spacing="-1.5">.ge</text>
+</svg>

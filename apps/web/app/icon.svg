@@ -1,6 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="96" fill="#2a6df4"/>
-  <rect x="128" y="120" width="80" height="280" fill="#ffffff"/>
-  <circle cx="252" cy="192" r="96" fill="#ffffff"/>
-  <circle cx="252" cy="192" r="40" fill="#2a6df4"/>
+  <!-- Solid brand background (fills full 512x512 — required for iOS, supports Android maskable crop) -->
+  <rect width="512" height="512" fill="#E54B1C"/>
+
+  <!-- Artwork centered inside the 80% safe-zone (a 410px circle, 51px inset on all sides).
+       Mark content occupies a ~280px square centered at (256, 256), well inside the safe-zone. -->
+
+  <!-- Grid lines -->
+  <line x1="256" y1="116" x2="256" y2="396" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <line x1="116" y1="256" x2="396" y2="256" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Two opposing tokens: white (player 1) top-left, amber (player 2) bottom-right -->
+  <circle cx="186" cy="186" r="44" fill="#FFFFFF"/>
+  <circle cx="326" cy="326" r="44" fill="#F59E0B"/>
 </svg>

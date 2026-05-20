@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
+import { Wordmark } from '@/features/branding/wordmark';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
 import { resolveLocale } from '@/lib/locale';
 
@@ -19,8 +20,24 @@ export default async function HomePage({ params }: PageProps) {
     <main className="container stack" style={{ gap: '2.5rem' }}>
       <InstallPrompt />
 
-      <section className="stack" style={{ gap: '0.5rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2.5rem' }}>PlayMe</h1>
+      <section
+        className="stack"
+        style={{ gap: '0.5rem', textAlign: 'center', alignItems: 'center' }}
+      >
+        <h1 style={{ margin: 0 }}>
+          <span className="visually-hidden">playme.ge</span>
+          <Wordmark size="3.25rem" />
+        </h1>
+        <p
+          style={{
+            color: 'var(--accent)',
+            fontWeight: 500,
+            margin: 0,
+            fontSize: '1.1rem',
+          }}
+        >
+          {t('site.brandTagline')}
+        </p>
         <p style={{ color: 'var(--fg-muted)', margin: 0 }}>{t('site.tagline')}</p>
       </section>
 
