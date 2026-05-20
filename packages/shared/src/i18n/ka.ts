@@ -10,6 +10,7 @@ export const ka: Record<EnKey, string> = {
   'site.titleShort': 'PlayMe — ითამაშე მეგობართან',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.brandTagline': 'შენი ჯერია',
   'site.ogImageAlt': 'PlayMe — ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',
   'site.howItWorks.title': 'როგორ მუშაობს PlayMe',
   'site.howItWorks.step1.title': 'აირჩიე თამაში',

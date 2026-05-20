@@ -21,6 +21,15 @@ const nextConfig = {
   // Transpile workspace TS packages from source — `@playme/shared`
   // exports `src/index.ts` directly, not a built `.js`.
   transpilePackages: ['@playme/shared'],
+  // The OG image route reads vendored Noto Sans Georgian woff files
+  // (app/opengraph-image.tsx) at runtime. Next.js's static tracer
+  // doesn't follow the path.join(process.cwd(), 'lib/fonts/…') string,
+  // so on Vercel the files would be stripped from the serverless
+  // bundle and the runtime read would 500. This include keeps them
+  // bundled with the route.
+  outputFileTracingIncludes: {
+    '/opengraph-image': ['./lib/fonts/*.woff'],
+  },
   // Same-origin proxy for the API in local dev. Without this, the browser
   // sees :3000 and :5080 as different origins, and Safari's ITP partitions
   // the session cookie set on :5080. Proxying through :3000 keeps the

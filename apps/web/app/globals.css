@@ -6,18 +6,31 @@
 :root {
   color-scheme: light dark;
 
-  --bg: #fafafa;
+  --bg: #fff4e6;
   --bg-elevated: #ffffff;
-  --fg: #1a1a1a;
-  --fg-muted: #5a5a5a;
-  --border: rgba(0, 0, 0, 0.12);
-  --accent: #2a6df4;
+  --fg: #1f1f1f;
+  --fg-muted: #6b5848;
+  --border: rgba(31, 31, 31, 0.14);
+  --accent: #e54b1c;
+  --accent-2: #f59e0b;
   --accent-fg: #ffffff;
   --danger: #b00020;
-  --highlight: rgba(42, 109, 244, 0.18);
+  --highlight: rgba(229, 75, 28, 0.14);
   --win-highlight: rgba(34, 197, 94, 0.32);
   --win-stroke: rgb(34, 197, 94);
   --win-glow: rgba(34, 197, 94, 0.5);
+
+  /* Wordmark `.ge` glyph color. Brand red on the cream light bg, amber
+   * on the dark bg — saturated red sits muddy against near-black, so
+   * the kit's dark wordmark variant swaps to amber. Scoped so the rest
+   * of the UI keeps `--accent` (brand red) across both modes. */
+  --wordmark-accent: #e54b1c;
+
+  /* Last-move outline color. Defaults to the brand accent so the TTT
+   * board lights up in brand red. The Connect 4 board overrides this
+   * (.c4__cell--last) to amber so the ring stays legible against the
+   * red Connect 4 disc, where brand-red-on-disc-red would clash. */
+  --last-move-ring: var(--accent);
 
   /* Connect 4 piece tokens. Game-piece colors stay legible across themes,
    * so the values are stable in light + dark; the token indirection keeps
@@ -38,12 +51,13 @@
  *      existing visitors.
  */
 :root[data-theme='dark'] {
-  --bg: #0e0e10;
-  --bg-elevated: #1a1a1c;
-  --fg: #ececec;
-  --fg-muted: #a0a0a0;
-  --border: rgba(255, 255, 255, 0.14);
-  --highlight: rgba(99, 158, 255, 0.24);
+  --bg: #1a0f0a;
+  --bg-elevated: #241612;
+  --fg: #f4ece4;
+  --fg-muted: #b8a896;
+  --border: rgba(255, 244, 230, 0.14);
+  --highlight: rgba(255, 122, 76, 0.18);
+  --wordmark-accent: #f59e0b;
   --win-highlight: rgba(74, 222, 128, 0.36);
   --win-stroke: rgb(74, 222, 128);
   --win-glow: rgba(74, 222, 128, 0.5);
@@ -51,12 +65,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']):not([data-theme='dark']) {
-    --bg: #0e0e10;
-    --bg-elevated: #1a1a1c;
-    --fg: #ececec;
-    --fg-muted: #a0a0a0;
-    --border: rgba(255, 255, 255, 0.14);
-    --highlight: rgba(99, 158, 255, 0.24);
+    --bg: #1a0f0a;
+    --bg-elevated: #241612;
+    --fg: #f4ece4;
+    --fg-muted: #b8a896;
+    --border: rgba(255, 244, 230, 0.14);
+    --highlight: rgba(255, 122, 76, 0.18);
+    --wordmark-accent: #f59e0b;
     --win-highlight: rgba(74, 222, 128, 0.36);
     --win-stroke: rgb(74, 222, 128);
     --win-glow: rgba(74, 222, 128, 0.5);
@@ -73,7 +88,13 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
+  /* Inter via next/font (layout.tsx) is exposed as `--font-inter`. The
+   * fallback chain covers Georgian glyphs (Inter ships no Georgian
+   * subset) and any pre-hydration paint before the woff2 finishes
+   * loading. */
   font-family:
+    var(--font-inter, 'Inter'),
+    'Helvetica Neue',
     system-ui,
     -apple-system,
     'Segoe UI',
@@ -119,6 +140,48 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+/* Screen-reader-only label. The brand wordmark renders the "playme.ge"
+ * name visually; this utility lets a sibling carry the accessible name
+ * for headings whose visible content is purely graphical. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Brand wordmark ---
+ * `play` 400 / `me` 700 / `.ge` 500 in Inter (loaded via next/font in
+ * layout.tsx). Ink colour tracks `--fg` so the wordmark inverts cor-
+ * rectly in dark mode; `.ge` uses `--wordmark-accent` which is brand
+ * red on the cream light bg and amber on the dark bg. */
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+}
+
+.wordmark__me {
+  font-weight: 700;
+}
+
+.wordmark__play {
+  font-weight: 400;
+}
+
+.wordmark__ge {
+  font-weight: 500;
+  color: var(--wordmark-accent);
 }
 
 /* --- PWA install prompt (Sprint 6) ---
@@ -585,7 +648,7 @@ textarea {
 
 .board__cell--last {
   animation: lastMovePulse 1.4s ease-out;
-  box-shadow: 0 0 0 3px var(--accent) inset;
+  box-shadow: 0 0 0 3px var(--last-move-ring) inset;
 }
 
 .board__cell--winning {
@@ -596,12 +659,12 @@ textarea {
 @keyframes lastMovePulse {
   0% {
     box-shadow:
-      0 0 0 3px var(--accent) inset,
+      0 0 0 3px var(--last-move-ring) inset,
       0 0 0 8px var(--highlight);
   }
   100% {
     box-shadow:
-      0 0 0 3px var(--accent) inset,
+      0 0 0 3px var(--last-move-ring) inset,
       0 0 0 0 transparent;
   }
 }
@@ -704,7 +767,12 @@ textarea {
 }
 
 .c4__cell--last {
-  outline: 3px solid var(--accent);
+  /* Brand red is also the Connect 4 red disc; override the global
+   * last-move ring to amber so the highlight reads against either
+   * disc color. The keyframes pick up the override via var(--last-
+   * move-ring). */
+  --last-move-ring: var(--accent-2);
+  outline: 3px solid var(--last-move-ring);
   outline-offset: -3px;
   animation: lastMovePulse 1.4s ease-out;
 }

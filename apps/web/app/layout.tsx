@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
+import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { createTranslator } from '@playme/shared';
 import { LangSync } from '@/features/locale/lang-sync';
@@ -12,6 +13,20 @@ import { AnalyticsBoot } from '@/lib/analytics-boot';
 import { getServerLocale } from '@/lib/locale';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
+
+// Brand wordmark targets Inter (play 400 / me 700 / .ge 500 per the
+// brand kit). next/font self-hosts the woff2 from /_next/static/media,
+// so the CSP `font-src 'self'` directive in middleware.ts already
+// covers it — no header change needed. Georgian glyphs fall through
+// to system fonts (Inter doesn't ship a Georgian subset); that's
+// intentional and renders correctly via the font-family fallback
+// chain in globals.css.
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 // Force per-request rendering so middleware's nonce CSP can attach a
 // fresh nonce to every framework script tag (see middleware.ts). Without
@@ -40,8 +55,8 @@ export const viewport: Viewport = {
   // stays brand-accent — that's only seen on the installed app
   // splash / launcher, where brand recognition matters more.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
-    { media: '(prefers-color-scheme: dark)', color: '#0e0e10' },
+    { media: '(prefers-color-scheme: light)', color: '#FFF4E6' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a0f0a' },
   ],
 };
 
@@ -105,7 +120,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const locale = await getServerLocale();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body>
         <script
           nonce={nonce}
