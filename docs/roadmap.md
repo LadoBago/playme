@@ -94,10 +94,11 @@ Shipped (as of 2026-05-20):
 - Security headers (CSP, HSTS, X-Frame-Options, etc.) — API `SecurityHeadersMiddleware` + Next.js `headers()` in `next.config.js` + per-request CSP nonce (`'nonce-<random>' 'strict-dynamic'`) in `apps/web/middleware.ts`.
 - Localized error codes ([`observability-and-i18n.md`](observability-and-i18n.md) §2) — `errors.*` keys in `packages/shared/src/i18n/{ka,en}.ts`; friendly 404 / expired-room rendering via `apps/web/app/[locale]/not-found.tsx`.
 - Production deploy with monitoring alerts wired to the on-call channel. Wired via `infra/provision.sh` (Azure CLI script) + `.github/workflows/deploy-api.yml` (GitHub Actions, OIDC → Azure, GHCR image). Alerts route to email; see [`security.md`](security.md) §11.
+- PostHog instrumentation per [`observability-and-i18n.md`](observability-and-i18n.md) §1.2. Web-side: `room_created`, `room_joined`, `match_started`, `move_made` (in `configure-form.tsx`, `join-form.tsx`, `room-client.tsx`). Server-side: `match_ended` fires from all four match-end handlers (`SubmitMove`, `Resign`, `AdjudicateTimeout`, `AdjudicateDisconnectGrace`) through `IAnalyticsClient` (`Application/Abstractions/`) → `PostHogAnalyticsClient` (`Infrastructure/Telemetry/`, ~100 LOC `HttpClient` adapter, no SDK dep). `NoOpAnalyticsClient` is the DI fallback when `PostHog:ApiKey` is unset (dev/test). The `rematch_*` events stay on web (user actions, not authoritative outcomes).
 
 Remaining before launch:
 
-- PostHog instrumentation for the remaining events from [`observability-and-i18n.md`](observability-and-i18n.md) §1.2. **Web-side events wired** (`room_created`, `room_joined`, `match_started`, `move_made`) in `configure-form.tsx`, `join-form.tsx`, and `room-client.tsx`. **Still pending:** `room_expired` (server-authoritative per §1.2) and re-homing `match_ended` from web → API server-side. Requires PostHog .NET SDK in the API + `IAnalyticsClient` abstraction. The `rematch_*` events stay on web (user actions, not authoritative outcomes).
+- `room_expired` event. Room expiry is lazy today (Redis TTL elapses → next read returns null) — firing analytics on expiry requires a new active sweeper or Redis keyspace notifications. Punted to its own PR (~250 LOC: `playme:expires` sorted set + `RoomExpirySweeperService` + the reserved `RoomExpired` SignalR event).
 - Basic load test (~hundreds of concurrent rooms). Verify the API and Redis hold up. No scripts in `infra/` or `tests/` yet.
 
 **Exit criteria:** Public launch on playme.ge at the cost target from the deployment table in `CLAUDE.md` §4.

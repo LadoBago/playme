@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using PlayMe.Application.Abstractions;
 using PlayMe.Infrastructure.Games;
 using PlayMe.Infrastructure.RateLimiting;
@@ -7,6 +8,7 @@ using PlayMe.Infrastructure.Random;
 using PlayMe.Infrastructure.Redis;
 using PlayMe.Infrastructure.Scheduling;
 using PlayMe.Infrastructure.Security;
+using PlayMe.Infrastructure.Telemetry;
 using PlayMe.Infrastructure.Time;
 using StackExchange.Redis;
 
@@ -57,6 +59,34 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<RedisDisconnectGraceSweeperService>();
         services.AddHostedService(sp => sp.GetRequiredService<RedisTimeoutSweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisDisconnectGraceSweeperService>());
+
+        // Sprint 7: server-side product analytics (docs/observability-and-i18n.md
+        // §1.2). Authoritative outcomes — match_ended, room_expired — fire from
+        // the API so the catalog stays accurate when a client disconnects before
+        // it can report. The web emits user-action events only.
+        //
+        // PostHog:ApiKey empty / unset → NoOp adapter. Local dev, integration
+        // tests, and any environment without a key get silent dropping; no
+        // accidental events from developer machines into a shared project.
+        services.Configure<PostHogOptions>(configuration.GetSection("PostHog"));
+        var posthogKey = configuration["PostHog:ApiKey"];
+        if (string.IsNullOrWhiteSpace(posthogKey))
+        {
+            services.AddSingleton<IAnalyticsClient, NoOpAnalyticsClient>();
+        }
+        else
+        {
+            services.AddHttpClient<IAnalyticsClient, PostHogAnalyticsClient>((sp, http) =>
+            {
+                var opts = sp.GetRequiredService<IOptions<PostHogOptions>>().Value;
+                http.BaseAddress = new Uri(opts.Host);
+                // 5s ceiling so a slow/down capture endpoint can't queue
+                // up against gameplay traffic. The adapter logs + swallows
+                // timeouts so missing the event is acceptable; blocking
+                // is not.
+                http.Timeout = TimeSpan.FromSeconds(5);
+            });
+        }
 
         return services;
     }

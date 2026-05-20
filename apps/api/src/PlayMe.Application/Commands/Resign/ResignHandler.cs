@@ -2,6 +2,7 @@ using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Application.RateLimiting;
+using PlayMe.Application.Telemetry;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.Resign;
@@ -26,6 +27,7 @@ public sealed class ResignHandler
     private readonly IClockService _clockService;
     private readonly ITimeoutScheduler _timeouts;
     private readonly IRateLimiter _rateLimiter;
+    private readonly IAnalyticsClient _analytics;
 
     public ResignHandler(
         IRoomRepository rooms,
@@ -33,7 +35,8 @@ public sealed class ResignHandler
         IClock clock,
         IClockService clockService,
         ITimeoutScheduler timeouts,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        IAnalyticsClient analytics)
     {
         _rooms = rooms;
         _games = games;
@@ -41,6 +44,7 @@ public sealed class ResignHandler
         _clockService = clockService;
         _timeouts = timeouts;
         _rateLimiter = rateLimiter;
+        _analytics = analytics;
     }
 
     public async Task<AppResult<ResignResult>> HandleAsync(
@@ -104,6 +108,11 @@ public sealed class ResignHandler
                     room.EndCurrentMatch();
                     await _rooms.SaveAsync(room, ct);
                     await _timeouts.CancelAsync(code, ct);
+                    await _analytics.TrackAsync(
+                        AnalyticsEvents.MatchEnded,
+                        room.Code.Value,
+                        AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+                        ct);
 
                     return AppResult<ResignResult>.Ok(new ResignResult(
                         Room: RoomMapper.ToDto(room, now, _games),
@@ -118,6 +127,11 @@ public sealed class ResignHandler
                 room.EndCurrentMatch();
                 await _rooms.SaveAsync(room, ct);
                 await _timeouts.CancelAsync(code, ct);
+                await _analytics.TrackAsync(
+                    AnalyticsEvents.MatchEnded,
+                    room.Code.Value,
+                    AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+                    ct);
 
                 return AppResult<ResignResult>.Ok(new ResignResult(
                     Room: RoomMapper.ToDto(room, now, _games),
