@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
@@ -65,6 +66,28 @@ export default async function ConfigurePage({ params }: PageProps) {
 
   return (
     <main className="container stack" style={{ gap: '2rem' }}>
+      <Link
+        href={localizedHref('/', locale)}
+        className="icon-link"
+        aria-label={t('configure.back')}
+        style={{ alignSelf: 'flex-start' }}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+      </Link>
+
       <header className="stack" style={{ gap: '0.25rem' }}>
         <h1 style={{ fontSize: '1.75rem' }}>{name}</h1>
         <p style={{ color: 'var(--fg-muted)', margin: 0 }}>

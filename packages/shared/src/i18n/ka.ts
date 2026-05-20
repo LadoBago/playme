@@ -67,6 +67,7 @@ export const ka: Record<EnKey, string> = {
   'configure.submit': 'ოთახის შექმნა',
   'configure.submitting': 'იქმნება…',
   'configure.rules.title': 'როგორ ვითამაშოთ',
+  'configure.back': 'მთავარ გვერდზე დაბრუნება',
 
   // --- Room / join ---
   'join.title': 'შემოუერთდი ოთახს',

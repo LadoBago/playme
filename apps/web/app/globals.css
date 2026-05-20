@@ -327,6 +327,40 @@ textarea {
   outline-offset: 2px;
 }
 
+/* --- Icon link ---
+ * Circular icon-only affordance for navigation links (e.g. the back
+ * arrow on the configure page). Shape matches .theme-toggle so the two
+ * read as siblings; rendered as <a> so semantics stay a navigation. */
+
+.icon-link {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.icon-link:hover {
+  background: var(--highlight);
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.icon-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* --- Layout primitives --- */
 
 .container {

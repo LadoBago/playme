@@ -487,11 +487,24 @@ function MatchView({
         ? 'join.waitingForHost'
         : 'join.waitingForStart'
       : 'join.waiting';
+    // No server "cancel" exists for WaitingForOpponent (docs/state.md §2.4:
+    // disconnects in this state are transparent; the room expires by TTL).
+    // So the back-to-lobby affordance here is a plain navigation link —
+    // anyone reopening the invite re-enters the same seat.
     return (
       <div className="stack">
         <MatchHeader room={room} role={role} />
         {isChallenger ? null : <ShareLink url={shareUrl} />}
         <p style={{ color: 'var(--fg-muted)' }}>{t(messageKey)}</p>
+        <div className="match-controls">
+          <Link
+            href={localizedHref('/', locale)}
+            className="button-ghost"
+            style={{ textDecoration: 'none' }}
+          >
+            {t('match.backToLobby')}
+          </Link>
+        </div>
       </div>
     );
   }
