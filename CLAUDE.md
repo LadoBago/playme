@@ -202,7 +202,7 @@ If a SOLID violation is necessary, call it out in the PR description with a one-
 
 - **Trunk-based.** `main` is always releasable.
 - Branches: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`. Short-lived (< 3 days).
-- Never commit directly to `main`. Every change goes through a PR.
+- **Never commit or push directly to `main`.** Every change — including docs, README, CLAUDE.md edits, config tweaks, and one-line fixes — lands on `main` only via a squash-merged PR with green CI. No exceptions for "small" or "obvious" changes. If you find yourself on `main` with local edits, create a branch first (`git switch -c <type>/<slug>`) before committing.
 
 ### Commits
 
@@ -279,6 +279,7 @@ The test: **could this code work unchanged if we removed every game except chess
 - Don't introduce new top-level dependencies without flagging them in the PR description (license, size, maintenance).
 - Don't change CI configuration, release scripts, `turbo.json`, or the deploy targets silently — call them out.
 - Don't commit secrets, `.env` files, or local certificates.
+- Don't commit or push directly to `main` — even for docs, README, or trivial fixes. Always branch + PR + squash-merge. If asked to "just commit and push," push to a branch and open a PR instead, and surface the constraint.
 
 ---
 
