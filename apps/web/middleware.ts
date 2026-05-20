@@ -169,16 +169,16 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Skip middleware on paths that don't render HTML (API rewrites,
-  // SignalR proxy, static assets, the OG image, robots/sitemap). RSC
-  // prefetch requests are also skipped — they ride on the page's CSP.
+  // SignalR proxy, static assets, the OG image, robots/sitemap).
+  //
+  // RSC prefetch requests DO run through middleware. They need the
+  // same locale rewrite as the eventual navigation — an unprefixed
+  // default-locale href like `/play/tictactoe-3x3` only resolves
+  // once middleware rewrites it to `/ka/play/tictactoe-3x3`. Before
+  // PR #64 introduced the [locale] segment the rewrite didn't exist
+  // and skipping prefetch was a free CSP win; now skipping it 404s
+  // every prefetch of a default-locale URL.
   matcher: [
-    {
-      source:
-        '/((?!api|hubs|_next/static|_next/image|opengraph-image|favicon.ico|robots.txt|sitemap.xml).*)',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
-    },
+    '/((?!api|hubs|_next/static|_next/image|opengraph-image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };
