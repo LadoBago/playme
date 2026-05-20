@@ -31,17 +31,15 @@ export function initAnalytics(): void {
   initialized = true;
 }
 
-// Event catalog — the §4.2 baseline. Extend as features land.
+// Event catalog — web-side events only. User actions fire from here;
+// authoritative outcomes (match_ended, room_expired) fire from the API
+// per docs/observability-and-i18n.md §1.2 so the catalog stays accurate
+// when a client disconnects before it can report.
 export type AnalyticsEvent =
   | { name: 'room_created'; props: { gameId: string } }
   | { name: 'room_joined'; props: { gameId: string } }
-  | { name: 'room_expired'; props: { gameId: string } }
   | { name: 'match_started'; props: { gameId: string } }
   | { name: 'move_made'; props: { gameId: string } }
-  | {
-      name: 'match_ended';
-      props: { gameId: string; reason: 'win' | 'draw' | 'resign' | 'timeout' | 'disconnect' };
-    }
   | { name: 'rematch_offered'; props: { gameId: string } }
   | { name: 'rematch_accepted'; props: { gameId: string } }
   | { name: 'rematch_rejected'; props: { gameId: string } };

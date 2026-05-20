@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
+using PlayMe.Application.Telemetry;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.AdjudicateDisconnectGrace;
@@ -27,6 +28,7 @@ public sealed partial class AdjudicateDisconnectGraceHandler
     private readonly IClockService _clockService;
     private readonly ITimeoutScheduler _timeouts;
     private readonly IRoomCodeRedactor _redactor;
+    private readonly IAnalyticsClient _analytics;
     private readonly ILogger<AdjudicateDisconnectGraceHandler> _log;
 
     public AdjudicateDisconnectGraceHandler(
@@ -36,6 +38,7 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         IClockService clockService,
         ITimeoutScheduler timeouts,
         IRoomCodeRedactor redactor,
+        IAnalyticsClient analytics,
         ILogger<AdjudicateDisconnectGraceHandler> log)
     {
         _rooms = rooms;
@@ -44,6 +47,7 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         _clockService = clockService;
         _timeouts = timeouts;
         _redactor = redactor;
+        _analytics = analytics;
         _log = log;
     }
 
@@ -105,6 +109,11 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         room.EndCurrentMatch();
         await _rooms.SaveAsync(room, ct);
         await _timeouts.CancelAsync(code, ct);
+        await _analytics.TrackAsync(
+            AnalyticsEvents.MatchEnded,
+            room.Code.Value,
+            AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+            ct);
 
         return AppResult<AdjudicateDisconnectGraceResult>.Ok(
             new AdjudicateDisconnectGraceResult(

@@ -3,6 +3,7 @@ using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Application.RateLimiting;
+using PlayMe.Application.Telemetry;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.SubmitMove;
@@ -28,6 +29,7 @@ public sealed class SubmitMoveHandler
     private readonly ITimeoutScheduler _timeouts;
     private readonly IDisconnectGraceScheduler _graces;
     private readonly IRateLimiter _rateLimiter;
+    private readonly IAnalyticsClient _analytics;
 
     public SubmitMoveHandler(
         IRoomRepository rooms,
@@ -36,7 +38,8 @@ public sealed class SubmitMoveHandler
         IClockService clockService,
         ITimeoutScheduler timeouts,
         IDisconnectGraceScheduler graces,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        IAnalyticsClient analytics)
     {
         _rooms = rooms;
         _games = games;
@@ -45,6 +48,7 @@ public sealed class SubmitMoveHandler
         _timeouts = timeouts;
         _graces = graces;
         _rateLimiter = rateLimiter;
+        _analytics = analytics;
     }
 
     public async Task<AppResult<SubmitMoveResult>> HandleAsync(
@@ -108,6 +112,11 @@ public sealed class SubmitMoveHandler
                     room.EndCurrentMatch();
                     await _rooms.SaveAsync(room, ct);
                     await _timeouts.CancelAsync(code, ct);
+                    await _analytics.TrackAsync(
+                        AnalyticsEvents.MatchEnded,
+                        room.Code.Value,
+                        AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+                        ct);
 
                     return AppResult<SubmitMoveResult>.Ok(new SubmitMoveResult(
                         Room: RoomMapper.ToDto(room, now, _games),
@@ -148,6 +157,11 @@ public sealed class SubmitMoveHandler
                     // moot once the match has ended.
                     await _graces.CancelAsync(code, cmd.CallerRole, ct);
                     await _graces.CancelAsync(code, nextActive, ct);
+                    await _analytics.TrackAsync(
+                        AnalyticsEvents.MatchEnded,
+                        room.Code.Value,
+                        AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+                        ct);
                 }
                 else
                 {

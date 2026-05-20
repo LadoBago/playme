@@ -1,6 +1,7 @@
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
+using PlayMe.Application.Telemetry;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.AdjudicateTimeout;
@@ -22,17 +23,20 @@ public sealed class AdjudicateTimeoutHandler
     private readonly IClock _clock;
     private readonly IClockService _clockService;
     private readonly IGameModuleRegistry _games;
+    private readonly IAnalyticsClient _analytics;
 
     public AdjudicateTimeoutHandler(
         IRoomRepository rooms,
         IClock clock,
         IClockService clockService,
-        IGameModuleRegistry games)
+        IGameModuleRegistry games,
+        IAnalyticsClient analytics)
     {
         _rooms = rooms;
         _clock = clock;
         _clockService = clockService;
         _games = games;
+        _analytics = analytics;
     }
 
     public async Task<AppResult<AdjudicateTimeoutResult>> HandleAsync(
@@ -74,6 +78,11 @@ public sealed class AdjudicateTimeoutHandler
         match.ApplyTimeout(match.SideToMove, now);
         room.EndCurrentMatch();
         await _rooms.SaveAsync(room, ct);
+        await _analytics.TrackAsync(
+            AnalyticsEvents.MatchEnded,
+            room.Code.Value,
+            AnalyticsEvents.MatchEndedProperties(room.GameId.Value, match.Outcome!),
+            ct);
 
         return AppResult<AdjudicateTimeoutResult>.Ok(
             new AdjudicateTimeoutResult(RoomMapper.ToDto(room, now, _games), TimedOut: true));

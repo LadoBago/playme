@@ -20,13 +20,17 @@ public sealed class AdjudicateDisconnectGraceHandlerTests
     private static readonly TimeSpan Budget = TimeSpan.FromSeconds(60);
 
     private static AdjudicateDisconnectGraceHandler BuildHandler(
-        FakeClock clock, FakeRoomRepository rooms, RecordingTimeoutScheduler timeouts) =>
+        FakeClock clock,
+        FakeRoomRepository rooms,
+        RecordingTimeoutScheduler timeouts,
+        RecordingAnalyticsClient? analytics = null) =>
         new(rooms,
             new SingleGameRegistry(),
             clock,
             new ClockService(),
             timeouts,
             new RoomCodeRedactor(),
+            analytics ?? new RecordingAnalyticsClient(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<AdjudicateDisconnectGraceHandler>.Instance);
 
     [Fact]

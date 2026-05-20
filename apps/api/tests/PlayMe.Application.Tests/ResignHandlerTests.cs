@@ -24,14 +24,16 @@ public sealed class ResignHandlerTests
         FakeClock clock,
         FakeRoomRepository rooms,
         RecordingTimeoutScheduler timeouts,
-        IRateLimiter? rateLimiter = null) =>
+        IRateLimiter? rateLimiter = null,
+        RecordingAnalyticsClient? analytics = null) =>
         new(
             rooms,
             new SingleGameRegistry(),
             clock,
             new ClockService(),
             timeouts,
-            rateLimiter ?? new RecordingRateLimiter());
+            rateLimiter ?? new RecordingRateLimiter(),
+            analytics ?? new RecordingAnalyticsClient());
 
     [Fact]
     public async Task Host_resign_ends_match_with_Resign_outcome_and_cancels_timeout()
@@ -195,5 +197,35 @@ public sealed class ResignHandlerTests
         // Room unchanged: lock was never acquired.
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
         saved!.Status.Should().Be(RoomStatus.InProgress);
+    }
+
+    [Fact]
+    public async Task Resign_emits_match_ended_analytics_with_reason_and_gameId()
+    {
+        var clock = new FakeClock();
+        var rooms = new FakeRoomRepository();
+        var timeouts = new RecordingTimeoutScheduler();
+        var analytics = new RecordingAnalyticsClient();
+        rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
+        var handler = BuildHandler(clock, rooms, timeouts, analytics: analytics);
+
+        var result = await handler.HandleAsync(
+            new ResignCommand(
+                RoomFactory.RoomCodeValue,
+                RoomFactory.HostPlayerId,
+                Role.Host),
+            CancellationToken.None);
+
+        result.Succeeded.Should().BeTrue();
+
+        // Single match_ended event, distinct_id = room code (per
+        // docs/observability-and-i18n.md §1.2 — server-side authoritative
+        // event, anonymous distinct_id; person profile suppressed adapter-side).
+        analytics.Events.Should().ContainSingle()
+            .Which.Should().Match<(string Event, string DistinctId, IReadOnlyDictionary<string, object?> Properties)>(e =>
+                e.Event == "match_ended"
+                && e.DistinctId == RoomFactory.RoomCodeValue
+                && (string)e.Properties["gameId"]! == TicTacToe3x3GameModule.GameId.Value
+                && (string)e.Properties["reason"]! == "resign");
     }
 }
