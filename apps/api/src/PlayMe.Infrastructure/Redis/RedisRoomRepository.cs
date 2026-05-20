@@ -168,11 +168,14 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     /// <summary>
     /// TTL policy from CLAUDE.md §2.8: 30 min while waiting, 1 h while in
     /// progress, 5 min after Ended (terminal cleanup window). Refreshed on
-    /// every save so active rooms don't expire mid-match.
+    /// every save so active rooms don't expire mid-match. The
+    /// WaitingForOpponent value is also used by the room-expiry sweeper to
+    /// fire <c>room_expired</c>; it lives in <see cref="RoomLifetimes"/>
+    /// so both the repo and the sweeper compute the same deadline.
     /// </summary>
     private static TimeSpan TtlFor(RoomStatus status) => status switch
     {
-        RoomStatus.WaitingForOpponent => TimeSpan.FromMinutes(30),
+        RoomStatus.WaitingForOpponent => RoomLifetimes.WaitingForOpponent,
         RoomStatus.InProgress => TimeSpan.FromHours(1),
         RoomStatus.Ended => TimeSpan.FromMinutes(5),
         RoomStatus.AwaitingRematch => TimeSpan.FromMinutes(5),

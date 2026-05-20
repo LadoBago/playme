@@ -28,6 +28,18 @@ internal static class RedisKeys
     public const string Grace = $"{Prefix}grace";
 
     /// <summary>
+    /// Sorted set: score = unix-ms deadline, value =
+    /// <c>{roomCode}|{gameId}</c>. One entry per room — enrolled at
+    /// creation (deadline = creation + <c>RoomLifetimes.WaitingForOpponent</c>),
+    /// ZREM'd when the match actually starts. The sweeper fires
+    /// <c>room_expired</c> for any entry whose room is still
+    /// <c>WaitingForOpponent</c> (or already reaped) at the deadline.
+    /// gameId rides on the member because by then the room's own Redis
+    /// key has elapsed and the handler can't load the room to learn it.
+    /// </summary>
+    public const string Expires = $"{Prefix}expires";
+
+    /// <summary>
     /// Per-session rate-limit sliding-window sorted set
     /// (docs/security.md §5). One key per policy × subject; each member
     /// is a single recent acquisition timestamp.

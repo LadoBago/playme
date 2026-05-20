@@ -25,6 +25,7 @@ public sealed class PresenceHandlerTests
         var rooms = new FakeRoomRepository();
         var timeouts = new RecordingTimeoutScheduler();
         var graces = new RecordingGraceScheduler();
+        var expiry = new RecordingRoomExpiryScheduler();
 
         // Seed a fresh room awaiting both players' connection.
         var seed = Room.Create(
@@ -46,7 +47,7 @@ public sealed class PresenceHandlerTests
         rooms.Seed(seed);
 
         var handler = new RegisterPresenceHandler(
-            rooms, new SingleGameRegistry(), clock, timeouts, graces);
+            rooms, new SingleGameRegistry(), clock, timeouts, graces, expiry);
 
         // Host connects — match doesn't start yet (challenger still offline).
         var hostResult = await handler.HandleAsync(
@@ -71,6 +72,12 @@ public sealed class PresenceHandlerTests
 
         timeouts.Scheduled.Should().HaveCount(1);
         timeouts.Scheduled[0].Deadline.Should().Be(clock.UtcNow + Budget);
+
+        // The WaitingForOpponent → InProgress transition cancels the
+        // unjoined-expiry entry so the sweeper doesn't fire room_expired
+        // for a room that actually made it to gameplay.
+        expiry.Cancelled.Should().ContainSingle()
+            .Which.Should().Be((RoomFactory.RoomCodeValue, TicTacToe3x3GameModule.GameId.Value));
     }
 
     [Fact]
@@ -184,7 +191,7 @@ public sealed class PresenceHandlerTests
         // Re-connect 5s later.
         clock.Advance(TimeSpan.FromSeconds(5));
         var register = new RegisterPresenceHandler(
-            rooms, new SingleGameRegistry(), clock, timeouts, graces);
+            rooms, new SingleGameRegistry(), clock, timeouts, graces, new RecordingRoomExpiryScheduler());
         var result = await register.HandleAsync(
             new RegisterPresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),

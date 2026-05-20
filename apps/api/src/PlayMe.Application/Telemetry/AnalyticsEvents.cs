@@ -17,6 +17,7 @@ namespace PlayMe.Application.Telemetry;
 public static class AnalyticsEvents
 {
     public const string MatchEnded = "match_ended";
+    public const string RoomExpired = "room_expired";
 
     /// <summary>
     /// Build the <c>match_ended</c> properties dictionary. <c>reason</c> is
@@ -30,5 +31,18 @@ public static class AnalyticsEvents
         {
             ["gameId"] = gameId,
             ["reason"] = RoomMapper.ToOutcomeDto(outcome).Kind,
+        };
+
+    /// <summary>
+    /// Build the <c>room_expired</c> properties dictionary. Fired only
+    /// for the <c>WaitingForOpponent</c> → <c>Expired</c> case — the
+    /// product-meaningful "nobody joined" funnel signal. Cleanup-TTL
+    /// expiries of terminal-state rooms are not tracked (just GC).
+    /// </summary>
+    public static IReadOnlyDictionary<string, object?> RoomExpiredProperties(
+        string gameId) =>
+        new Dictionary<string, object?>
+        {
+            ["gameId"] = gameId,
         };
 }

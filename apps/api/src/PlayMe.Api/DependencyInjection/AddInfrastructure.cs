@@ -55,10 +55,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<SweeperOptions>(configuration.GetSection("Sweepers"));
         services.AddSingleton<ITimeoutScheduler, RedisTimeoutScheduler>();
         services.AddSingleton<IDisconnectGraceScheduler, RedisDisconnectGraceScheduler>();
+        services.AddSingleton<IRoomExpiryScheduler, RedisRoomExpiryScheduler>();
         services.AddSingleton<RedisTimeoutSweeperService>();
         services.AddSingleton<RedisDisconnectGraceSweeperService>();
+        services.AddSingleton<RedisRoomExpirySweeperService>();
         services.AddHostedService(sp => sp.GetRequiredService<RedisTimeoutSweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisDisconnectGraceSweeperService>());
+        services.AddHostedService(sp => sp.GetRequiredService<RedisRoomExpirySweeperService>());
 
         // Sprint 7: server-side product analytics (docs/observability-and-i18n.md
         // §1.2). Authoritative outcomes — match_ended, room_expired — fire from
