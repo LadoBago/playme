@@ -33,7 +33,7 @@ export function initAnalytics(): void {
 
 // Event catalog — the §4.2 baseline. Extend as features land.
 export type AnalyticsEvent =
-  | { name: 'room_created'; props: { gameId: string; timeLimit: string } }
+  | { name: 'room_created'; props: { gameId: string } }
   | { name: 'room_joined'; props: { gameId: string } }
   | { name: 'room_expired'; props: { gameId: string } }
   | { name: 'match_started'; props: { gameId: string } }

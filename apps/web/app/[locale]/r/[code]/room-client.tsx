@@ -80,14 +80,21 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 
     hub.on({
       onOpponentJoined: ({ room: r }) => setRoom(r),
-      onMatchStarted: ({ room: r }) => setRoom(r),
-      onMoveAccepted: ({ room: r }) => setRoom(r),
+      onMatchStarted: ({ room: r }) => {
+        setRoom(r);
+        track({ name: 'match_started', props: { gameId: r.gameId } });
+      },
+      onMoveAccepted: ({ room: r }) => {
+        setRoom(r);
+        track({ name: 'move_made', props: { gameId: r.gameId } });
+      },
       onMatchEnded: ({ room: r }) => {
         setRoom(r);
         // Fires on both clients — sender and receiver. We don't dedupe
         // server-side because PostHog already collapses by distinct_id
         // in insight queries; doing it here would require a separate
-        // coordination event for no analytical benefit.
+        // coordination event for no analytical benefit. Same precedent
+        // applies to match_started and move_made above.
         const outcome = r.currentMatch?.outcome;
         if (outcome) {
           track({
