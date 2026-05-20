@@ -40,9 +40,24 @@ const size = { width: 1200, height: 630 };
 const contentType = 'image/png';
 
 export function generateImageMetadata() {
+  // Pull the alt strings from the i18n catalog so the tagline is
+  // sourced once (per CLAUDE.md §6: "No hard-coded user-facing
+  // strings — always through an i18n key"). The rendered image
+  // pulls the same key from the same catalog, so the two stay in
+  // lock-step.
   return [
-    { id: 'ka', alt: 'playme.ge — შენი ჯერია', size, contentType },
-    { id: 'en', alt: 'playme.ge — Your move.', size, contentType },
+    {
+      id: 'ka',
+      alt: `playme.ge — ${createTranslator('ka').t('site.brandTagline')}`,
+      size,
+      contentType,
+    },
+    {
+      id: 'en',
+      alt: `playme.ge — ${createTranslator('en').t('site.brandTagline')}`,
+      size,
+      contentType,
+    },
   ];
 }
 
