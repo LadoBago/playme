@@ -24,4 +24,13 @@ public sealed class RoomNotifier : IRoomNotifier
         _hub.Clients
             .Group(RoomHub.GroupName(code.Value))
             .SendAsync(RoomHubEvents.MatchEnded, new { room }, ct);
+
+    public Task BroadcastRoomExpiredAsync(RoomCode code, CancellationToken ct) =>
+        // No payload — the event itself is the signal that the room is
+        // gone. Adding fields here later (e.g. an `expiredAt` for client
+        // analytics) is forward-compatible since the web parses with
+        // Zod and ignores unknown keys.
+        _hub.Clients
+            .Group(RoomHub.GroupName(code.Value))
+            .SendAsync(RoomHubEvents.RoomExpired, new { }, ct);
 }

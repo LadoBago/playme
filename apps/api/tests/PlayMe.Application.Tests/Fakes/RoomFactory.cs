@@ -41,4 +41,20 @@ public static class RoomFactory
         room.TryStartMatch(module, clockBudget, startedAt);
         return room;
     }
+
+    /// <summary>
+    /// Builds a <see cref="Room"/> in <see cref="RoomStatus.WaitingForOpponent"/>
+    /// — host registered, no challenger, no match. Mirrors the post-
+    /// CreateRoomHandler state used by the room-expiry tests.
+    /// </summary>
+    public static Room WaitingForOpponent(DateTimeOffset createdAt) =>
+        Room.Create(
+            new RoomCode(RoomCodeValue),
+            TicTacToe3x3GameModule.GameId,
+            SideSelectionMode.HostPicksSpecific,
+            new Player(
+                new PlayerId(HostPlayerId),
+                DisplayName.Create("Host"),
+                TicTacToeSides.X),
+            createdAt);
 }

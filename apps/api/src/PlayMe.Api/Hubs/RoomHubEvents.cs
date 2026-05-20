@@ -4,10 +4,6 @@ namespace PlayMe.Api.Hubs;
 /// Names of the server → client events broadcast from <see cref="RoomHub"/>
 /// (CLAUDE.md §2.9 Server-emitted events). String constants are referenced
 /// by both the server and the TS client wrapper in <c>packages/shared</c>.
-///
-/// Sprint 2 adds <see cref="ClockTick"/> and <see cref="OpponentReconnected"/>;
-/// <c>OpponentAbandoned</c>, rematch events, and <c>RoomExpired</c> arrive
-/// in later sprints.
 /// </summary>
 public static class RoomHubEvents
 {
@@ -21,4 +17,5 @@ public static class RoomHubEvents
     public const string OpponentExited = "OpponentExited";
     public const string RematchOffered = "RematchOffered";
     public const string RematchDeclined = "RematchDeclined";
+    public const string RoomExpired = "RoomExpired";
 }

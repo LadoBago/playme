@@ -22,6 +22,7 @@ public sealed class CreateRoomHandler
     private readonly IGameModuleRegistry _games;
     private readonly IRandom _random;
     private readonly IClock _clock;
+    private readonly IRoomExpiryScheduler _expiry;
 
     public CreateRoomHandler(
         IRoomRepository rooms,
@@ -29,7 +30,8 @@ public sealed class CreateRoomHandler
         IPlayerIdGenerator playerIds,
         IGameModuleRegistry games,
         IRandom random,
-        IClock clock)
+        IClock clock,
+        IRoomExpiryScheduler expiry)
     {
         _rooms = rooms;
         _codes = codes;
@@ -37,6 +39,7 @@ public sealed class CreateRoomHandler
         _games = games;
         _random = random;
         _clock = clock;
+        _expiry = expiry;
     }
 
     public async Task<AppResult<CreateRoomResult>> HandleAsync(
@@ -102,6 +105,17 @@ public sealed class CreateRoomHandler
                 PlatformErrors.RoomBusy,
                 "Repeated room-code collisions; aborting room creation.");
         }
+
+        // Enroll the unjoined-expiry sweeper. Deadline matches the
+        // WaitingForOpponent Redis TTL so the sweeper fires within
+        // moments of the room key being reaped (state.md §2.2).
+        // Cancelled in RegisterPresenceHandler the moment the match
+        // actually starts.
+        await _expiry.ScheduleAsync(
+            created.Code,
+            created.GameId,
+            _clock.UtcNow + RoomLifetimes.WaitingForOpponent,
+            ct);
 
         return AppResult<CreateRoomResult>.Ok(
             new CreateRoomResult(hostPlayerId, RoomMapper.ToDto(created, _clock.UtcNow, _games)));

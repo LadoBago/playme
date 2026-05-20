@@ -12,19 +12,22 @@ public sealed class RegisterPresenceHandler
     private readonly IClock _clock;
     private readonly ITimeoutScheduler _timeouts;
     private readonly IDisconnectGraceScheduler _graces;
+    private readonly IRoomExpiryScheduler _expiry;
 
     public RegisterPresenceHandler(
         IRoomRepository rooms,
         IGameModuleRegistry games,
         IClock clock,
         ITimeoutScheduler timeouts,
-        IDisconnectGraceScheduler graces)
+        IDisconnectGraceScheduler graces,
+        IRoomExpiryScheduler expiry)
     {
         _rooms = rooms;
         _games = games;
         _clock = clock;
         _timeouts = timeouts;
         _graces = graces;
+        _expiry = expiry;
     }
 
     public async Task<AppResult<RegisterPresenceResult>> HandleAsync(
@@ -91,6 +94,12 @@ public sealed class RegisterPresenceHandler
                         code,
                         room.CurrentMatch.Clock.ActivePlayerDeadline(),
                         ct);
+
+                    // Authoritative WaitingForOpponent → InProgress
+                    // transition point. Cancel the unjoined-expiry entry
+                    // so the sweeper doesn't fire room_expired for a
+                    // room that actually made it to gameplay.
+                    await _expiry.CancelAsync(code, room.GameId, ct);
                 }
 
                 var reconnected = wasInProgress && !wasConnected;
