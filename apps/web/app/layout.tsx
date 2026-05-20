@@ -92,11 +92,35 @@ export async function generateMetadata(): Promise<Metadata> {
       description: t('site.tagline'),
       url: canonical,
       locale: locale === 'ka' ? 'ka_GE' : 'en_US',
+      // Explicit URL pins which of the two file-route variants
+      // (app/opengraph-image.tsx → generateImageMetadata returns
+      // [ka, en]) this page emits. Without this, Next.js would
+      // auto-inject one og:image meta tag per variant on every
+      // page, so a Georgian page would advertise both the Georgian
+      // and English image. Pointing at the locale-matched URL
+      // collapses that to a single tag.
+      images: [
+        {
+          url: `/opengraph-image/${locale}`,
+          width: 1200,
+          height: 630,
+          alt: t('site.ogImageAlt'),
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: t('site.title'),
       description: t('site.tagline'),
+      // Twitter falls back to og:image when twitter:image is absent
+      // but Next.js otherwise emits twitter:image entries for every
+      // file-convention variant too — same de-duplication concern.
+      images: [
+        {
+          url: `/opengraph-image/${locale}`,
+          alt: t('site.ogImageAlt'),
+        },
+      ],
     },
   };
 }

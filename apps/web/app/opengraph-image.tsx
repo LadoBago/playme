@@ -1,46 +1,50 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ImageResponse } from 'next/og';
-import { DEFAULT_LOCALE, createTranslator } from '@playme/shared';
+import { createTranslator, type Locale } from '@playme/shared';
 
 /**
- * Public-page Open Graph image (docs/frontend.md §2). Next.js's file-
- * route convention auto-injects this as `og:image` for every page under
- * `/`, so the root layout and every per-game `/play/<game>` page get a
- * branded preview without per-page metadata.
+ * Per-locale Open Graph images. `generateImageMetadata` produces two
+ * variants — `/opengraph-image/ka` and `/opengraph-image/en` — and the
+ * root layout's `generateMetadata` (app/layout.tsx) sets
+ * `openGraph.images` explicitly to the variant matching the current
+ * page's locale, so each rendered page emits exactly one `og:image`
+ * meta tag pointing at the right locale.
  *
- * Layout matches the brand-kit `og-image.svg`: cream bg, brand mark on
- * the left (rounded square + grid + two tokens), wordmark `play` 400 /
- * `me` 700 / `.ge` 500, brand tagline below in muted cocoa. The mark
- * is composed of positioned <div>s rather than inline SVG so satori's
- * HTML-CSS subset renders it deterministically.
+ * Both variant URLs sit under `/opengraph-image/*`, which the middle-
+ * ware matcher already excludes (see middleware.ts) — no locale
+ * rewrite runs, so no header plumbing is needed.
  *
- * Runs on the Node.js runtime, not edge — the next/og bundle (satori +
- * resvg) is ~1.01 MB and Vercel's Hobby tier caps edge functions at
+ * Layout matches the brand kit's `og-image.svg`: cream bg, brand mark
+ * on the left (rounded square + grid + two tokens), wordmark `play`
+ * 400 / `me` 700 / `.ge` 500, brand tagline below in muted cocoa. The
+ * mark is composed of positioned <div>s rather than inline SVG so
+ * satori's HTML-CSS subset renders it deterministically.
+ *
+ * Runs on the Node.js runtime, not edge — the next/og bundle (satori
+ * + resvg) is ~1.01 MB and Vercel's Hobby tier caps edge functions at
  * 1 MB. Node serverless functions are 50 MB. OG images are low-volume
  * and Vercel CDN-caches the response, so the extra cold-start is
  * irrelevant in practice.
  *
  * The Georgian tagline glyphs need a Georgian-capable font; satori's
- * default font is Latin-only. We vendor the Noto Sans Georgian woff
- * subset (Georgian + extensions, ~20 KB per weight) under lib/fonts/
- * and bundle it with this route via `outputFileTracingIncludes` in
- * next.config.js — without that the file is stripped from the Vercel
- * serverless function and the runtime read errors.
- *
- * The image always renders the default-locale (ka) tagline because
- * middleware.ts's matcher excludes `/opengraph-image`, so no
- * `x-locale` header is ever set on this route. Delivering a per-
- * locale OG image would mean moving the file into
- * `app/[locale]/opengraph-image.tsx` and adjusting middleware so
- * `/ka/opengraph-image` and `/en/opengraph-image` don't get
- * double-rewritten — deferred as a follow-up because exposing
- * `/ka/...` publicly has SEO implications worth deciding
- * deliberately.
+ * default font is Latin-only. Noto Sans Georgian (woff 400/500,
+ * ~20 KB per weight) is vendored under lib/fonts/ and bundled with
+ * this route via `outputFileTracingIncludes` in next.config.js —
+ * without that the files are stripped from the Vercel serverless
+ * function and the runtime read errors. The English variant doesn't
+ * need the font but loading it unconditionally keeps the code paths
+ * symmetric and the cold-start cost is one fs read.
  */
-export const size = { width: 1200, height: 630 };
-export const contentType = 'image/png';
-export const alt = 'PlayMe';
+const size = { width: 1200, height: 630 };
+const contentType = 'image/png';
+
+export function generateImageMetadata() {
+  return [
+    { id: 'ka', alt: 'playme.ge — შენი ჯერია', size, contentType },
+    { id: 'en', alt: 'playme.ge — Your move.', size, contentType },
+  ];
+}
 
 async function loadGeorgianFonts() {
   // Paths are joined from process.cwd() with literal filenames; no
@@ -69,8 +73,16 @@ async function loadGeorgianFonts() {
   ];
 }
 
-export default async function Image() {
-  const { t } = createTranslator(DEFAULT_LOCALE);
+export default async function Image({ id }: { id: Promise<string> }) {
+  // Next.js 16 wraps the metadata-route `id` in a Promise (same shape
+  // as `params` for [locale]/page.tsx) — awaiting it yields the
+  // variant string. The values are whatever `generateImageMetadata`
+  // returned above; narrow defensively in case Next.js ever surfaces
+  // an unknown id (we fall back to the default locale so the request
+  // still resolves rather than 500-ing).
+  const resolvedId = await id;
+  const locale: Locale = resolvedId === 'en' ? 'en' : 'ka';
+  const { t } = createTranslator(locale);
   const tagline = t('site.brandTagline');
   const fonts = await loadGeorgianFonts();
 
