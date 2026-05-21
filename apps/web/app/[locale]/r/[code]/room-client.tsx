@@ -846,10 +846,9 @@ function ShareLink({ url }: { url: string }) {
       } catch (e) {
         // User dismissed the sheet — AbortError is expected; no other
         // error path is interesting enough to surface to the user.
+        // NotAllowedError-style failures can only occur on insecure
+        // contexts, which production HTTPS rules out.
         if (e instanceof Error && e.name !== 'AbortError') {
-          // Other errors (e.g. NotAllowedError on insecure context)
-          // are silent failures here — Copy link is always available
-          // as the fallback path right next to this button.
           console.warn('[ShareLink] navigator.share failed', e);
         }
       }
@@ -861,24 +860,25 @@ function ShareLink({ url }: { url: string }) {
       <span className="label">{t('join.shareLink.label')}</span>
       <div className="share-link">
         <span className="share-link__url">{url}</span>
-        <button
-          type="button"
-          className="button-ghost"
-          onClick={() => {
-            void (async () => {
-              await navigator.clipboard.writeText(url);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            })();
-          }}
-        >
-          {copied ? t('join.shareLink.copied') : t('join.shareLink.copy')}
-        </button>
         {canShare ? (
           <button type="button" className="button-ghost" onClick={handleShare}>
             {t('join.shareLink.share')}
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            className="button-ghost"
+            onClick={() => {
+              void (async () => {
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              })();
+            }}
+          >
+            {copied ? t('join.shareLink.copied') : t('join.shareLink.copy')}
+          </button>
+        )}
       </div>
     </div>
   );
