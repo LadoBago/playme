@@ -31,4 +31,18 @@ public interface IRoomNotifier
     /// disconnect error.
     /// </summary>
     Task BroadcastRoomExpiredAsync(RoomCode code, CancellationToken ct);
+
+    /// <summary>
+    /// Broadcast <c>OpponentExited</c> to the room group from outside a
+    /// Hub call. Used by the post-match-exit grace sweeper when the
+    /// reconnect window elapses without the disconnected player
+    /// returning (docs/state.md §2.4). <paramref name="exitedRole"/> is
+    /// the role of the leaving party; the still-connected player picks
+    /// it up to render "opponent left".
+    /// </summary>
+    Task BroadcastOpponentExitedAsync(
+        RoomCode code,
+        Role exitedRole,
+        RoomDto room,
+        CancellationToken ct);
 }

@@ -33,4 +33,18 @@ public sealed class RoomNotifier : IRoomNotifier
         _hub.Clients
             .Group(RoomHub.GroupName(code.Value))
             .SendAsync(RoomHubEvents.RoomExpired, new { }, ct);
+
+    public Task BroadcastOpponentExitedAsync(
+        RoomCode code,
+        Role exitedRole,
+        Application.Dtos.RoomDto room,
+        CancellationToken ct) =>
+        // The exiting connection is already gone from the group by the
+        // time the sweeper fires (10 s after disconnect), so Group() and
+        // OthersInGroup() reach the same audience — the still-connected
+        // player. Payload shape mirrors RoomHub.ExitRoom() so the client
+        // doesn't have to branch on who fired the event.
+        _hub.Clients
+            .Group(RoomHub.GroupName(code.Value))
+            .SendAsync(RoomHubEvents.OpponentExited, new { role = exitedRole, room }, ct);
 }

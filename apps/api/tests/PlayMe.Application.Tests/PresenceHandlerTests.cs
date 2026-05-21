@@ -25,6 +25,7 @@ public sealed class PresenceHandlerTests
         var rooms = new FakeRoomRepository();
         var timeouts = new RecordingTimeoutScheduler();
         var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         var expiry = new RecordingRoomExpiryScheduler();
 
         // Seed a fresh room awaiting both players' connection.
@@ -47,7 +48,7 @@ public sealed class PresenceHandlerTests
         rooms.Seed(seed);
 
         var handler = new RegisterPresenceHandler(
-            rooms, new SingleGameRegistry(), clock, timeouts, graces, expiry);
+            rooms, new SingleGameRegistry(), clock, timeouts, graces, postMatchGraces, expiry);
 
         // Host connects — match doesn't start yet (challenger still offline).
         var hostResult = await handler.HandleAsync(
@@ -92,9 +93,11 @@ public sealed class PresenceHandlerTests
         var clock = new FakeClock();
         var rooms = new FakeRoomRepository();
         var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
+        var handler = new ReleasePresenceHandler(
+            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
 
         var result = await handler.HandleAsync(
             new ReleasePresenceCommand(
@@ -106,27 +109,32 @@ public sealed class PresenceHandlerTests
         result.Succeeded.Should().BeTrue();
         result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
         graces.Scheduled.Should().BeEmpty();
+        postMatchGraces.Scheduled.Should().BeEmpty();
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
         saved!.HostConnected.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ReleasePresence_from_Ended_closes_room_and_signals_OpponentExited()
+    public async Task ReleasePresence_from_Ended_schedules_post_match_exit_grace()
     {
-        // Tab-close from Ended is identical to an explicit ExitRoom
-        // (state.md §2.4). The handler must transition Ended → Closed
-        // and report OpponentExited so the Hub broadcasts the right
-        // event to the still-present player.
+        // Post-match disconnect (state.md §2.4): refresh, locale toggle,
+        // and transient blips all manifest as a SignalR drop here. The
+        // handler must NOT immediately close the room or notify the
+        // opponent; instead it schedules a brief reconnect grace and
+        // returns Effect.None. The sweeper closes the room + emits
+        // OpponentExited only if the grace elapses without a reconnect.
         var clock = new FakeClock();
         var rooms = new FakeRoomRepository();
         var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         var seed = RoomFactory.InProgress(clock.UtcNow, Budget);
         seed.CurrentMatch!.Resign(TicTacToeSides.X);
         seed.EndCurrentMatch();
         rooms.Seed(seed);
 
-        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
+        var handler = new ReleasePresenceHandler(
+            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
 
         var result = await handler.HandleAsync(
             new ReleasePresenceCommand(
@@ -136,12 +144,18 @@ public sealed class PresenceHandlerTests
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
-        result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentExited);
+        result.Value!.Effect.Should().Be(PresenceReleaseEffect.None);
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
-        saved!.Status.Should().Be(RoomStatus.Closed);
+        saved!.Status.Should().Be(RoomStatus.Ended);
         saved.HostConnected.Should().BeFalse();
         graces.Scheduled.Should().BeEmpty();
+
+        postMatchGraces.Scheduled.Should().ContainSingle()
+            .Which.Should().Be((
+                RoomFactory.RoomCodeValue,
+                Role.Host,
+                clock.UtcNow + ReleasePresenceHandler.PostMatchExitGracePeriod));
     }
 
     [Fact]
@@ -150,12 +164,14 @@ public sealed class PresenceHandlerTests
         var clock = new FakeClock();
         var rooms = new FakeRoomRepository();
         var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         var seed = RoomFactory.InProgress(clock.UtcNow, Budget);
         // Pre-condition: host has already dropped (e.g. earlier disconnect).
         seed.MarkDisconnected(Role.Host);
         rooms.Seed(seed);
 
-        var handler = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
+        var handler = new ReleasePresenceHandler(
+            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
 
         // A second disconnect — e.g. a stale-cookie probe that briefly
         // connected and tore down — must NOT re-broadcast OpponentDisconnected
@@ -170,6 +186,7 @@ public sealed class PresenceHandlerTests
         result.Succeeded.Should().BeTrue();
         result.Value!.Effect.Should().Be(PresenceReleaseEffect.None);
         graces.Scheduled.Should().BeEmpty();
+        postMatchGraces.Scheduled.Should().BeEmpty();
     }
 
     [Fact]
@@ -179,10 +196,12 @@ public sealed class PresenceHandlerTests
         var rooms = new FakeRoomRepository();
         var timeouts = new RecordingTimeoutScheduler();
         var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
         // Drop the host.
-        var release = new ReleasePresenceHandler(rooms, clock, graces, new SingleGameRegistry());
+        var release = new ReleasePresenceHandler(
+            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
         await release.HandleAsync(
             new ReleasePresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),
@@ -191,7 +210,13 @@ public sealed class PresenceHandlerTests
         // Re-connect 5s later.
         clock.Advance(TimeSpan.FromSeconds(5));
         var register = new RegisterPresenceHandler(
-            rooms, new SingleGameRegistry(), clock, timeouts, graces, new RecordingRoomExpiryScheduler());
+            rooms,
+            new SingleGameRegistry(),
+            clock,
+            timeouts,
+            graces,
+            postMatchGraces,
+            new RecordingRoomExpiryScheduler());
         var result = await register.HandleAsync(
             new RegisterPresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),
@@ -207,5 +232,54 @@ public sealed class PresenceHandlerTests
         saved!.HostConnected.Should().BeTrue();
         // Clock kept ticking through the disconnect — state.md §2.4 invariant.
         saved.CurrentMatch!.Clock.LastTickAt.Should().Be(clock.UtcNow - TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task RegisterPresence_on_post_match_reconnect_cancels_post_match_grace()
+    {
+        // State.md §2.4: a reconnect during the post-match exit grace
+        // window must cancel the pending entry so the sweeper doesn't
+        // close the room and broadcast OpponentExited. Mirrors the
+        // in-progress reconnect path but on the post-match scheduler.
+        var clock = new FakeClock();
+        var rooms = new FakeRoomRepository();
+        var timeouts = new RecordingTimeoutScheduler();
+        var graces = new RecordingGraceScheduler();
+        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
+        var seed = RoomFactory.InProgress(clock.UtcNow, Budget);
+        seed.CurrentMatch!.Resign(TicTacToeSides.X);
+        seed.EndCurrentMatch();
+        rooms.Seed(seed);
+
+        // Drop the host from Ended.
+        var release = new ReleasePresenceHandler(
+            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
+        await release.HandleAsync(
+            new ReleasePresenceCommand(
+                RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),
+            CancellationToken.None);
+        postMatchGraces.Scheduled.Should().ContainSingle();
+
+        // Re-connect within the grace window.
+        clock.Advance(TimeSpan.FromSeconds(3));
+        var register = new RegisterPresenceHandler(
+            rooms,
+            new SingleGameRegistry(),
+            clock,
+            timeouts,
+            graces,
+            postMatchGraces,
+            new RecordingRoomExpiryScheduler());
+        var result = await register.HandleAsync(
+            new RegisterPresenceCommand(
+                RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),
+            CancellationToken.None);
+
+        result.Succeeded.Should().BeTrue();
+        postMatchGraces.Cancelled.Should().Contain((RoomFactory.RoomCodeValue, Role.Host));
+
+        var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
+        saved!.Status.Should().Be(RoomStatus.Ended);
+        saved.HostConnected.Should().BeTrue();
     }
 }
