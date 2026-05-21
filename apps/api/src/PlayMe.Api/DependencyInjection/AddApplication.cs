@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.AcceptRematch;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
+using PlayMe.Application.Commands.AdjudicatePostMatchExitGrace;
 using PlayMe.Application.Commands.AdjudicateRoomExpiry;
 using PlayMe.Application.Commands.AdjudicateTimeout;
 using PlayMe.Application.Commands.CreateRoom;
@@ -46,6 +47,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<RejectRematchHandler>();
         services.AddScoped<AdjudicateTimeoutHandler>();
         services.AddScoped<AdjudicateDisconnectGraceHandler>();
+        services.AddScoped<AdjudicatePostMatchExitGraceHandler>();
         services.AddScoped<AdjudicateRoomExpiryHandler>();
 
         // Pure-compute clock facade. Singleton — stateless.

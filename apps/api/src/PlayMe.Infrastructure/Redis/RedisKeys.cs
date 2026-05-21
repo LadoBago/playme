@@ -28,6 +28,20 @@ internal static class RedisKeys
     public const string Grace = $"{Prefix}grace";
 
     /// <summary>
+    /// Sorted set: score = unix-ms deadline, value = <c>{roomCode}:{role}</c>.
+    /// Post-match reconnect grace for disconnects in
+    /// <see cref="PlayMe.Domain.Platform.RoomStatus.Ended"/> /
+    /// <see cref="PlayMe.Domain.Platform.RoomStatus.AwaitingRematch"/>
+    /// (state.md §2.4): a brief window covers refresh / locale toggle /
+    /// transient blips. On expiry the sweeper transitions the room to
+    /// <see cref="PlayMe.Domain.Platform.RoomStatus.Closed"/> and emits
+    /// <c>OpponentExited</c>. Reuses <see cref="Scheduling.GraceMemberKey"/>
+    /// since the encoding (room code, role) is identical to the
+    /// in-progress grace.
+    /// </summary>
+    public const string PostMatchExit = $"{Prefix}postmatch_exit";
+
+    /// <summary>
     /// Sorted set: score = unix-ms deadline, value =
     /// <c>{roomCode}|{gameId}</c>. One entry per room — enrolled at
     /// creation (deadline = creation + <c>RoomLifetimes.WaitingForOpponent</c>),

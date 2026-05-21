@@ -12,6 +12,7 @@ public sealed class RegisterPresenceHandler
     private readonly IClock _clock;
     private readonly ITimeoutScheduler _timeouts;
     private readonly IDisconnectGraceScheduler _graces;
+    private readonly IPostMatchExitGraceScheduler _postMatchGraces;
     private readonly IRoomExpiryScheduler _expiry;
 
     public RegisterPresenceHandler(
@@ -20,6 +21,7 @@ public sealed class RegisterPresenceHandler
         IClock clock,
         ITimeoutScheduler timeouts,
         IDisconnectGraceScheduler graces,
+        IPostMatchExitGraceScheduler postMatchGraces,
         IRoomExpiryScheduler expiry)
     {
         _rooms = rooms;
@@ -27,6 +29,7 @@ public sealed class RegisterPresenceHandler
         _clock = clock;
         _timeouts = timeouts;
         _graces = graces;
+        _postMatchGraces = postMatchGraces;
         _expiry = expiry;
     }
 
@@ -59,6 +62,7 @@ public sealed class RegisterPresenceHandler
                 }
 
                 var wasInProgress = room.Status == RoomStatus.InProgress;
+                var wasPostMatch = room.Status is RoomStatus.Ended or RoomStatus.AwaitingRematch;
                 var wasConnected = cmd.CallerRole switch
                 {
                     Role.Host => room.HostConnected,
@@ -83,6 +87,16 @@ public sealed class RegisterPresenceHandler
                 if (wasInProgress && !wasConnected)
                 {
                     await _graces.CancelAsync(code, cmd.CallerRole, ct);
+                }
+
+                // Cancel any pending post-match exit grace (state.md §2.4).
+                // The defensive re-check in the adjudicator catches a race
+                // where this cancel arrives after the sweeper already picked
+                // up the entry; this cancel just removes it sooner so the
+                // sweeper doesn't waste cycles on a no-op.
+                if (wasPostMatch && !wasConnected)
+                {
+                    await _postMatchGraces.CancelAsync(code, cmd.CallerRole, ct);
                 }
 
                 // Schedule the first timeout check when the match just
