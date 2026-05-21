@@ -555,6 +555,8 @@ function MatchView({
 
       <PostMatchStatus room={room} role={role} declined={declined} />
 
+      <ConnectionHint room={room} role={role} />
+
       <GameView
         matchState={match.state}
         callerSide={mySide}
@@ -587,8 +589,6 @@ function MatchView({
         onRejectClick={() => setConfirmRejectOpen(true)}
         onBackToLobby={handleBackToLobby}
       />
-
-      <ConnectionHint room={room} role={role} />
 
       {opponent ? null : <ShareLink url={shareUrl} />}
 
@@ -813,6 +813,11 @@ function OutcomeBanner({
 function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
   const { t } = useTranslator();
   if (!role) return null;
+  // Only meaningful during active play. Post-match states render their own
+  // status (PostMatchStatus banner above the board, OutcomeBanner) — a
+  // second "opponent disconnected" line beneath the board duplicates that
+  // (and contradicts it once the room transitions to closed).
+  if (room.status !== 'inProgress') return null;
   const opponentConnected = role === 'host' ? room.challengerConnected : room.hostConnected;
   const opponentRegistered = role === 'host' ? room.challenger != null : true;
   if (!opponentRegistered || opponentConnected) return null;
