@@ -114,11 +114,19 @@ dotnet restore apps/api
 
 ### Run (dev)
 ```bash
-pnpm dev                                            # turbo: starts web + watch tasks
-pnpm --filter web dev                               # web only (Next.js dev server)
-dotnet run --project apps/api                       # API on https://localhost:5001
-docker compose -f infra/docker-compose.yml up redis # local Redis
+pnpm dev                                                  # turbo: starts web + watch tasks
+pnpm --filter web dev                                     # web only (Next.js dev server on http://localhost:3000)
+dotnet run --project apps/api/src/PlayMe.Api              # API on http://localhost:5080 (see note below)
+docker compose -f infra/docker-compose.yml up redis       # local Redis
 ```
+
+> **`dotnet run` needs the full project path.** `apps/api/` is a multi-project layout
+> (`src/PlayMe.Api`, `src/PlayMe.Application`, `src/PlayMe.Domain`, `src/PlayMe.Infrastructure`,
+> `tests/...`) with no top-level `.csproj` or `.sln`, so `--project apps/api` fails with
+> *"Couldn't find a project to run."* The other `dotnet` verbs (`restore`, `build`, `format`)
+> accept the directory because they walk it for projects — `run` doesn't.
+> Local API binds **`http://localhost:5080`** per `apps/api/src/PlayMe.Api/Properties/launchSettings.json` —
+> there is no HTTPS profile and no port 5001.
 
 ### Build
 ```bash

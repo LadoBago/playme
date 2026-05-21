@@ -54,7 +54,7 @@ pnpm install
 dotnet restore apps/api
 
 docker compose -f infra/docker-compose.yml up redis    # local Redis
-dotnet run --project apps/api                          # API on https://localhost:5001
+dotnet run --project apps/api/src/PlayMe.Api           # API on http://localhost:5080
 pnpm --filter web dev                                  # web on http://localhost:3000
 ```
 
