@@ -23,7 +23,10 @@ export const MatchStartedPayloadSchema = z.object({ room: RoomSchema });
 export const MoveAcceptedPayloadSchema = z.object({ room: RoomSchema });
 export const MatchEndedPayloadSchema = z.object({ room: RoomSchema });
 
-export const OpponentDisconnectedPayloadSchema = z.object({ role: RoleSchema });
+export const OpponentDisconnectedPayloadSchema = z.object({
+  role: RoleSchema,
+  room: RoomSchema,
+});
 
 export const OpponentReconnectedPayloadSchema = z.object({
   role: RoleSchema,

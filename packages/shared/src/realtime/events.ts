@@ -37,6 +37,12 @@ export interface MatchEndedPayload {
 
 export interface OpponentDisconnectedPayload {
   role: Role;
+  // Mirrors OpponentReconnected: the still-connected player needs the
+  // updated room DTO (the disconnected role's `*Connected` flag is now
+  // false) so the UI can render the transient "opponent disconnected"
+  // hint. Without it the client never learns about the flag flip until
+  // the next state-bearing event arrives.
+  room: RoomDto;
 }
 
 export interface OpponentReconnectedPayload {

@@ -100,7 +100,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         track({ name: 'move_made', props: { gameId: r.gameId } });
       },
       onMatchEnded: ({ room: r }) => setRoom(r),
-      onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
+      onOpponentDisconnected: ({ room: r }) => setRoom(r),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
       onOpponentExited: ({ room: r }) => setRoom(r),
       onRematchOffered: ({ room: r }) => setRoom(r),
@@ -555,6 +555,8 @@ function MatchView({
 
       <PostMatchStatus room={room} role={role} declined={declined} />
 
+      <ConnectionHint room={room} role={role} />
+
       <GameView
         matchState={match.state}
         callerSide={mySide}
@@ -587,8 +589,6 @@ function MatchView({
         onRejectClick={() => setConfirmRejectOpen(true)}
         onBackToLobby={handleBackToLobby}
       />
-
-      <ConnectionHint room={room} role={role} />
 
       {opponent ? null : <ShareLink url={shareUrl} />}
 
@@ -700,7 +700,19 @@ function PostMatchPanel({
   }
 
   // Ended (no offer yet) or Closed (after decline / opponent exit).
-  const canOffer = room.status === 'ended';
+  // Only offer rematch when the opponent is actually present — otherwise
+  // the button would park the offerer in awaitingRematch with no one to
+  // accept (e.g. the opponent dropped mid-game and the match ended on
+  // timeout / disconnect / win-without-them). If they reconnect inside
+  // the post-match grace, opponentConnected flips back and the button
+  // reappears on the next render.
+  const opponentConnected =
+    role === 'host'
+      ? room.challengerConnected
+      : role === 'challenger'
+        ? room.hostConnected
+        : false;
+  const canOffer = room.status === 'ended' && opponentConnected;
   return (
     <div className="match-controls">
       <button
@@ -813,6 +825,11 @@ function OutcomeBanner({
 function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
   const { t } = useTranslator();
   if (!role) return null;
+  // Only meaningful during active play. Post-match states render their own
+  // status (PostMatchStatus banner above the board, OutcomeBanner) — a
+  // second "opponent disconnected" line beneath the board duplicates that
+  // (and contradicts it once the room transitions to closed).
+  if (room.status !== 'inProgress') return null;
   const opponentConnected = role === 'host' ? room.challengerConnected : room.hostConnected;
   const opponentRegistered = role === 'host' ? room.challenger != null : true;
   if (!opponentRegistered || opponentConnected) return null;
