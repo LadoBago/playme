@@ -162,6 +162,30 @@ export class RoomHubClient {
   }
 
   /**
+   * Invoke a hub method, unwrapping SignalR's HubException prefix so callers
+   * see the bare i18n key. With <c>EnableDetailedErrors=false</c> (the default
+   * for production), ASP.NET Core wraps every <c>HubException("errors.X")</c>
+   * as <c>"An unexpected error occurred invoking 'METHOD' on the server.
+   * HubException: errors.X"</c> before sending it on the wire — left
+   * un-stripped, the room page would try to translate that whole framework
+   * string as an i18n key and surface the literal text to the player.
+   */
+  private async _invoke<T>(method: string, ...args: unknown[]): Promise<T> {
+    try {
+      return await this._connection.invoke<T>(method, ...args);
+    } catch (e) {
+      if (e instanceof Error) {
+        const marker = 'HubException: ';
+        const idx = e.message.indexOf(marker);
+        if (idx !== -1) {
+          throw new Error(e.message.slice(idx + marker.length).trim());
+        }
+      }
+      throw e;
+    }
+  }
+
+  /**
    * Subscribe to a server-pushed hub event after validating the payload
    * with Zod. A schema mismatch logs a structured error and drops the
    * message rather than calling the handler with an ill-shaped payload —
@@ -210,7 +234,7 @@ export class RoomHubClient {
    * browser opens a different room's link.
    */
   async joinRoom(expectedRoomCode: string): Promise<RoomSessionDto> {
-    const raw = await this._connection.invoke<unknown>('JoinRoom', expectedRoomCode);
+    const raw = await this._invoke<unknown>('JoinRoom', expectedRoomCode);
     // See _bindEvent for why the cast is needed (Zod ↔ exactOptionalPropertyTypes).
     return RoomSessionSchema.parse(raw) as unknown as RoomSessionDto;
   }
@@ -222,7 +246,7 @@ export class RoomHubClient {
    * errors.move.notYourTurn, ...).
    */
   async submitMove(move: MoveDto): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('SubmitMove', move);
+    const raw = await this._invoke<unknown>('SubmitMove', move);
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
@@ -234,7 +258,7 @@ export class RoomHubClient {
    * (errors.move.matchNotInProgress, errors.rate.exceeded, ...).
    */
   async resign(): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('Resign');
+    const raw = await this._invoke<unknown>('Resign');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
@@ -245,7 +269,7 @@ export class RoomHubClient {
    * errors.exit.notAllowed for invalid states.
    */
   async exitRoom(): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('ExitRoom');
+    const raw = await this._invoke<unknown>('ExitRoom');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
@@ -257,7 +281,7 @@ export class RoomHubClient {
    * raced this one (implicit accept).
    */
   async offerRematch(): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('OfferRematch');
+    const raw = await this._invoke<unknown>('OfferRematch');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
@@ -266,7 +290,7 @@ export class RoomHubClient {
    * fresh match.
    */
   async acceptRematch(): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('AcceptRematch');
+    const raw = await this._invoke<unknown>('AcceptRematch');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 
@@ -276,7 +300,7 @@ export class RoomHubClient {
    * §1 #10).
    */
   async rejectRematch(): Promise<RoomDto> {
-    const raw = await this._connection.invoke<unknown>('RejectRematch');
+    const raw = await this._invoke<unknown>('RejectRematch');
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 

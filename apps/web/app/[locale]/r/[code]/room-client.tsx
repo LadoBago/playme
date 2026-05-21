@@ -71,6 +71,14 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // joining. Terminal UI; no recovery path other than "back to home".
   const [expired, setExpired] = useState(false);
   const hubRef = useRef<RoomHubClient | null>(null);
+  // Drops rapid double-taps on the same cell while the previous SubmitMove
+  // is still in flight. Without this gate, a lag-induced second click would
+  // reach the server *after* the first move already flipped sideToMove, and
+  // come back as `errors.move.notYourTurn` — the user did nothing wrong;
+  // their first click was already accepted. A ref (not state) so the second
+  // tap is rejected synchronously inside the same event loop turn as the
+  // first.
+  const movePendingRef = useRef(false);
 
   // URL room code — passed to hub.joinRoom() so the server can reject a
   // stale cookie that belongs to a different room (see RoomHub.JoinRoom).
@@ -203,6 +211,8 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   }, [connect]);
 
   const handleSubmitMove = useCallback((payload: unknown) => {
+    if (movePendingRef.current) return;
+    movePendingRef.current = true;
     void (async () => {
       setError(null);
       try {
@@ -211,6 +221,8 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       } catch (e) {
         const message = e instanceof Error ? e.message : 'errors.unknown';
         setError(t(message as I18nKey));
+      } finally {
+        movePendingRef.current = false;
       }
     })();
   }, []);
