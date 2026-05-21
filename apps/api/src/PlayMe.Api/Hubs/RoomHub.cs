@@ -109,7 +109,7 @@ public sealed class RoomHub : Hub
                     case PresenceReleaseEffect.OpponentDisconnected:
                         await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
                             .SendAsync(RoomHubEvents.OpponentDisconnected,
-                                new { role = session.Role },
+                                new { role = session.Role, room = value.Room },
                                 CancellationToken.None);
                         break;
                     case PresenceReleaseEffect.OpponentExited:

@@ -100,7 +100,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         track({ name: 'move_made', props: { gameId: r.gameId } });
       },
       onMatchEnded: ({ room: r }) => setRoom(r),
-      onOpponentDisconnected: () => setRoom((prev) => ({ ...prev })),
+      onOpponentDisconnected: ({ room: r }) => setRoom(r),
       onOpponentReconnected: ({ room: r }) => setRoom(r),
       onOpponentExited: ({ room: r }) => setRoom(r),
       onRematchOffered: ({ room: r }) => setRoom(r),
