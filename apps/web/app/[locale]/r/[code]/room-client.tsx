@@ -861,13 +861,13 @@ function ShareLink({ url }: { url: string }) {
       <div className="share-link">
         <span className="share-link__url">{url}</span>
         {canShare ? (
-          <button type="button" className="button-ghost" onClick={handleShare}>
+          <button type="button" className="button-primary" onClick={handleShare}>
             {t('join.shareLink.share')}
           </button>
         ) : (
           <button
             type="button"
-            className="button-ghost"
+            className="button-primary"
             onClick={() => {
               void (async () => {
                 await navigator.clipboard.writeText(url);
