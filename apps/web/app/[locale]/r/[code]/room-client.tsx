@@ -700,7 +700,19 @@ function PostMatchPanel({
   }
 
   // Ended (no offer yet) or Closed (after decline / opponent exit).
-  const canOffer = room.status === 'ended';
+  // Only offer rematch when the opponent is actually present — otherwise
+  // the button would park the offerer in awaitingRematch with no one to
+  // accept (e.g. the opponent dropped mid-game and the match ended on
+  // timeout / disconnect / win-without-them). If they reconnect inside
+  // the post-match grace, opponentConnected flips back and the button
+  // reappears on the next render.
+  const opponentConnected =
+    role === 'host'
+      ? room.challengerConnected
+      : role === 'challenger'
+        ? room.hostConnected
+        : false;
+  const canOffer = room.status === 'ended' && opponentConnected;
   return (
     <div className="match-controls">
       <button
