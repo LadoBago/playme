@@ -132,7 +132,7 @@ function resolveLocaleRewrite(pathname: string): {
   };
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const nonce = generateNonce();
   const csp = buildCsp(nonce);
   const pathname = request.nextUrl.pathname;
@@ -168,13 +168,13 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip middleware on paths that don't render HTML (API rewrites,
+  // Skip the proxy on paths that don't render HTML (API rewrites,
   // SignalR proxy, static assets, the OG image, robots/sitemap).
   //
-  // RSC prefetch requests DO run through middleware. They need the
+  // RSC prefetch requests DO run through the proxy. They need the
   // same locale rewrite as the eventual navigation — an unprefixed
   // default-locale href like `/play/tictactoe-3x3` only resolves
-  // once middleware rewrites it to `/ka/play/tictactoe-3x3`. Before
+  // once the proxy rewrites it to `/ka/play/tictactoe-3x3`. Before
   // PR #64 introduced the [locale] segment the rewrite didn't exist
   // and skipping prefetch was a free CSP win; now skipping it 404s
   // every prefetch of a default-locale URL.
