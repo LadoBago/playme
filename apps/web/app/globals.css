@@ -19,6 +19,10 @@
   --win-highlight: rgba(34, 197, 94, 0.32);
   --win-stroke: rgb(34, 197, 94);
   --win-glow: rgba(34, 197, 94, 0.5);
+  /* Lose tokens mirror the win pair, sharing the `--highlight` base hue
+   * so the winning-row highlight matches the "you lose" banner tone. */
+  --lose-stroke: rgb(229, 75, 28);
+  --lose-glow: rgba(229, 75, 28, 0.5);
 
   /* Wordmark `.ge` glyph color. Brand red on the cream light bg, amber
    * on the dark bg — saturated red sits muddy against near-black, so
@@ -61,6 +65,8 @@
   --win-highlight: rgba(74, 222, 128, 0.36);
   --win-stroke: rgb(74, 222, 128);
   --win-glow: rgba(74, 222, 128, 0.5);
+  --lose-stroke: rgb(255, 122, 76);
+  --lose-glow: rgba(255, 122, 76, 0.5);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,6 +81,8 @@
     --win-highlight: rgba(74, 222, 128, 0.36);
     --win-stroke: rgb(74, 222, 128);
     --win-glow: rgba(74, 222, 128, 0.5);
+    --lose-stroke: rgb(255, 122, 76);
+    --lose-glow: rgba(255, 122, 76, 0.5);
   }
 }
 
@@ -714,6 +722,15 @@ textarea {
   box-shadow: 0 0 0 3px var(--win-stroke) inset;
 }
 
+/* Caller-perspective loss: the winning line is the opponent's, so the
+ * highlight mirrors the "you lose" banner tone instead of the green
+ * win tokens. Declared after .board__cell--winning so the cascade picks
+ * this up when both classes are present. */
+.board__cell--winning-lost {
+  background: var(--highlight);
+  box-shadow: 0 0 0 3px var(--lose-stroke) inset;
+}
+
 @keyframes lastMovePulse {
   0% {
     box-shadow:
@@ -839,6 +856,14 @@ textarea {
   box-shadow:
     0 0 0 3px var(--win-stroke) inset,
     0 0 12px var(--win-glow);
+}
+
+/* Caller-perspective loss: mirror .c4__cell--winning with brand-red
+ * tokens so the highlight matches the "you lose" banner tone. */
+.c4__cell--winning-lost {
+  box-shadow:
+    0 0 0 3px var(--lose-stroke) inset,
+    0 0 12px var(--lose-glow);
 }
 
 .share-link {

@@ -11,6 +11,10 @@ interface BoardProps {
   lastMoveCell: number | null;
   /** Flat indices of the winning line, if a Win has occurred. */
   winningCells: ReadonlySet<number>;
+  /** True when the caller is the losing side of the winning line — the
+   *  highlight switches from the win tokens to the brand-red lose tokens
+   *  so the winning row reads as "you lose" instead of "you win". */
+  winningIsLoss?: boolean;
   canPlay: boolean;
   onCellClick: (cell: number) => void;
   /**
@@ -35,6 +39,7 @@ export function Board({
   cells,
   lastMoveCell,
   winningCells,
+  winningIsLoss = false,
   canPlay,
   onCellClick,
   renderCell,
@@ -61,7 +66,8 @@ export function Board({
           'board__cell' +
           (filled ? ' board__cell--filled' : '') +
           (isLast ? ' board__cell--last' : '') +
-          (isWinning ? ' board__cell--winning' : '');
+          (isWinning ? ' board__cell--winning' : '') +
+          (isWinning && winningIsLoss ? ' board__cell--winning-lost' : '');
 
         return (
           <button
