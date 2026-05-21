@@ -493,18 +493,30 @@ function MatchView({
     // anyone reopening the invite re-enters the same seat.
     return (
       <div className="stack">
+        <Link
+          href={localizedHref('/', locale)}
+          className="icon-link"
+          aria-label={t('match.backToLobby')}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </Link>
         <MatchHeader room={room} role={role} />
         {isChallenger ? null : <ShareLink url={shareUrl} />}
         <p style={{ color: 'var(--fg-muted)' }}>{t(messageKey)}</p>
-        <div className="match-controls">
-          <Link
-            href={localizedHref('/', locale)}
-            className="button-ghost"
-            style={{ textDecoration: 'none' }}
-          >
-            {t('match.backToLobby')}
-          </Link>
-        </div>
       </div>
     );
   }
