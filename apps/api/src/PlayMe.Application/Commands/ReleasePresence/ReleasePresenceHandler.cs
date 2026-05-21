@@ -8,20 +8,32 @@ namespace PlayMe.Application.Commands.ReleasePresence;
 
 public sealed class ReleasePresenceHandler
 {
+    /// <summary>
+    /// Post-match reconnect grace (docs/state.md §2.4). Long enough to
+    /// cover refresh, locale toggle, and the SignalR auto-reconnect
+    /// window; short enough that a genuine close still feels prompt to
+    /// the still-connected player. If this needs to differ per
+    /// environment, lift to <c>SweeperOptions</c> or a sibling.
+    /// </summary>
+    public static readonly TimeSpan PostMatchExitGracePeriod = TimeSpan.FromSeconds(10);
+
     private readonly IRoomRepository _rooms;
     private readonly IClock _clock;
     private readonly IDisconnectGraceScheduler _graces;
+    private readonly IPostMatchExitGraceScheduler _postMatchGraces;
     private readonly IGameModuleRegistry _games;
 
     public ReleasePresenceHandler(
         IRoomRepository rooms,
         IClock clock,
         IDisconnectGraceScheduler graces,
+        IPostMatchExitGraceScheduler postMatchGraces,
         IGameModuleRegistry games)
     {
         _rooms = rooms;
         _clock = clock;
         _graces = graces;
+        _postMatchGraces = postMatchGraces;
         _games = games;
     }
 
@@ -74,17 +86,23 @@ public sealed class ReleasePresenceHandler
                     return Effect(room, PresenceReleaseEffect.None);
                 }
 
-                // Tab-close from Ended / AwaitingRematch is identical to
-                // an explicit ExitRoom (state.md §2.4): transition straight
-                // to Closed and let the still-present player see
-                // OpponentExited. The clock isn't running here so there's
-                // no fairness reason to wait for a reconnect.
+                // Post-match disconnect (Ended / AwaitingRematch): schedule a
+                // brief reconnect grace (state.md §2.4) instead of treating
+                // the disconnect as an immediate exit. Covers refresh, locale
+                // toggle, and transient blips — the post-match UI looks
+                // identical before and during the window, so the still-
+                // connected player sees nothing until the grace either
+                // elapses (sweeper broadcasts OpponentExited + Closed) or is
+                // cancelled by a reconnect. An explicit ExitRoom from the
+                // disconnected player still closes the room immediately on
+                // its own path.
                 if (room.Status is RoomStatus.Ended or RoomStatus.AwaitingRematch)
                 {
                     room.MarkDisconnected(cmd.CallerRole);
-                    room.Exit();
                     await _rooms.SaveAsync(room, ct);
-                    return Effect(room, PresenceReleaseEffect.OpponentExited);
+                    var deadline = _clock.UtcNow + PostMatchExitGracePeriod;
+                    await _postMatchGraces.ScheduleAsync(code, cmd.CallerRole, deadline, ct);
+                    return Effect(room, PresenceReleaseEffect.None);
                 }
 
                 var notifyOpponent = room.Status == RoomStatus.InProgress;
