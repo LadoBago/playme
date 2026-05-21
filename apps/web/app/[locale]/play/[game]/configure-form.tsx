@@ -131,8 +131,20 @@ export function ConfigureForm({ gameId, sides, defaultHostSide }: ConfigureFormP
 
       {error ? <div className="banner banner--error">{error}</div> : null}
 
-      <button type="submit" className="button-primary" disabled={submitting || !displayName.trim()}>
-        {submitting ? t('configure.submitting') : t('configure.submit')}
+      <button
+        type="submit"
+        className="button-primary"
+        disabled={submitting || !displayName.trim()}
+        aria-busy={submitting}
+      >
+        {submitting ? (
+          <>
+            <span className="button-spinner" aria-hidden="true" />
+            {t('configure.submitting')}
+          </>
+        ) : (
+          t('configure.submit')
+        )}
       </button>
     </form>
   );

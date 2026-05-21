@@ -91,8 +91,20 @@ export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
 
         {error ? <div className="banner banner--error">{error}</div> : null}
 
-        <button type="submit" className="button-primary" disabled={!submittable || submitting}>
-          {submitting ? t('join.submitting') : t('join.submit')}
+        <button
+          type="submit"
+          className="button-primary"
+          disabled={!submittable || submitting}
+          aria-busy={submitting}
+        >
+          {submitting ? (
+            <>
+              <span className="button-spinner" aria-hidden="true" />
+              {t('join.submitting')}
+            </>
+          ) : (
+            t('join.submit')
+          )}
         </button>
       </form>
     </div>
