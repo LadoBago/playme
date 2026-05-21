@@ -42,6 +42,7 @@ function renderTttCell(side: string | null): string {
 
 export const TicTacToe3x3View: GameView = ({
   matchState,
+  callerSide,
   canPlay,
   matchEnded,
   onSubmitMove,
@@ -56,6 +57,13 @@ export const TicTacToe3x3View: GameView = ({
     return set;
   }, [board.cols, board.winningLine]);
 
+  const winningSide = useMemo(() => {
+    if (!board.winningLine || board.winningLine.length === 0) return null;
+    const first = board.winningLine[0]!;
+    return board.cells[first.row * board.cols + first.col] ?? null;
+  }, [board.cells, board.cols, board.winningLine]);
+  const winningIsLoss = winningSide !== null && callerSide !== null && winningSide !== callerSide;
+
   return (
     <Board
       rows={board.rows}
@@ -63,6 +71,7 @@ export const TicTacToe3x3View: GameView = ({
       cells={board.cells}
       lastMoveCell={board.lastMove ?? null}
       winningCells={winningCells}
+      winningIsLoss={winningIsLoss}
       canPlay={canPlay && !matchEnded}
       onCellClick={(cell) => onSubmitMove({ cell })}
       renderCell={renderTttCell}

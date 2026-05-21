@@ -53,6 +53,7 @@ function columnIsFull(state: Connect4BoardState, col: number): boolean {
 
 export const Connect4View: GameView = ({
   matchState,
+  callerSide,
   canPlay,
   matchEnded,
   onSubmitMove,
@@ -67,6 +68,13 @@ export const Connect4View: GameView = ({
     }
     return set;
   }, [board]);
+
+  const winningSide = useMemo(() => {
+    if (!board.winningLine || board.winningLine.length === 0) return null;
+    const first = board.winningLine[0]!;
+    return board.cells[indexOf(board, first.row, first.col)] ?? null;
+  }, [board]);
+  const winningIsLoss = winningSide !== null && callerSide !== null && winningSide !== callerSide;
 
   const lastMoveIndex =
     board.lastMove !== undefined ? indexOf(board, board.lastMove.row, board.lastMove.col) : -1;
@@ -120,7 +128,8 @@ export const Connect4View: GameView = ({
             'c4__cell' +
             (side ? ` c4__cell--${side}` : '') +
             (isLast ? ' c4__cell--last' : '') +
-            (isWinning ? ' c4__cell--winning' : '');
+            (isWinning ? ' c4__cell--winning' : '') +
+            (isWinning && winningIsLoss ? ' c4__cell--winning-lost' : '');
           // Side identifiers ("red"/"yellow") are this module's vocab and
           // stay inside it (CLAUDE.md §7 "Platform thinness"); the inline
           // branch resolves them to localised cell labels.
