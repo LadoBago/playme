@@ -493,18 +493,30 @@ function MatchView({
     // anyone reopening the invite re-enters the same seat.
     return (
       <div className="stack">
+        <Link
+          href={localizedHref('/', locale)}
+          className="icon-link"
+          aria-label={t('match.backToLobby')}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </Link>
         <MatchHeader room={room} role={role} />
         {isChallenger ? null : <ShareLink url={shareUrl} />}
         <p style={{ color: 'var(--fg-muted)' }}>{t(messageKey)}</p>
-        <div className="match-controls">
-          <Link
-            href={localizedHref('/', locale)}
-            className="button-ghost"
-            style={{ textDecoration: 'none' }}
-          >
-            {t('match.backToLobby')}
-          </Link>
-        </div>
       </div>
     );
   }
@@ -846,10 +858,9 @@ function ShareLink({ url }: { url: string }) {
       } catch (e) {
         // User dismissed the sheet — AbortError is expected; no other
         // error path is interesting enough to surface to the user.
+        // NotAllowedError-style failures can only occur on insecure
+        // contexts, which production HTTPS rules out.
         if (e instanceof Error && e.name !== 'AbortError') {
-          // Other errors (e.g. NotAllowedError on insecure context)
-          // are silent failures here — Copy link is always available
-          // as the fallback path right next to this button.
           console.warn('[ShareLink] navigator.share failed', e);
         }
       }
@@ -861,24 +872,25 @@ function ShareLink({ url }: { url: string }) {
       <span className="label">{t('join.shareLink.label')}</span>
       <div className="share-link">
         <span className="share-link__url">{url}</span>
-        <button
-          type="button"
-          className="button-ghost"
-          onClick={() => {
-            void (async () => {
-              await navigator.clipboard.writeText(url);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            })();
-          }}
-        >
-          {copied ? t('join.shareLink.copied') : t('join.shareLink.copy')}
-        </button>
         {canShare ? (
-          <button type="button" className="button-ghost" onClick={handleShare}>
+          <button type="button" className="button-primary" onClick={handleShare}>
             {t('join.shareLink.share')}
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            className="button-primary"
+            onClick={() => {
+              void (async () => {
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              })();
+            }}
+          >
+            {copied ? t('join.shareLink.copied') : t('join.shareLink.copy')}
+          </button>
+        )}
       </div>
     </div>
   );
