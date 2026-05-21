@@ -46,8 +46,8 @@ In three terminals:
 # Terminal 1 — Redis
 docker compose -f infra/docker-compose.yml up redis
 
-# Terminal 2 — API (defaults to http://localhost:5000 / https://localhost:5001)
-dotnet run --project apps/api
+# Terminal 2 — API (binds http://localhost:5080 per launchSettings.json)
+dotnet run --project apps/api/src/PlayMe.Api
 
 # Terminal 3 — load test
 pnpm --filter @playme/loadtest start
