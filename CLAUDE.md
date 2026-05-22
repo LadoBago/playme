@@ -11,7 +11,7 @@ Context Claude Code needs to work effectively in **PlayMe**. Detailed specs live
 Hard rules:
 
 - **No accounts.** Anonymous; display name only. **Two players** per match, exactly. **Real-time only** over SignalR. **Invite-link matchmaking only** — no queue, no friends list, no leaderboards.
-- **Catalog:** Tic-Tac-Toe 3×3 / 6×6 / 9×9, Connect 4, Reversi (post-MVP addition, Sprint 8). Each game is a **self-contained module** — no shared rules engine across games.
+- **Catalog:** Tic-Tac-Toe (configurable board size: 3×3 / 6×6 / 9×9), Connect 4, Reversi. Each game is a **self-contained module** — no shared rules engine across games. The unified `tictactoe` module (Sprint 9) carries a per-room `gameOptions: { boardSize }` blob through the platform layer opaquely; platform code never inspects the shape.
 - **Languages at launch:** Georgian (`ka`, default) and English (`en`).
 - **Client surface in v1: web only** (responsive Next.js + PWA). Native mobile is deferred to v2 — `packages/shared` is structured to be consumed by RN later.
 - **No monetization in v1.**

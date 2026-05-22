@@ -10,7 +10,7 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 
 1. **Room lifecycle** — creation, single-use invite link, TTL, cleanup.
 2. **Two-role model** — host and challenger, exactly two players per room.
-3. **Chess clock** — fixed total per player, server-authoritative, ticks server-side. **Three presets only** (no custom values, no "unlimited" in v1): **1 min**, **3 min**, **10 min** per player. Both players always get the same time bank. Modeled as a strongly-typed enum `TimeLimit { OneMin, ThreeMin, TenMin }` on the API; FluentValidation rejects anything else with `errors.config.invalidTimeLimit`. Room state stores the resolved `timeLimitMs` for the clock model in [`state.md`](state.md) §2. **Per-game defaults** preselected on the configure page so the host can submit fast: `tictactoe-3x3` → 3 min, `tictactoe-6x6` → 3 min, `tictactoe-9x9` → 10 min, `connect4` → 3 min. All three presets remain selectable for every game — defaults are just the preselected option.
+3. **Chess clock** — fixed total per player, server-authoritative, ticks server-side. **Three presets only** (no custom values, no "unlimited" in v1): **1 min**, **3 min**, **10 min** per player. Both players always get the same time bank. Modeled as a strongly-typed enum `TimeLimit { OneMin, ThreeMin, TenMin }` on the API; FluentValidation rejects anything else with `errors.config.invalidTimeLimit`. Room state stores the resolved `timeLimitMs` for the clock model in [`state.md`](state.md) §2. **Per-game default budgets** live on each `IGameModule.DefaultClockBudget`: `tictactoe` → 3 min, `connect4` → 3 min, `reversi` → 10 min. All three presets remain selectable for every game — defaults are just the preselected option on the configure page. **Size-driven sub-defaults** for `tictactoe` (1 min for 3×3, 3 min for 6×6, 10 min for 9×9) were considered during Sprint 9 but deferred — the platform has no host-selected clock picker today, so the module's single value applies until that picker lands (see [`roadmap.md`](roadmap.md) §3).
 4. **Online move pipeline** — every move travels client → server → opponent via SignalR.
 5. **Host-created matches** — host chooses game type, time limit, side/color, display name.
 6. **Invite flow** — host shares the link; first non-host to open it becomes the opponent.
@@ -44,9 +44,7 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 
 | Module | Game |
 |---|---|
-| `tictactoe-3x3` | Tic-Tac-Toe on 3×3, win = 3 in a row |
-| `tictactoe-6x6` | Tic-Tac-Toe on 6×6, win = 4 in a row |
-| `tictactoe-9x9` | Tic-Tac-Toe on 9×9, win = 5 in a row |
+| `tictactoe` | Tic-Tac-Toe on N×N. `gameOptions: { boardSize ∈ {3, 6, 9} }` picks the grid; win length is derived deterministically (3→3, 6→4, 9→5). Sides: **X** and **O**. |
 | `connect4` | Connect 4 on 7×6 with gravity, win = 4 in a row. Colors: **red** and **yellow** (traditional pair). |
 | `reversi` | Classic Reversi on 8×8 with free central-square opening, win by majority disc count. Colors: **dark** and **light**. |
 
@@ -56,11 +54,13 @@ Each module owns: its board representation, legal-move validation, win/draw dete
 
 These are the authoritative rules. The server validates every move against them. Per-module READMEs (`apps/api/src/PlayMe.Domain/Games/<game>/RULES.md`) may expand on edge cases, but the canonical statement lives here.
 
-**`tictactoe-3x3`** — 3×3 grid, players alternate placing X / O. First to align **3 consecutive** marks (horizontal, vertical, or either diagonal) wins. Board fills with no line → **draw**. **X moves first.** No wraparound.
+**`tictactoe`** — N×N grid, players alternate placing X / O. Host picks `boardSize ∈ {3, 6, 9}` via `gameOptions` at room creation; win length derives deterministically:
 
-**`tictactoe-6x6`** — 6×6 grid, players alternate placing X / O. First to align **at least 4 consecutive** marks (horizontal, vertical, or either diagonal) wins. A run of 5 or 6 in a row counts as a win, not separately. Board fills with no line → **draw**. **X moves first.** No wraparound. **No swap / pro / balancing rule** in v1.
+- **3×3** — first to align **3 consecutive** marks wins.
+- **6×6** — first to align **at least 4 consecutive** marks wins. A run of 5 or 6 in a row counts as a single win, not separately.
+- **9×9** — first to align **at least 5 consecutive** marks wins (Gomoku-style first-to-5). Longer runs (6 / 7 / 8 / 9 in a row) also count as a single win. First-player advantage exists on 9×9 and is accepted for casual play; no swap / pro / balancing rule in v1.
 
-**`tictactoe-9x9`** — 9×9 grid, players alternate placing X / O. First to align **at least 5 consecutive** marks (horizontal, vertical, or either diagonal) wins. Board fills with no line → **draw**. **X moves first.** No wraparound. **No swap / pro / balancing rule** in v1 (i.e. plain Gomoku-style first-to-5; we know first-player advantage exists on 9×9 and accept it for casual play).
+Lines count horizontally, vertically, or along either diagonal. No wraparound. Board fills with no line → **draw**. **X moves first** regardless of board size.
 
 **`connect4`** — 7-column × 6-row board with **gravity**: a dropped disc occupies the lowest empty cell of the chosen column. Players alternate dropping **red** and **yellow** discs. First to align **4 consecutive** discs (horizontal, vertical, or either diagonal) wins. A column with no empty cells is not a legal target. Whole board fills with no line → **draw**. **Red moves first** by Hasbro convention; the host's color choice at room creation therefore implicitly decides who starts (platform rule §1 #11).
 
@@ -102,7 +102,8 @@ Pin canonical terms so different files don't invent synonyms. When the codebase 
 | **Clock** | Per-player remaining time. Server-authoritative; ticks server-side; broadcast on move and at low frequency. |
 | **TimeBank** | The fixed total time allocated to each player at match start. Same for both players. |
 | **Session** / **SessionToken** | Signed credential tying a single connection to a (room, player, role) triple. HttpOnly cookie or bearer. Dies with the room. |
-| **GameId** | String identifying which game module is in play: `tictactoe-3x3`, `tictactoe-6x6`, `tictactoe-9x9`, or `connect4`. |
+| **GameId** | String identifying which game module is in play: `tictactoe`, `connect4`, or `reversi`. |
+| **GameOptions** | Per-room module-specific configuration carried opaquely on the room aggregate. `tictactoe` accepts `{ boardSize ∈ {3, 6, 9} }`; `connect4` and `reversi` take none. The platform never inspects the shape — the module validates via `IGameModule.ValidateOptions` (CLAUDE.md §7 "Platform thinness"). |
 | **GameModule** | A self-contained per-game implementation (rules + UI). Lives in `Domain/Games/<game>/` on the API and as a feature folder on the web. |
 | **Outcome** | Terminal match result: `Win` (with winner + winning-line coordinates), `Draw`, `Resign`, `Timeout`, or `Disconnect` (the server auto-ended the match after the §1 #7 reconnect grace elapsed; the disconnected side loses). |
 | **RematchOffer** | The post-match handshake state. Either player can offer; opponent accepts (→ new match) or rejects (→ rejector to lobby, offerer stays with a notice). |

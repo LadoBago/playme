@@ -131,6 +131,22 @@ Invariants the sprint must preserve:
 
 **Exit criteria:** Landing grid shows three tiles. Configure page picks board size for TTT; the challenger sees the chosen size in onboarding before joining. All three sizes play correctly end-to-end with clock, reconnect, rematch (with side swap), and resign. Old slug URLs 301 to the new one. No platform code path branches on `boardSize` or any other game-specific field.
 
+**Status:** Shipped 2026-05-23.
+
+| # | PR | What |
+|---:|---|---|
+| 96 | docs | Sprint 9 plan |
+| 97 | PR1a | `gameOptions` seam — `IGameModule.ValidateOptions`/`NewMatch(options)`, `Room.GameOptions`, `RoomRecord`/`RoomDto` plumbing, surface validation (1 KiB raw-JSON cap), 12 new seam tests |
+| 98 | PR1b | Unified `tictactoe` module + parser + 65 new tests (`boardSize ∈ {3,6,9}`, win length derived 3/4/5, directional-sweep win detection) |
+| 99 | PR2 | Catalog/UI cutover — one tile, board-size segmented control, `?size=` pre-select from 308 redirects, new `games.tictactoe.{name,shortDescription,rules}` i18n keys |
+| 100 | PR3 | Drop legacy `tictactoe-{3x3,6x6,9x9}` modules + parsers + renderers + redirects + deprecated i18n keys (54 files, +86 / −2549) |
+
+Variances from the plan worth recording:
+
+- **PR1 split into PR1a + PR1b for reviewability.** The plan called for a single PR; each half landed as its own merge so the platform seam and its first consumer could be reviewed independently. Mirrored the Sprint 8 Reversi api/web split precedent.
+- **PR3 landed immediately, not after a 2-week redirect window.** The original window protected invite-link tails sitting in chats; the site is still pre-launch with only the developer using it, so there was no traffic to drain. Server-side rooms with legacy gameIds drain in 30 minutes per `RoomLifetimes.WaitingForOpponent`.
+- **Size-driven clock defaults dropped from scope.** The plan called for `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` defaults on the configure page; there's no host-side clock picker today, so the module's single `DefaultClockBudget = 3 min` is the only knob. Listed under §3 deferred polish.
+
 ### 1.1 Roadmap rules
 
 - **The first end-to-end slice (Sprint 1) is the canary** for whether the platform layer is right. Don't add anything to a later sprint until Sprint 1 ships.
@@ -149,7 +165,7 @@ Intentionally unresolved — raise in PRs rather than choosing silently.
 - **Monetization.** No monetization in v1. When introduced, the likely path is rewarded video ads first, then cosmetic IAP — both of which will require introducing optional accounts.
 - **Accounts & player stats.** Not in v1 (pure anonymous play). Will become necessary when monetization, leaderboards, friends, or persistent history land.
 - **Spectator mode.** Dropped from v1. Revisit after the core 1v1 flow is solid.
-- **More games.** Catalog is fixed at four modules for MVP. New games are net-new modules, not parameterizations of existing ones.
+- **More games.** Catalog currently ships three modules (`tictactoe`, `connect4`, `reversi`). Net-new games remain the default — own state shape, own move payload, own win/draw detection, own renderer. **Per-game configurable variants** (board size, ruleset toggles) now go through `gameOptions` on the existing module rather than spawning sibling gameIds — the `tictactoe` consolidation in Sprint 9 set that pattern. Reach for a new module when the rules genuinely diverge; reach for a `gameOptions` knob when only a parameter does.
 - **Push notifications.** Web push only (where supported) when re-engagement becomes a priority. Native push waits for the mobile app.
 - **Tournaments / prizes.** Not in v1. If pursued later, legal review is required (Georgian gambling-law implications even for skill-based paid entry).
 - **Managed log/trace backend.** OTel currently exports to stdout/file. Wire to Grafana Cloud / Honeycomb / similar when scaling beyond one API instance.
@@ -166,5 +182,7 @@ When a decision is made, update the relevant doc in the same PR.
 In-scope-for-v1 items that have been deliberately postponed but should be picked up before launch (or shortly after). Distinct from §2 "deferred to v2" — these are smaller polishes that don't change scope, just timing. Pick from this list when there's bandwidth between sprints.
 
 - **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform-and-games.md`](platform-and-games.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
+
+- **Host clock-picker + size-driven `tictactoe` defaults.** The configure page has no host-side time-limit picker today; the room inherits the module's `DefaultClockBudget`. Sprint 9 dropped the planned `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` size-driven preselect because there's nothing for it to *pre*-select — adding the 1/3/10-min segmented control (the platform invariant in [`platform-and-games.md`](platform-and-games.md) §1 #3) unblocks both the per-game default and per-room time-limit selection in one go. Likely needs a new `timeLimit` field on `CreateRoomCommand` / `Room` / `RoomDto` plus the segmented control on the configure form, mirroring the side-mode picker.
 
 When picking up an item, move it under the relevant sprint header or open a feature branch directly.
