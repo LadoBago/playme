@@ -1,6 +1,7 @@
 import type { GameModule, GameView } from './types';
 import { Connect4View, connect4SideLabel } from './connect4/view';
 import { ReversiView, reversiSideLabel } from './reversi/view';
+import { TicTacToeView, tictactoeSideLabel } from './tictactoe/view';
 import { TicTacToe3x3View, tttSideLabel } from './tictactoe-3x3/view';
 import { TicTacToe6x6View, tictactoe6x6SideLabel } from './tictactoe-6x6/view';
 import { TicTacToe9x9View, tictactoe9x9SideLabel } from './tictactoe-9x9/view';
@@ -11,8 +12,15 @@ import { TicTacToe9x9View, tictactoe9x9SideLabel } from './tictactoe-9x9/view';
  * shell (CLAUDE.md §7 "Platform thinness"). Per-game vocabulary ("x"/"o",
  * "red"/"yellow", "dark"/"light") stays inside the module: the platform
  * only ever sees the `GameModule` shape.
+ *
+ * Sprint 9 PR2: the unified `tictactoe` module is the active TTT entry
+ * (catalog points at it; configure form submits gameOptions.boardSize).
+ * The legacy per-size entries stay registered so rooms still in Redis
+ * with `tictactoe-3x3` / `-6x6` / `-9x9` gameIds keep rendering correctly.
+ * PR3 of the sprint removes them once the redirect window has passed.
  */
 const MODULES = new Map<string, GameModule>([
+  ['tictactoe', { View: TicTacToeView, getSideLabel: tictactoeSideLabel }],
   ['tictactoe-3x3', { View: TicTacToe3x3View, getSideLabel: tttSideLabel }],
   ['tictactoe-6x6', { View: TicTacToe6x6View, getSideLabel: tictactoe6x6SideLabel }],
   ['tictactoe-9x9', { View: TicTacToe9x9View, getSideLabel: tictactoe9x9SideLabel }],

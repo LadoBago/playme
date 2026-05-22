@@ -44,6 +44,11 @@ export const en = {
     'Five-in-a-row on a 9×9 grid. Place Xs and Os; first to align at least five wins.',
   'games.tictactoe-9x9.rules':
     'Players alternate placing X and O on a 9×9 grid. The first to align at least five of their marks consecutively — horizontally, vertically, or diagonally — wins. Longer runs (six, seven, eight, or nine in a row) also count as a single win. If the board fills with no line, the game is a draw. X always moves first.',
+  'games.tictactoe.name': 'Tic-Tac-Toe',
+  'games.tictactoe.shortDescription':
+    'Pick a board size: 3×3, 6×6, or 9×9. First to align the target number of marks wins.',
+  'games.tictactoe.rules':
+    'Players alternate placing X and O on a grid. On 3×3, align three marks to win; on 6×6, at least four; on 9×9, at least five. Lines count horizontally, vertically, or diagonally. Runs longer than the target on the bigger boards still count as a single win. If the board fills with no line, the game is a draw. X always moves first.',
   'games.tictactoe.sideX': 'X (moves first)',
   'games.tictactoe.sideO': 'O',
   'games.tictactoe.shortSideX': 'X',
@@ -78,6 +83,7 @@ export const en = {
   'configure.sideMode.random': 'Random',
   'configure.sideMode.challengerPicks': 'Let my friend pick',
   'configure.hostSide.label': 'Your side',
+  'configure.boardSize.label': 'Board size',
   'configure.submit': 'Create room',
   'configure.submitting': 'Creating…',
   'configure.rules.title': 'How to play',

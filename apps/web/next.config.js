@@ -47,6 +47,22 @@ const nextConfig = {
       { source: '/hubs/:path*', destination: `${apiUpstream}/hubs/:path*` },
     ];
   },
+  // Sprint 9 PR2: legacy per-size Tic-Tac-Toe slugs 301 to the unified
+  // configure page with the size pre-selected via `?size=N`. Keeps invite
+  // links sitting in chats working through the 2-week redirect window.
+  // PR3 of the sprint removes these rules + the legacy renderer entries.
+  async redirects() {
+    return [
+      // Default locale (ka) at the root.
+      { source: '/play/tictactoe-3x3', destination: '/play/tictactoe?size=3', permanent: true },
+      { source: '/play/tictactoe-6x6', destination: '/play/tictactoe?size=6', permanent: true },
+      { source: '/play/tictactoe-9x9', destination: '/play/tictactoe?size=9', permanent: true },
+      // English locale prefix.
+      { source: '/en/play/tictactoe-3x3', destination: '/en/play/tictactoe?size=3', permanent: true },
+      { source: '/en/play/tictactoe-6x6', destination: '/en/play/tictactoe?size=6', permanent: true },
+      { source: '/en/play/tictactoe-9x9', destination: '/en/play/tictactoe?size=9', permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
