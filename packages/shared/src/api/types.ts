@@ -89,6 +89,13 @@ export interface RoomDto {
   /** Role that offered the current rematch — set while status is
    * `awaitingRematch`, null otherwise. See docs/platform-and-games.md §1 #10. */
   rematchOffererRole?: Role;
+  /**
+   * Opaque per-room game-options blob the host chose at room creation
+   * (Sprint 9 PR1). Platform never inspects the shape — each game module
+   * owns its own schema (e.g. unified `tictactoe` carries `{boardSize}`).
+   * Null / undefined for games without options.
+   */
+  gameOptions?: unknown;
 }
 
 /**
@@ -124,6 +131,12 @@ export interface CreateRoomRequest {
   gameId: string;
   sideSelectionMode: SideSelectionMode;
   hostSide?: string | undefined;
+  /**
+   * Opaque per-room game-options blob sent at room creation (Sprint 9 PR1).
+   * Server-side game module validates the shape; surface size cap is 1 KiB
+   * of raw JSON (see CreateRoomCommandValidator on the API).
+   */
+  gameOptions?: unknown;
 }
 
 export interface JoinRoomRequestBody {

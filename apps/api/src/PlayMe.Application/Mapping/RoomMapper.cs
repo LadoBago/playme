@@ -32,7 +32,8 @@ public static class RoomMapper
         CurrentMatch: room.CurrentMatch is null ? null : ToMatchDto(room.CurrentMatch, now, games),
         CreatedAt: room.CreatedAt,
         Score: new ScoreDto(room.SeriesScore.Host, room.SeriesScore.Challenger, room.SeriesScore.Draws),
-        RematchOffererRole: room.RematchOffererRole);
+        RematchOffererRole: room.RematchOffererRole,
+        GameOptions: room.GameOptions);
 
     public static PlayerDto ToPlayerDto(Player player) =>
         new(player.DisplayName.Value, player.Side);

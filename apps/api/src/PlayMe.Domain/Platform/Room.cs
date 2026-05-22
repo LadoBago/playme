@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace PlayMe.Domain.Platform;
 
 /// <summary>
@@ -14,6 +16,16 @@ public sealed class Room
 {
     public RoomCode Code { get; }
     public GameId GameId { get; }
+
+    /// <summary>
+    /// Per-room game-specific options blob, set at room creation and
+    /// immutable for the room's lifetime (Sprint 9 PR1). Opaque to the
+    /// platform — only the game module deserializes / validates it
+    /// (CLAUDE.md §7 "Platform thinness"). Null for games that don't
+    /// take options.
+    /// </summary>
+    public JsonElement? GameOptions { get; }
+
     public SideSelectionMode SideSelectionMode { get; }
     public DateTimeOffset CreatedAt { get; }
 
@@ -50,10 +62,12 @@ public sealed class Room
         bool hostConnected,
         bool challengerConnected,
         SeriesScore seriesScore,
-        Role? rematchOffererRole)
+        Role? rematchOffererRole,
+        JsonElement? gameOptions)
     {
         Code = code;
         GameId = gameId;
+        GameOptions = gameOptions;
         SideSelectionMode = sideSelectionMode;
         CreatedAt = createdAt;
         Host = host;
@@ -72,13 +86,18 @@ public sealed class Room
     /// (the application handler does the resolution before construction);
     /// under <see cref="SideSelectionMode.ChallengerPicks"/> the host's side
     /// is null and resolves at join.
+    /// <paramref name="gameOptions"/> is the validated per-room options blob
+    /// for the game module (Sprint 9 PR1); the handler validates it against
+    /// the module before calling this factory. Defaults to null for games
+    /// without options.
     /// </summary>
     public static Room Create(
         RoomCode code,
         GameId gameId,
         SideSelectionMode sideSelectionMode,
         Player host,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        JsonElement? gameOptions = null)
     {
         ValidateHostSideForMode(sideSelectionMode, host.Side);
 
@@ -94,7 +113,8 @@ public sealed class Room
             hostConnected: false,
             challengerConnected: false,
             seriesScore: SeriesScore.Zero,
-            rematchOffererRole: null);
+            rematchOffererRole: null,
+            gameOptions: gameOptions);
     }
 
     /// <summary>
@@ -113,10 +133,11 @@ public sealed class Room
         bool hostConnected,
         bool challengerConnected,
         SeriesScore seriesScore,
-        Role? rematchOffererRole) =>
+        Role? rematchOffererRole,
+        JsonElement? gameOptions = null) =>
         new(code, gameId, sideSelectionMode, createdAt, host, challenger,
             status, currentMatch, hostConnected, challengerConnected, seriesScore,
-            rematchOffererRole);
+            rematchOffererRole, gameOptions);
 
     /// <summary>
     /// Register the challenger via the join-onboarding endpoint
@@ -187,7 +208,7 @@ public sealed class Room
         var firstMover = RoleForSide(module.FirstMoveSide);
         CurrentMatch = Match.Start(
             GameId,
-            module.NewMatch(),
+            module.NewMatch(GameOptions),
             module.FirstMoveSide,
             firstMover,
             clockBudget,
@@ -330,7 +351,7 @@ public sealed class Room
         var firstMover = RoleForSide(module.FirstMoveSide);
         CurrentMatch = Match.Start(
             GameId,
-            module.NewMatch(),
+            module.NewMatch(GameOptions),
             module.FirstMoveSide,
             firstMover,
             module.DefaultClockBudget,

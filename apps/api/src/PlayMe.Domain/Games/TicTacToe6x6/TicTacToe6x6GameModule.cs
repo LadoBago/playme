@@ -71,7 +71,10 @@ public sealed class TicTacToe6x6GameModule : IGameModule
         _ => throw new ArgumentException($"Unknown side '{side}'.", nameof(side)),
     };
 
-    public IGameState NewMatch() => new TicTacToe6x6State();
+    public string? ValidateOptions(JsonElement? options) =>
+        options is null ? null : "errors.config.invalidGameOptions";
+
+    public IGameState NewMatch(JsonElement? options) => new TicTacToe6x6State();
 
     public MoveResult ApplyMove(IGameState state, string side, GameMove move)
     {

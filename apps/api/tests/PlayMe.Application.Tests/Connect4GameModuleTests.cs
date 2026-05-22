@@ -24,7 +24,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void NewMatch_starts_with_empty_board_and_red_first()
     {
-        var state = (Connect4State)_module.NewMatch();
+        var state = (Connect4State)_module.NewMatch(null);
 
         state.Cells.Should().HaveCount(Connect4State.CellCount);
         state.Cells.Should().AllSatisfy(c => c.Should().BeNull());
@@ -46,7 +46,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void ApplyMove_drops_disc_to_bottom_of_empty_column()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(3));
 
@@ -69,7 +69,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void ApplyMove_stacks_subsequent_discs_in_same_column()
     {
-        IGameState state = _module.NewMatch();
+        IGameState state = _module.NewMatch(null);
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(0)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Yellow, new Connect4Move(0)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(0)).NewState!;
@@ -85,7 +85,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void ApplyMove_rejects_negative_column()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(-1));
 
@@ -96,7 +96,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void ApplyMove_rejects_column_past_right_edge()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(Connect4State.Cols));
 
@@ -107,7 +107,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void ApplyMove_rejects_full_column()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         // Fill column 4 — 6 discs alternating Red/Yellow.
         var side = Connect4Sides.Red;
         for (var i = 0; i < Connect4State.Rows; i++)
@@ -127,7 +127,7 @@ public sealed class Connect4GameModuleTests
     {
         // Red builds 4-in-a-row across cols 0..3 of the bottom row, Yellow
         // wastes moves stacking col 6.
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(0)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Yellow, new Connect4Move(6)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(1)).NewState!;
@@ -153,7 +153,7 @@ public sealed class Connect4GameModuleTests
     public void ApplyMove_vertical_four_wins()
     {
         // Yellow stacks col 2 four times; Red wastes moves on col 5.
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(5)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Yellow, new Connect4Move(2)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(5)).NewState!;
@@ -251,7 +251,7 @@ public sealed class Connect4GameModuleTests
     public void Win_detection_only_fires_when_run_reaches_four()
     {
         // Three Reds in a row should not be a win.
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(0)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Yellow, new Connect4Move(6)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(1)).NewState!;
@@ -337,7 +337,7 @@ public sealed class Connect4GameModuleTests
     [Fact]
     public void Serialize_and_Deserialize_round_trip_preserves_state()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(3)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Yellow, new Connect4Move(3)).NewState!;
         state = _module.ApplyMove(state, Connect4Sides.Red, new Connect4Move(2)).NewState!;

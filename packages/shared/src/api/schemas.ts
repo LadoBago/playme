@@ -88,6 +88,10 @@ export const RoomSchema = z.object({
   createdAt: z.string(),
   score: ScoreSchema,
   rematchOffererRole: RoleSchema.optional(),
+  // Opaque per-room game-options blob (Sprint 9 PR1). Per-game web
+  // renderers parse and validate their own shape; the platform-level
+  // schema only confirms it's a present-or-absent JSON value.
+  gameOptions: z.unknown().optional(),
 });
 
 export const RoomSessionSchema = z.object({

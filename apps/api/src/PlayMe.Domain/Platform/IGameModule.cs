@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace PlayMe.Domain.Platform;
 
 /// <summary>
@@ -30,8 +32,23 @@ public interface IGameModule
     /// </summary>
     TimeSpan DefaultClockBudget { get; }
 
-    /// <summary>Initial state for a new match (empty board).</summary>
-    IGameState NewMatch();
+    /// <summary>
+    /// Validate per-room game options at room creation (Sprint 9 PR1).
+    /// Returns null on success or an i18n error key on rejection. Modules
+    /// that have no configurable options must require <paramref name="options"/>
+    /// to be null; modules with options own the schema and validation
+    /// entirely — the platform never inspects <paramref name="options"/>
+    /// itself (CLAUDE.md §7 "Platform thinness").
+    /// </summary>
+    string? ValidateOptions(JsonElement? options);
+
+    /// <summary>
+    /// Initial state for a new match. <paramref name="options"/> is the
+    /// validated per-room <c>gameOptions</c> blob from <see cref="Room.GameOptions"/>
+    /// (passed through by the platform without inspection); modules without
+    /// options ignore it.
+    /// </summary>
+    IGameState NewMatch(JsonElement? options);
 
     /// <summary>
     /// Validate and apply a move on behalf of <paramref name="side"/>. The

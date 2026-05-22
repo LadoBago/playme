@@ -26,7 +26,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void NewMatch_starts_with_empty_board_and_x_first()
     {
-        var state = (TicTacToe9x9State)_module.NewMatch();
+        var state = (TicTacToe9x9State)_module.NewMatch(null);
 
         state.Cells.Should().HaveCount(TicTacToe9x9State.CellCount);
         state.Cells.Should().AllSatisfy(c => c.Should().BeNull());
@@ -48,7 +48,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void ApplyMove_places_x_at_chosen_cell()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(Idx(4, 4)));
 
@@ -68,7 +68,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void ApplyMove_rejects_negative_cell()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(-1));
 
@@ -79,7 +79,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void ApplyMove_rejects_cell_past_last_index()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(
             state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(TicTacToe9x9State.CellCount));
@@ -91,7 +91,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void ApplyMove_rejects_occupied_cell()
     {
-        IGameState state = _module.NewMatch();
+        IGameState state = _module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(Idx(0, 0))).NewState!;
 
         var result = _module.ApplyMove(state, TicTacToe9x9Sides.O, new TicTacToe9x9Move(Idx(0, 0)));
@@ -300,7 +300,7 @@ public sealed class TicTacToe9x9GameModuleTests
     [Fact]
     public void Serialize_and_Deserialize_round_trip_preserves_state()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(Idx(0, 0))).NewState!;
         state = _module.ApplyMove(state, TicTacToe9x9Sides.O, new TicTacToe9x9Move(Idx(1, 1))).NewState!;
         state = _module.ApplyMove(state, TicTacToe9x9Sides.X, new TicTacToe9x9Move(Idx(2, 2))).NewState!;

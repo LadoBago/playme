@@ -39,7 +39,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void NewMatch_starts_with_empty_board()
     {
-        var state = (TicTacToe6x6State)_module.NewMatch();
+        var state = (TicTacToe6x6State)_module.NewMatch(null);
 
         state.Cells.Should().HaveCount(TicTacToe6x6State.CellCount);
         state.Cells.Should().AllSatisfy(c => c.Should().BeNull());
@@ -50,7 +50,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void ApplyMove_places_mark_and_records_last_move()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(2, 3)));
 
@@ -64,7 +64,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void ApplyMove_rejects_negative_cell()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(-1));
 
@@ -75,7 +75,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void ApplyMove_rejects_cell_past_board_end()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(
             state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(TicTacToe6x6State.CellCount));
@@ -87,7 +87,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void ApplyMove_rejects_occupied_cell()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(0, 0))).NewState!;
 
         var result = _module.ApplyMove(state, TicTacToe6x6Sides.O, new TicTacToe6x6Move(Idx(0, 0)));
@@ -101,7 +101,7 @@ public sealed class TicTacToe6x6GameModuleTests
     {
         // X plays (0,0),(0,1),(0,2); O plays (5,0),(5,1). No win — minimum
         // run is 4 (`platform-and-games.md §2.1`).
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(0, 0))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.O, new TicTacToe6x6Move(Idx(5, 0))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(0, 1))).NewState!;
@@ -117,7 +117,7 @@ public sealed class TicTacToe6x6GameModuleTests
     public void ApplyMove_horizontal_four_wins()
     {
         // X plays (1,0),(1,1),(1,2),(1,3); O fills (5,0),(5,1),(5,2).
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(1, 0))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.O, new TicTacToe6x6Move(Idx(5, 0))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(1, 1))).NewState!;
@@ -143,7 +143,7 @@ public sealed class TicTacToe6x6GameModuleTests
     public void ApplyMove_vertical_four_wins()
     {
         // O stacks col 2 (rows 0..3); X plays scattered cells.
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(5, 5))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.O, new TicTacToe6x6Move(Idx(0, 2))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(5, 4))).NewState!;
@@ -319,7 +319,7 @@ public sealed class TicTacToe6x6GameModuleTests
     [Fact]
     public void Serialize_and_Deserialize_round_trip_preserves_state()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(2, 2))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.O, new TicTacToe6x6Move(Idx(3, 3))).NewState!;
         state = _module.ApplyMove(state, TicTacToe6x6Sides.X, new TicTacToe6x6Move(Idx(0, 5))).NewState!;

@@ -58,7 +58,10 @@ public sealed class Connect4GameModule : IGameModule
         _ => throw new ArgumentException($"Unknown side '{side}'.", nameof(side)),
     };
 
-    public IGameState NewMatch() => new Connect4State();
+    public string? ValidateOptions(JsonElement? options) =>
+        options is null ? null : "errors.config.invalidGameOptions";
+
+    public IGameState NewMatch(JsonElement? options) => new Connect4State();
 
     public MoveResult ApplyMove(IGameState state, string side, GameMove move)
     {
