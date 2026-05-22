@@ -100,6 +100,14 @@ Shipped (as of 2026-05-20):
 
 **Exit criteria:** Public launch on playme.ge at the cost target from the deployment table in `CLAUDE.md` §4. **Sprint 7 closed 2026-05-20.**
 
+**Sprint 8 — Reversi (~1–2 weeks).** First post-MVP game. Canonical rules in [`platform-and-games.md`](platform-and-games.md) §2.1.
+
+- New self-contained game module `reversi` (8×8, classic free central-square opening, dark/light discs, server-driven auto-pass, draw on tie). `DefaultClockBudget` = 10:00 per side.
+- Reuses the platform layer entirely. **If you need to modify the platform to add it, that's a design bug — fix the seam first.**
+- DI registration (one line each in `AddDomain.cs` + `AddApplication.cs`). Web renderer at `apps/web/features/games/reversi/` (opening-phase visual cue on the central 2×2, last-move highlight, live disc counters, auto-pass toast). `games.reversi.*` keys in both `packages/shared/src/i18n/ka.ts` and `en.ts`. Catalog entry registered; landing grid grows from four cards to five.
+
+**Exit criteria:** Reversi plays correctly end-to-end with clock, reconnect, rematch (with side-swap), and resign. Auto-pass, double-auto-pass terminal, and tie outcome all verified. No platform code was modified (only added) — `git diff main -- 'apps/api/src/PlayMe.Domain/Platform/' 'apps/api/src/PlayMe.Api/Hubs/' 'apps/api/src/PlayMe.Infrastructure/Redis/'` is empty.
+
 ### 1.1 Roadmap rules
 
 - **The first end-to-end slice (Sprint 1) is the canary** for whether the platform layer is right. Don't add anything to a later sprint until Sprint 1 ships.
@@ -135,6 +143,5 @@ When a decision is made, update the relevant doc in the same PR.
 In-scope-for-v1 items that have been deliberately postponed but should be picked up before launch (or shortly after). Distinct from §2 "deferred to v2" — these are smaller polishes that don't change scope, just timing. Pick from this list when there's bandwidth between sprints.
 
 - **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform-and-games.md`](platform-and-games.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
-- **Replace placeholder PWA brand assets.** PR #59 shipped a placeholder icon (geometric "P" composed of a rect + two circles on accent-blue `#2a6df4`), rendered via ImageMagick MVG primitives so no font dependency was needed. Files to swap when the final brand asset lands: `apps/web/app/icon.svg` (vector favicon), `apps/web/app/apple-icon.png` (180×180), and `apps/web/public/icon-{192,512,maskable-512}.png`. The maskable variant needs the logo sitting inside the inner 80% safe zone with a fully bleeding background (no transparent edges, no rounded corners — the OS clips). If the brand colours change, update `theme_color` / `background_color` in `apps/web/app/manifest.ts` too.
 
 When picking up an item, move it under the relevant sprint header or open a feature branch directly.

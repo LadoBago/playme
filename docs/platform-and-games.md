@@ -48,6 +48,7 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 | `tictactoe-6x6` | Tic-Tac-Toe on 6×6, win = 4 in a row |
 | `tictactoe-9x9` | Tic-Tac-Toe on 9×9, win = 5 in a row |
 | `connect4` | Connect 4 on 7×6 with gravity, win = 4 in a row. Colors: **red** and **yellow** (traditional pair). |
+| `reversi` | Classic Reversi on 8×8 with free central-square opening, win by majority disc count. Colors: **dark** and **light**. |
 
 Each module owns: its board representation, legal-move validation, win/draw detection, and its UI rendering. **Do not extract a shared rules engine across modules** — that decision is intentional. Common features live only in the platform layer.
 
@@ -65,10 +66,12 @@ These are the authoritative rules. The server validates every move against them.
 
 **Connect 4 piece rendering (accessibility).** Red and yellow are perceptually close for the most common forms of color-blindness (deuteranopia / protanopia, ~5% of male players), so the two sides must be distinguishable without relying on hue alone. Render **red as a solid disc** and **yellow as a ring (donut)** — same outer circle, yellow has a transparent inner hole. This preserves Connect 4's "stacked discs" visual identity, keeps both sides symmetric in shape, and remains legible in monochrome, high-contrast mode, screenshots, and at small mobile sizes. The win-line highlight should glow around both shapes equally. Do **not** distinguish the two players by changing the outer shape (e.g. circle vs. triangle) — that breaks the gravity/stacking intuition that defines Connect 4.
 
-### 2.2 Rules shared by all four games
+**`reversi`** — 8×8 grid, two sides **dark** and **light** placing two-sided discs. **Classic free opening:** the first four placements are restricted to the central 2×2 squares (d4/d5/e4/e5). Players alternate (dark, light, dark, light); no flipping occurs during the opening because no brackets can form on an otherwise-empty board. **Standard placement (move 5+):** a legal move must bracket ≥1 contiguous opponent disc in some straight line (horizontal, vertical, or diagonal) between the placed disc and another disc of the mover's color. **All** bracketed opponent discs in **every** direction flip in a single move. A placement that flips nothing is illegal. **Auto-pass:** when the side-to-move has no legal placement, the server flips the turn automatically and signals "no legal move — passed" in the move-result payload; there is no client-side pass action. **End:** the game ends when the board is full or both sides pass consecutively. Higher disc count wins; equal counts → **draw**. **Dark moves first.**
 
-- A move that lands in an occupied cell (Tic-Tac-Toe) or a full column (Connect 4) is **rejected by the server**, the player's clock keeps running, and the client must surface a clear inline error — not silently retry.
-- Win detection runs **after every accepted move**, on the server. The server emits an `MatchEnded` event with the winning line coordinates so the client can highlight them.
+### 2.2 Rules shared by all five games
+
+- A move that lands in an occupied cell (Tic-Tac-Toe, Reversi), a full column (Connect 4), or — for Reversi post-opening — that doesn't bracket an opponent disc, is **rejected by the server**, the player's clock keeps running, and the client must surface a clear inline error — not silently retry.
+- Terminal detection runs **after every accepted move**, on the server. For the line-based games (Tic-Tac-Toe, Connect 4) the server emits `MatchEnded` with the winning line coordinates so the client can highlight them. For Reversi the server emits the final disc counts (`{ dark, light }`) instead; there is no winning line.
 - Resign and timeout are platform-level outcomes (see §1 #8 and #3); they are not game-rule terminations.
 
 ## 3. Cross-game in-match UX rules
@@ -76,7 +79,7 @@ These are the authoritative rules. The server validates every move against them.
 These apply to every game module's board rendering, regardless of which game it implements.
 
 - **Last-move highlight.** Every accepted opponent move must be visually highlighted on the board for the receiving player — e.g. a subtle pulse, glow, or coloured border on the just-played cell (Tic-Tac-Toe) or the disc that just landed (Connect 4). The highlight persists until the receiving player makes their own next move, then disappears. This matters especially on the 6×6 and 9×9 boards, where scanning for a single new mark is slow. The player's *own* last move does not need this highlight; the focus is on making the opponent's action obvious.
-- **Winning-line highlight.** On match end with `Outcome.Win`, the winning line is highlighted with a **distinct** visual treatment from the last-move highlight (e.g. solid glow along all winning cells vs. the pulse on a single cell). The server provides the coordinates in `MatchEnded`; the client renders them; do not recompute the winning line on the client.
+- **Winning-line highlight.** On match end with `Outcome.Win`, the winning line is highlighted with a **distinct** visual treatment from the last-move highlight (e.g. solid glow along all winning cells vs. the pulse on a single cell). The server provides the coordinates in `MatchEnded`; the client renders them; do not recompute the winning line on the client. **Reversi has no winning line** — its renderer instead shows the final disc counts (`{ dark, light }` from `MatchEnded`) and crowns the higher-count side.
 - **Series scoreboard.** When platform invariant §1 #13 applies (rematches in the same room), the in-match UI displays the current score for both players in a fixed, glanceable location (typically beside or above each player's clock).
 
 ---
