@@ -10,7 +10,7 @@ The script lives in [`infra/loadtest/`](../infra/loadtest/) as a standalone `@pl
 
 For each requested room, it runs an independent scenario end-to-end:
 
-1. **Host (HTTP)** — `POST /api/rooms` with `tictactoe-3x3`. Stores the issued session cookie.
+1. **Host (HTTP)** — `POST /api/rooms` with `gameId: "tictactoe"` and `gameOptions: { boardSize: 3 }`. Stores the issued session cookie.
 2. **Challenger (HTTP)** — `POST /api/rooms/{code}/join` with a separate cookie jar.
 3. **Both clients (SignalR)** — open WebSocket connections to `/hubs/room`, attaching their respective `Cookie` headers; then invoke the hub's `JoinRoom(code)` method. Whichever lands second drives the `WaitingForOpponent → InProgress` server transition and triggers a `MatchStarted` broadcast.
 4. **Play** — both clients subscribe to `MoveAccepted` and `MatchEnded`. Whoever is the `currentMatch.clock.activePlayer` submits a random unoccupied cell. Loop until `MatchEnded` lands. Moves are spaced ~150ms apart, well below the 60-moves/min per-session limit.

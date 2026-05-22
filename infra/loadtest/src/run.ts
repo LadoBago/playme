@@ -124,9 +124,13 @@ async function createRoom(target: string, jar: CookieJar, displayName: string): 
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         hostDisplayName: displayName,
-        gameId: 'tictactoe-3x3',
+        gameId: 'tictactoe',
         sideSelectionMode: 'hostPicksSpecific',
         hostSide: 'x',
+        // Sprint 9 PR1b: unified tictactoe module requires gameOptions.
+        // Smallest 3×3 board keeps move volume comparable to the original
+        // Sprint 7 baseline capture in docs/loadtest.md §7.
+        gameOptions: { boardSize: 3 },
       }),
     });
     if (!res.ok) {
