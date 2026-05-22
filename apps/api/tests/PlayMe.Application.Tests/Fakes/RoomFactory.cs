@@ -1,4 +1,5 @@
-using PlayMe.Domain.Games.TicTacToe3x3;
+using System.Text.Json;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Tests.Fakes;
@@ -7,7 +8,8 @@ namespace PlayMe.Application.Tests.Fakes;
 /// Builds a <see cref="Room"/> with both players seated and an active
 /// match — the typical fixture for SubmitMove / clock tests. Sides are
 /// resolved via the canonical first-mover (host plays X, challenger
-/// plays O).
+/// plays O). Uses the unified Tic-Tac-Toe module with the 3×3 board
+/// size for parity with the original Sprint 1 fixture (Sprint 9 PR3).
 /// </summary>
 public static class RoomFactory
 {
@@ -15,19 +17,28 @@ public static class RoomFactory
     public const string ChallengerPlayerId = "challenger-player";
     public const string RoomCodeValue = "ABCDEF";
 
+    /// <summary>
+    /// Shared <c>boardSize: 3</c> options blob used by every fixture in
+    /// this file — JsonDocument is read-once-keep-alive, so we hand out
+    /// fresh JsonElement instances from a parsed parent each call.
+    /// </summary>
+    public static JsonElement DefaultGameOptions() =>
+        JsonDocument.Parse("""{"boardSize":3}""").RootElement;
+
     public static Room InProgress(DateTimeOffset startedAt, TimeSpan clockBudget)
     {
         var room = Room.Create(
             new RoomCode(RoomCodeValue),
-            TicTacToe3x3GameModule.GameId,
+            TicTacToeGameModule.GameId,
             SideSelectionMode.HostPicksSpecific,
             new Player(
                 new PlayerId(HostPlayerId),
                 DisplayName.Create("Host"),
                 TicTacToeSides.X),
-            startedAt);
+            startedAt,
+            gameOptions: DefaultGameOptions());
 
-        var module = new TicTacToe3x3GameModule();
+        var module = new TicTacToeGameModule();
         room.RegisterChallenger(
             new Player(
                 new PlayerId(ChallengerPlayerId),
@@ -50,11 +61,12 @@ public static class RoomFactory
     public static Room WaitingForOpponent(DateTimeOffset createdAt) =>
         Room.Create(
             new RoomCode(RoomCodeValue),
-            TicTacToe3x3GameModule.GameId,
+            TicTacToeGameModule.GameId,
             SideSelectionMode.HostPicksSpecific,
             new Player(
                 new PlayerId(HostPlayerId),
                 DisplayName.Create("Host"),
                 TicTacToeSides.X),
-            createdAt);
+            createdAt,
+            gameOptions: DefaultGameOptions());
 }

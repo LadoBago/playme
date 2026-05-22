@@ -1,17 +1,18 @@
 using PlayMe.Application.Abstractions;
-using PlayMe.Application.Games.TicTacToe3x3;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Application.Games.TicTacToe;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Tests.Fakes;
 
 /// <summary>
-/// Minimal <see cref="IGameModuleRegistry"/> wired to the only Sprint 1
-/// game module. Handler tests don't need full DI assembly scanning.
+/// Minimal <see cref="IGameModuleRegistry"/> wired to a single game
+/// module — the unified Tic-Tac-Toe (Sprint 9 PR3). Handler tests don't
+/// need full DI assembly scanning.
 /// </summary>
 public sealed class SingleGameRegistry : IGameModuleRegistry
 {
-    private readonly TicTacToe3x3GameModule _module = new();
+    private readonly TicTacToeGameModule _module = new();
     private readonly TicTacToeMoveParser _parser = new();
 
     public bool IsRegistered(GameId id) => id == _module.Id;

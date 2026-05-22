@@ -1,6 +1,6 @@
 using FluentAssertions;
 using PlayMe.Application.Tests.Fakes;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -55,7 +55,7 @@ public sealed class RoomExitTests
     {
         var room = Room.Create(
             new RoomCode(RoomFactory.RoomCodeValue),
-            TicTacToe3x3GameModule.GameId,
+            TicTacToeGameModule.GameId,
             SideSelectionMode.HostPicksSpecific,
             new Player(
                 new PlayerId(RoomFactory.HostPlayerId),

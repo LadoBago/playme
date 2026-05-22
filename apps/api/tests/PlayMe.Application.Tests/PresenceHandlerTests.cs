@@ -2,7 +2,7 @@ using FluentAssertions;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Tests.Fakes;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -16,7 +16,10 @@ namespace PlayMe.Application.Tests;
 /// </summary>
 public sealed class PresenceHandlerTests
 {
-    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(60);
+    // Matches TicTacToeGameModule.DefaultClockBudget — the platform pulls
+    // the budget off the module when TryStartMatch fires, so changing the
+    // module's default ripples here.
+    private static readonly TimeSpan Budget = TimeSpan.FromMinutes(3);
 
     [Fact]
     public async Task RegisterPresence_starts_match_initialises_clock_and_schedules_first_timeout()
@@ -28,23 +31,27 @@ public sealed class PresenceHandlerTests
         var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
         var expiry = new RecordingRoomExpiryScheduler();
 
-        // Seed a fresh room awaiting both players' connection.
+        // Seed a fresh room awaiting both players' connection. The unified
+        // tictactoe module requires gameOptions; the test triggers
+        // TryStartMatch via the handler so omitting them would throw at
+        // module.NewMatch time.
         var seed = Room.Create(
             new RoomCode(RoomFactory.RoomCodeValue),
-            TicTacToe3x3GameModule.GameId,
+            TicTacToeGameModule.GameId,
             SideSelectionMode.HostPicksSpecific,
             new Player(
                 new PlayerId(RoomFactory.HostPlayerId),
                 DisplayName.Create("Host"),
                 TicTacToeSides.X),
-            clock.UtcNow);
+            clock.UtcNow,
+            gameOptions: RoomFactory.DefaultGameOptions());
         seed.RegisterChallenger(
             new Player(
                 new PlayerId(RoomFactory.ChallengerPlayerId),
                 DisplayName.Create("Challenger"),
                 Side: null),
             challengerPickedSide: null,
-            new TicTacToe3x3GameModule());
+            new TicTacToeGameModule());
         rooms.Seed(seed);
 
         var handler = new RegisterPresenceHandler(
@@ -78,42 +85,17 @@ public sealed class PresenceHandlerTests
         // unjoined-expiry entry so the sweeper doesn't fire room_expired
         // for a room that actually made it to gameplay.
         expiry.Cancelled.Should().ContainSingle()
-            .Which.Should().Be((RoomFactory.RoomCodeValue, TicTacToe3x3GameModule.GameId.Value));
+            .Which.Should().Be((RoomFactory.RoomCodeValue, TicTacToeGameModule.GameId.Value));
     }
 
-    [Fact]
-    public async Task ReleasePresence_during_InProgress_signals_disconnect_no_grace_for_OneMin_tier()
-    {
-        // TTT 3x3 has DefaultClockBudget = 60s, which sits in the
-        // "≤ 1 min → no grace tier" bucket per docs/platform-and-games.md
-        // §1 #7. The handler must still emit OpponentDisconnected so the
-        // opponent's UI shows the transient banner — but the abandon
-        // grace stays unscheduled (the chess-clock timeout catches the
-        // abandon as Timeout instead).
-        var clock = new FakeClock();
-        var rooms = new FakeRoomRepository();
-        var graces = new RecordingGraceScheduler();
-        var postMatchGraces = new RecordingPostMatchExitGraceScheduler();
-        rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
+    // OneMin-tier coverage (no grace for budgets ≤ 1 min, per
+    // docs/platform-and-games.md §1 #7) moved to GraceSchedulingPolicyTests
+    // — the previous handler-level test depended on the legacy
+    // tictactoe-3x3 module having DefaultClockBudget = 60s. With that
+    // module gone in Sprint 9 PR3, no remaining module returns the tier
+    // value via DefaultClockBudget, so the behavior is verified at the
+    // policy layer instead.
 
-        var handler = new ReleasePresenceHandler(
-            rooms, clock, graces, postMatchGraces, new SingleGameRegistry());
-
-        var result = await handler.HandleAsync(
-            new ReleasePresenceCommand(
-                RoomFactory.RoomCodeValue,
-                RoomFactory.HostPlayerId,
-                Role.Host),
-            CancellationToken.None);
-
-        result.Succeeded.Should().BeTrue();
-        result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
-        graces.Scheduled.Should().BeEmpty();
-        postMatchGraces.Scheduled.Should().BeEmpty();
-
-        var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
-        saved!.HostConnected.Should().BeFalse();
-    }
 
     [Fact]
     public async Task ReleasePresence_from_Ended_schedules_post_match_exit_grace()

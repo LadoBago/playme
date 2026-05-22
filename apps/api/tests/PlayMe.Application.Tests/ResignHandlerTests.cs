@@ -5,7 +5,7 @@ using PlayMe.Application.Errors;
 using PlayMe.Application.RateLimiting;
 using PlayMe.Application.Tests.Fakes;
 using PlayMe.Application.Time;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -225,7 +225,7 @@ public sealed class ResignHandlerTests
             .Which.Should().Match<(string Event, string DistinctId, IReadOnlyDictionary<string, object?> Properties)>(e =>
                 e.Event == "match_ended"
                 && e.DistinctId == RoomFactory.RoomCodeValue
-                && (string)e.Properties["gameId"]! == TicTacToe3x3GameModule.GameId.Value
+                && (string)e.Properties["gameId"]! == TicTacToeGameModule.GameId.Value
                 && (string)e.Properties["reason"]! == "resign");
     }
 }

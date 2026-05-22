@@ -2,7 +2,7 @@ using FluentAssertions;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 using PlayMe.Application.Tests.Fakes;
 using PlayMe.Application.Time;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using PlayMe.Infrastructure.Security;
 using Xunit;

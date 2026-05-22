@@ -7,7 +7,7 @@ using PlayMe.Application.Errors;
 using PlayMe.Application.RateLimiting;
 using PlayMe.Application.Tests.Fakes;
 using PlayMe.Application.Time;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -249,7 +249,7 @@ public sealed class RematchHandlerTests
     private static Room AwaitingRematchOfferedByHost(FakeClock clock)
     {
         var room = EndedRoom(clock);
-        room.OfferRematch(Role.Host, new TicTacToe3x3GameModule(), clock.UtcNow);
+        room.OfferRematch(Role.Host, new TicTacToeGameModule(), clock.UtcNow);
         return room;
     }
 }

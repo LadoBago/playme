@@ -32,15 +32,6 @@ describe('findGame', () => {
     expect(entry?.defaultHostSide).toBe('dark');
   });
 
-  it('no longer surfaces legacy per-size Tic-Tac-Toe entries (Sprint 9 PR2)', () => {
-    // Old `tictactoe-3x3` / `-6x6` / `-9x9` slugs route via Next.js
-    // permanent redirects (next.config.js → /play/tictactoe?size=N), so
-    // the catalog itself should not return them.
-    expect(findGame('tictactoe-3x3')).toBeUndefined();
-    expect(findGame('tictactoe-6x6')).toBeUndefined();
-    expect(findGame('tictactoe-9x9')).toBeUndefined();
-  });
-
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });

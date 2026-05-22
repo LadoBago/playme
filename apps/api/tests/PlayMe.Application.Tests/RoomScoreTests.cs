@@ -1,6 +1,6 @@
 using FluentAssertions;
 using PlayMe.Application.Tests.Fakes;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
