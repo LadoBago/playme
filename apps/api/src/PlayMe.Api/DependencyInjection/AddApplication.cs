@@ -20,6 +20,8 @@ using PlayMe.Application.Games.Reversi;
 using PlayMe.Application.Games.TicTacToe3x3;
 using PlayMe.Application.Games.TicTacToe6x6;
 using PlayMe.Application.Games.TicTacToe9x9;
+// Aliased — same class name as TicTacToe3x3's parser, different namespace.
+using UnifiedTicTacToeMoveParser = PlayMe.Application.Games.TicTacToe.TicTacToeMoveParser;
 using PlayMe.Application.Queries.GetRoom;
 using PlayMe.Application.Time;
 
@@ -63,6 +65,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IGameMoveParser, TicTacToe9x9MoveParser>();
         services.AddSingleton<IGameMoveParser, Connect4MoveParser>();
         services.AddSingleton<IGameMoveParser, ReversiMoveParser>();
+        // Sprint 9 PR1b — unified `tictactoe` parser. Coexists with the
+        // legacy per-size parsers until PR3 of the sprint removes them.
+        services.AddSingleton<IGameMoveParser, UnifiedTicTacToeMoveParser>();
 
         return services;
     }
