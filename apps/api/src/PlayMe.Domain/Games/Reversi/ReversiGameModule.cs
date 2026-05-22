@@ -58,7 +58,10 @@ public sealed class ReversiGameModule : IGameModule
         _ => throw new ArgumentException($"Unknown side '{side}'.", nameof(side)),
     };
 
-    public IGameState NewMatch() => new ReversiState();
+    public string? ValidateOptions(JsonElement? options) =>
+        options is null ? null : "errors.config.invalidGameOptions";
+
+    public IGameState NewMatch(JsonElement? options) => new ReversiState();
 
     public MoveResult ApplyMove(IGameState state, string side, GameMove move)
     {

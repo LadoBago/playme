@@ -35,7 +35,7 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void NewMatch_starts_empty_with_dark_to_move_and_opening_phase()
     {
-        var state = (ReversiState)_module.NewMatch();
+        var state = (ReversiState)_module.NewMatch(null);
 
         state.Cells.Should().HaveCount(ReversiState.CellCount);
         state.Cells.Should().AllSatisfy(c => c.Should().BeNull());
@@ -53,7 +53,7 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void Opening_placement_outside_central_2x2_is_rejected()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(0, 0));
 
@@ -68,7 +68,7 @@ public sealed class ReversiGameModuleTests
     [InlineData(4, 4)]
     public void Opening_central_placement_is_accepted_and_does_not_flip(int row, int col)
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(row, col));
 
@@ -88,7 +88,7 @@ public sealed class ReversiGameModuleTests
         // Standard Othello-style diagonal opening: D at (3,4) and (4,3);
         // L at (3,3) and (4,4). The classic rule allows any free central
         // ordering; we pick this one for clarity.
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 4)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(3, 3)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(4, 3)).NewState!;
@@ -183,7 +183,7 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void Placement_out_of_bounds_is_rejected()
     {
-        var state = _module.NewMatch();
+        var state = _module.NewMatch(null);
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(8, 0));
 
@@ -194,7 +194,7 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void Placement_on_occupied_cell_is_rejected()
     {
-        var state = _module.ApplyMove(_module.NewMatch(), ReversiSides.Dark, new ReversiPlacement(3, 3)).NewState!;
+        var state = _module.ApplyMove(_module.NewMatch(null), ReversiSides.Dark, new ReversiPlacement(3, 3)).NewState!;
 
         var result = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(3, 3));
 
@@ -466,7 +466,7 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void Serialize_and_Deserialize_round_trip_preserves_state()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 4)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(3, 3)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(4, 3)).NewState!;
@@ -505,7 +505,7 @@ public sealed class ReversiGameModuleTests
     /// </summary>
     private IGameState OthelloDiagonalOpening()
     {
-        var state = (IGameState)_module.NewMatch();
+        var state = (IGameState)_module.NewMatch(null);
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 4)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(3, 3)).NewState!;
         state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(4, 3)).NewState!;

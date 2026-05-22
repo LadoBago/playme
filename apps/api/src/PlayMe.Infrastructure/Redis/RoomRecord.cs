@@ -1,3 +1,4 @@
+using System.Text.Json;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Infrastructure.Redis;
@@ -24,6 +25,11 @@ internal sealed record RoomRecord(
     SeriesScoreRecord? SeriesScore = null,
     // Null outside RoomStatus.AwaitingRematch; nullable for forward compat
     // with rooms persisted before §1 #10 landed.
-    Role? RematchOffererRole = null);
+    Role? RematchOffererRole = null,
+    // Opaque per-room game options blob (Sprint 9 PR1). Nullable for
+    // forward compat — rooms persisted before the seam landed come back
+    // without this field, which is correct for the games that don't take
+    // options.
+    JsonElement? GameOptions = null);
 
 internal sealed record SeriesScoreRecord(int Host, int Challenger, int Draws);

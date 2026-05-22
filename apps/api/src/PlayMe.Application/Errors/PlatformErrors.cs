@@ -20,6 +20,7 @@ public static class PlatformErrors
     public const string ConfigInvalidGameId = "errors.config.invalidGameId";
     public const string ConfigInvalidSideSelectionMode = "errors.config.invalidSideSelectionMode";
     public const string ConfigInvalidHostSide = "errors.config.invalidHostSide";
+    public const string ConfigInvalidGameOptions = "errors.config.invalidGameOptions";
 
     // --- Join flow ---
     public const string JoinSideNotAllowed = "errors.join.sideNotAllowed";

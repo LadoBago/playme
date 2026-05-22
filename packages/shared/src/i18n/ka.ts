@@ -195,6 +195,7 @@ export const ka: Record<EnKey, string> = {
   'errors.config.invalidGameId': 'უცნობი თამაში.',
   'errors.config.invalidSideSelectionMode': 'აირჩიე, როგორ მიენიჭოს მხარეები.',
   'errors.config.invalidHostSide': 'ეს მხარე აქ ვერ აირჩევა.',
+  'errors.config.invalidGameOptions': 'თამაშის პარამეტრები არასწორია.',
   'errors.join.sideNotAllowed': 'მხარეები უკვე არჩეულია — ვერ აირჩევ.',
   'errors.join.sidePickRequired': 'აირჩიე მხარე გასაგრძელებლად.',
   'errors.join.invalidSide': 'ეს მხარე ამ თამაშისთვის არ არსებობს.',

@@ -25,11 +25,13 @@ internal static class RoomMapping
         HostConnected: room.HostConnected,
         ChallengerConnected: room.ChallengerConnected,
         SeriesScore: ToSeriesScoreRecord(room.SeriesScore),
-        RematchOffererRole: room.RematchOffererRole);
+        RematchOffererRole: room.RematchOffererRole,
+        GameOptions: room.GameOptions);
 
     public static Room FromRecord(RoomRecord record, IGameModuleRegistry games) => Room.Rehydrate(
         code: record.Code,
         gameId: record.GameId,
+        gameOptions: record.GameOptions,
         sideSelectionMode: record.SideSelectionMode,
         createdAt: record.CreatedAt,
         host: FromPlayerRecord(record.Host),

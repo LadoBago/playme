@@ -60,6 +60,15 @@ public sealed class CreateRoomHandler
         }
         var module = _games.GetModule(gameId);
 
+        // Per-room options are validated by the game module (CLAUDE.md §7
+        // "Platform thinness"). The platform never inspects the shape — the
+        // module returns either null (accept) or an i18n error key (reject).
+        var optionsError = module.ValidateOptions(cmd.GameOptions);
+        if (optionsError is not null)
+        {
+            return AppResult<CreateRoomResult>.Fail(optionsError);
+        }
+
         if (!Enum.IsDefined(cmd.SideSelectionMode))
         {
             return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidSideSelectionMode);
@@ -88,6 +97,7 @@ public sealed class CreateRoomHandler
             var candidate = Room.Create(
                 code: _codes.NewCode(),
                 gameId: gameId,
+                gameOptions: cmd.GameOptions,
                 sideSelectionMode: cmd.SideSelectionMode,
                 host: host,
                 createdAt: _clock.UtcNow);

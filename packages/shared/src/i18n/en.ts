@@ -205,6 +205,7 @@ export const en = {
   'errors.config.invalidGameId': 'Unknown game.',
   'errors.config.invalidSideSelectionMode': 'Pick a way to assign sides.',
   'errors.config.invalidHostSide': "That side can't be picked here.",
+  'errors.config.invalidGameOptions': "Those game settings aren't valid.",
   'errors.join.sideNotAllowed': "The host already chose sides — you can't pick.",
   'errors.join.sidePickRequired': 'Pick a side to continue.',
   'errors.join.invalidSide': "That side doesn't exist for this game.",
