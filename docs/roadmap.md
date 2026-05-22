@@ -102,7 +102,7 @@ Shipped (as of 2026-05-20):
 
 **Sprint 8 — Reversi (~1–2 weeks).** First post-MVP game. Canonical rules in [`platform-and-games.md`](platform-and-games.md) §2.1.
 
-- New self-contained game module `reversi` (8×8, classic free central-square opening, dark/light discs, server-driven auto-pass, draw on tie). `DefaultClockBudget` = 10:00 per side.
+- New self-contained game module `reversi` (8×8, classic free central-square opening, dark/light discs, auto-pass via renderer-emitted + server-validated synthetic move, draw on tie). `DefaultClockBudget` = 10:00 per side.
 - Reuses the platform layer entirely. **If you need to modify the platform to add it, that's a design bug — fix the seam first.**
 - DI registration (one line each in `AddDomain.cs` + `AddApplication.cs`). Web renderer at `apps/web/features/games/reversi/` (opening-phase visual cue on the central 2×2, last-move highlight, live disc counters, auto-pass toast). `games.reversi.*` keys in both `packages/shared/src/i18n/ka.ts` and `en.ts`. Catalog entry registered; landing grid grows from four cards to five.
 
