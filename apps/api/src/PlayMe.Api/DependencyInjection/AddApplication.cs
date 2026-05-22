@@ -16,6 +16,7 @@ using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Games.Connect4;
+using PlayMe.Application.Games.Reversi;
 using PlayMe.Application.Games.TicTacToe3x3;
 using PlayMe.Application.Games.TicTacToe6x6;
 using PlayMe.Application.Games.TicTacToe9x9;
@@ -61,6 +62,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IGameMoveParser, TicTacToe6x6MoveParser>();
         services.AddSingleton<IGameMoveParser, TicTacToe9x9MoveParser>();
         services.AddSingleton<IGameMoveParser, Connect4MoveParser>();
+        services.AddSingleton<IGameMoveParser, ReversiMoveParser>();
 
         return services;
     }
