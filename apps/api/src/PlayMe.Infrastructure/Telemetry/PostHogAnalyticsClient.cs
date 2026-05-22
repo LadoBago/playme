@@ -24,7 +24,7 @@ namespace PlayMe.Infrastructure.Telemetry;
 ///   "event":   "match_ended",
 ///   "distinct_id": "ABCD1234",
 ///   "properties": {
-///     "gameId": "tictactoe-3x3",
+///     "gameId": "tictactoe",
 ///     "reason": "win",
 ///     "source": "server",
 ///     "$process_person_profile": false

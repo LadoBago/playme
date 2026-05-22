@@ -173,10 +173,10 @@ export const config = {
   //
   // RSC prefetch requests DO run through the proxy. They need the
   // same locale rewrite as the eventual navigation — an unprefixed
-  // default-locale href like `/play/tictactoe-3x3` only resolves
-  // once the proxy rewrites it to `/ka/play/tictactoe-3x3`. Before
-  // PR #64 introduced the [locale] segment the rewrite didn't exist
-  // and skipping prefetch was a free CSP win; now skipping it 404s
+  // default-locale href like `/play/tictactoe` only resolves once
+  // the proxy rewrites it to `/ka/play/tictactoe`. Before PR #64
+  // introduced the [locale] segment the rewrite didn't exist and
+  // skipping prefetch was a free CSP win; now skipping it 404s
   // every prefetch of a default-locale URL.
   matcher: [
     '/((?!api|hubs|_next/static|_next/image|opengraph-image|favicon.ico|robots.txt|sitemap.xml).*)',

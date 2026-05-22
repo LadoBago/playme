@@ -14,9 +14,9 @@ namespace PlayMe.Application.Tests;
 public sealed class ExpiryMemberKeyTests
 {
     [Theory]
-    [InlineData("ABCDEF", "tictactoe-3x3")]
+    [InlineData("ABCDEF", "tictactoe")]
     [InlineData("xyz123", "connect4")]
-    [InlineData("Z9Y8X7", "tictactoe-9x9")]
+    [InlineData("Z9Y8X7", "reversi")]
     public void Encode_decode_round_trip(string codeValue, string gameIdValue)
     {
         var encoded = ExpiryMemberKey.Encode(

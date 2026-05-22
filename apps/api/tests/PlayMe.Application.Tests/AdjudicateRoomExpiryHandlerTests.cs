@@ -1,7 +1,7 @@
 using FluentAssertions;
 using PlayMe.Application.Commands.AdjudicateRoomExpiry;
 using PlayMe.Application.Tests.Fakes;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -16,7 +16,7 @@ namespace PlayMe.Application.Tests;
 /// </summary>
 public sealed class AdjudicateRoomExpiryHandlerTests
 {
-    private const string GameIdValue = "tictactoe-3x3";
+    private const string GameIdValue = "tictactoe";
 
     private static AdjudicateRoomExpiryHandler BuildHandler(
         FakeRoomRepository rooms,

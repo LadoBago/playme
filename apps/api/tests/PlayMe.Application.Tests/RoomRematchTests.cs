@@ -1,6 +1,6 @@
 using FluentAssertions;
 using PlayMe.Application.Tests.Fakes;
-using PlayMe.Domain.Games.TicTacToe3x3;
+using PlayMe.Domain.Games.TicTacToe;
 using PlayMe.Domain.Platform;
 using Xunit;
 
@@ -14,7 +14,7 @@ namespace PlayMe.Application.Tests;
 public sealed class RoomRematchTests
 {
     private static readonly TimeSpan Budget = TimeSpan.FromMinutes(3);
-    private static readonly TicTacToe3x3GameModule Module = new();
+    private static readonly TicTacToeGameModule Module = new();
 
     [Fact]
     public void OfferRematch_from_Ended_records_offerer_and_flips_to_AwaitingRematch()

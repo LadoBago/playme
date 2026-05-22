@@ -2,9 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Domain.Games.Connect4;
 using PlayMe.Domain.Games.Reversi;
 using PlayMe.Domain.Games.TicTacToe;
-using PlayMe.Domain.Games.TicTacToe3x3;
-using PlayMe.Domain.Games.TicTacToe6x6;
-using PlayMe.Domain.Games.TicTacToe9x9;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Api.DependencyInjection;
@@ -18,15 +15,9 @@ public static class DomainServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddDomain(this IServiceCollection services)
     {
-        services.AddSingleton<IGameModule, TicTacToe3x3GameModule>();
-        services.AddSingleton<IGameModule, TicTacToe6x6GameModule>();
-        services.AddSingleton<IGameModule, TicTacToe9x9GameModule>();
+        services.AddSingleton<IGameModule, TicTacToeGameModule>();
         services.AddSingleton<IGameModule, Connect4GameModule>();
         services.AddSingleton<IGameModule, ReversiGameModule>();
-        // Sprint 9 PR1b — unified `tictactoe` module behind the
-        // gameOptions seam. Coexists with the legacy three until PR3 of
-        // the sprint removes them.
-        services.AddSingleton<IGameModule, TicTacToeGameModule>();
         return services;
     }
 }
