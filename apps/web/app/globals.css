@@ -866,6 +866,151 @@ textarea {
     0 0 12px var(--lose-glow);
 }
 
+/* ── Reversi ───────────────────────────────────────────────────────────
+ * Per-cell click model on an 8x8 grid. Disc colours are stable across
+ * themes (a physical disc doesn't change with the OS theme); the board
+ * background uses `--bg-elevated` so the chrome reads correctly in both.
+ * Single source of truth for the cell size (Safari otherwise loops on
+ * grid + cell aspect-ratio, same problem Connect 4 hit).
+ */
+.rv {
+  --rv-cell: clamp(28px, calc((100vw - 3rem - 16px) / 8), 56px);
+  --rv-gap: 2px;
+  width: calc(8 * var(--rv-cell) + 7 * var(--rv-gap) + 16px);
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rv__toast {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  background: var(--highlight);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.rv__grid {
+  display: grid;
+  gap: var(--rv-gap);
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.rv__cell {
+  position: relative;
+  width: var(--rv-cell);
+  height: var(--rv-cell);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: default;
+}
+
+.rv__cell:not(:disabled).rv__cell--legal {
+  cursor: pointer;
+}
+
+/* Legal-move indicator: a small accent dot the player can scan for. The
+ * dot intensifies on hover so the affordance is obvious without making
+ * the board feel busy when many cells are legal. */
+.rv__cell--legal::after {
+  content: '';
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.32;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.rv__cell--legal:hover::after {
+  opacity: 0.7;
+}
+
+.rv__cell--last {
+  --last-move-ring: var(--accent-2);
+  outline: 3px solid var(--last-move-ring);
+  outline-offset: -3px;
+  animation: lastMovePulse 1.4s ease-out;
+}
+
+.rv__cell--flipped .rv__disc {
+  animation: rvFlipIn 380ms ease-out;
+}
+
+@keyframes rvFlipIn {
+  from {
+    transform: scale(0.55);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.rv__disc {
+  display: block;
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.rv__cell--dark .rv__disc {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+
+.rv__cell--light .rv__disc {
+  background: #f5f1e8;
+  border: 1px solid #b9b3a3;
+}
+
+.rv__counters {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.rv__counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.rv__counter::before {
+  content: '';
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+}
+
+.rv__counter--dark::before {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+
+.rv__counter--light::before {
+  background: #f5f1e8;
+  border: 1px solid #b9b3a3;
+}
+
 .share-link {
   display: flex;
   gap: 0.5rem;

@@ -55,6 +55,16 @@ export const ka: Record<EnKey, string> = {
   'games.connect4.shortSideRed': 'წითელი',
   'games.connect4.shortSideYellow': 'ყვითელი',
 
+  'games.reversi.name': 'რევერსი',
+  'games.reversi.shortDescription':
+    'მოწინააღმდეგის დისკები მოაქციე შენებს შორის და გადააქციე შენიანებად. ვინც დასასრულს მეტ დისკს ფლობს — იგებს.',
+  'games.reversi.rules':
+    'მოთამაშეები რიგრიგობით სვამენ მუქ და ღია დისკებს 8×8 დაფაზე; პირველი მუქი იწყებს. პირველი ოთხი დადგმა აუცილებლად ცენტრალურ 2×2 უჯრებში სრულდება და ჯერ არცერთი დისკი არ ბრუნდება — ეს კლასიკური თავისუფალი დებიუტია. მე-5 სვლიდან ყოველმა დადგმამ უნდა მოაქციოს მინიმუმ ერთი მოწინააღმდეგის დისკი ახალ დისკსა და შენს ერთ-ერთ დისკს შორის სწორ ხაზზე (ჰორიზონტალურად, ვერტიკალურად ან დიაგონალზე); ყველა მოქცეული მოწინააღმდეგის დისკი ერთბაშად შენი ფერისა ხდება. თუ კანონიერი სვლა არ გაქვს, სვლა ავტომატურად გამოტოვდება. მატჩი მთავრდება, როცა დაფა შეივსება ან ორივე მხარე ზედიზედ გამოტოვებს სვლას. გამარჯვებულია ის, ვისაც მეტი დისკი აქვს; თანაბარი დათვლა — ფრე.',
+  'games.reversi.sideDark': 'მუქი (პირველი სვლა)',
+  'games.reversi.sideLight': 'ღია',
+  'games.reversi.shortSideDark': 'მუქი',
+  'games.reversi.shortSideLight': 'ღია',
+
   // --- Configure page ---
   'configure.title': 'ოთახის კონფიგურაცია',
   'configure.displayName.label': 'შენი სახელი',
@@ -149,6 +159,16 @@ export const ka: Record<EnKey, string> = {
   'games.connect4.cell.discYellow': 'ყვითელი დისკი',
   'games.connect4.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}',
 
+  // --- Reversi a11y labels (per-module vocab) ---
+  'games.reversi.board.label': 'რევერსის დაფა',
+  'games.reversi.cell.discDark': 'მუქი დისკი',
+  'games.reversi.cell.discLight': 'ღია დისკი',
+  'games.reversi.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}, სვეტი {col}',
+  'games.reversi.cell.legal': 'კანონიერი სვლა, მწკრივი {row}, სვეტი {col}',
+  'games.reversi.score.dark': '{count} მუქი',
+  'games.reversi.score.light': '{count} ღია',
+  'games.reversi.toast.autoPass': 'კანონიერი სვლა არ არის — სვლა ავტომატურად გამოტოვდა.',
+
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',
   'pwa.install.cta': 'დაყენება',
@@ -186,6 +206,10 @@ export const ka: Record<EnKey, string> = {
   'errors.move.cellOccupied': 'ეს უჯრა უკვე დაკავებულია.',
   'errors.move.illegalColumn': 'ასეთი სვეტი არ არსებობს.',
   'errors.move.columnFull': 'ეს სვეტი სავსეა.',
+  'errors.move.outOfBounds': 'ეს ადგილი დაფის გარეთ არის.',
+  'errors.move.mustBracket': 'უნდა მოაქცე მინიმუმ ერთი მოწინააღმდეგის დისკი შენებს შორის.',
+  'errors.move.openingMustBeCentral': 'საწყისი სვლები ცენტრალურ ოთხ უჯრაში სრულდება.',
+  'errors.move.passNotAllowed': 'სვლის გამოტოვება არ შეიძლება — კანონიერი სვლა გაქვს.',
   'errors.move.notYourTurn': 'შენი რიგი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',
