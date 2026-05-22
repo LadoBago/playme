@@ -39,6 +39,15 @@ describe('findGame', () => {
     expect(entry?.defaultHostSide).toBe('x');
   });
 
+  it('finds Reversi by its id with dark/light sides on an 8×8 board', () => {
+    const entry = findGame('reversi');
+    expect(entry).toBeDefined();
+    expect(entry?.rows).toBe(8);
+    expect(entry?.cols).toBe(8);
+    expect(entry?.sides.map((s) => s.id)).toEqual(['dark', 'light']);
+    expect(entry?.defaultHostSide).toBe('dark');
+  });
+
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });

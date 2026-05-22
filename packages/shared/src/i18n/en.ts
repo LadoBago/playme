@@ -59,6 +59,16 @@ export const en = {
   'games.connect4.shortSideRed': 'Red',
   'games.connect4.shortSideYellow': 'Yellow',
 
+  'games.reversi.name': 'Reversi',
+  'games.reversi.shortDescription':
+    "Sandwich your opponent's discs between yours to flip them. Whoever has more discs at the end wins.",
+  'games.reversi.rules':
+    "Two players alternate placing discs on an 8×8 board: dark first, then light. The first four placements must go in the central 2×2 squares and flip nothing — this is the classic free opening. From move 5 onward, every placement must bracket at least one of the opponent's discs between the new disc and another of your own in a straight line (horizontal, vertical, or diagonal); all bracketed opponent discs in every direction flip to your colour in a single move. If you have no legal move, the game passes for you automatically. The match ends when the board is full or both sides pass in succession. The player with more discs wins; equal counts is a draw.",
+  'games.reversi.sideDark': 'Dark (moves first)',
+  'games.reversi.sideLight': 'Light',
+  'games.reversi.shortSideDark': 'Dark',
+  'games.reversi.shortSideLight': 'Light',
+
   // --- Configure page ---
   'configure.title': 'Configure room',
   'configure.displayName.label': 'Your name',
@@ -153,6 +163,16 @@ export const en = {
   'games.connect4.cell.discYellow': 'Yellow disc',
   'games.connect4.cell.empty': 'Empty cell row {row}',
 
+  // --- Reversi a11y labels (per-module vocab) ---
+  'games.reversi.board.label': 'Reversi board',
+  'games.reversi.cell.discDark': 'Dark disc',
+  'games.reversi.cell.discLight': 'Light disc',
+  'games.reversi.cell.empty': 'Empty cell row {row} column {col}',
+  'games.reversi.cell.legal': 'Legal move row {row} column {col}',
+  'games.reversi.score.dark': '{count} dark',
+  'games.reversi.score.light': '{count} light',
+  'games.reversi.toast.autoPass': 'No legal moves — passed automatically.',
+
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'Install PlayMe as an app',
   'pwa.install.cta': 'Install',
@@ -196,6 +216,11 @@ export const en = {
   'errors.move.cellOccupied': 'That cell is already taken.',
   'errors.move.illegalColumn': "That column doesn't exist.",
   'errors.move.columnFull': 'That column is full.',
+  'errors.move.outOfBounds': 'That spot is off the board.',
+  'errors.move.mustBracket':
+    "You can only place where you'd flip at least one of the opponent's discs.",
+  'errors.move.openingMustBeCentral': 'Opening moves go in the central four squares.',
+  'errors.move.passNotAllowed': "You can't pass — you still have a legal move.",
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',

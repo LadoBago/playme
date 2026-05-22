@@ -76,6 +76,20 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     rows: 6,
     cols: 7,
   },
+  {
+    id: 'reversi',
+    slug: 'reversi',
+    nameKey: 'games.reversi.name',
+    shortDescriptionKey: 'games.reversi.shortDescription',
+    rulesKey: 'games.reversi.rules',
+    sides: [
+      { id: 'dark', labelKey: 'games.reversi.sideDark' },
+      { id: 'light', labelKey: 'games.reversi.sideLight' },
+    ],
+    defaultHostSide: 'dark',
+    rows: 8,
+    cols: 8,
+  },
 ];
 
 export function findGame(slugOrId: string): GameCatalogEntry | undefined {
