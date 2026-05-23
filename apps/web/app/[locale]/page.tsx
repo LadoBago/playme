@@ -50,7 +50,11 @@ export default async function HomePage({ params }: PageProps) {
               href={localizedHref(`/play/${game.slug}`, locale)}
               className="game-card"
             >
-              <BoardPreview rows={game.rows} cols={game.cols} />
+              <BoardPreview
+                gameId={game.id}
+                cols={game.cols}
+                cells={game.preview}
+              />
               <span className="game-card__title">{t(game.nameKey)}</span>
               <span className="game-card__desc">{t(game.shortDescriptionKey)}</span>
             </Link>
@@ -80,32 +84,44 @@ function Step({ n, title, body }: { n: number; title: string; body: string }) {
   );
 }
 
-function BoardPreview({ rows, cols }: { rows: number; cols: number }) {
-  // Decorative-only: a simple grid silhouette so each card has a visual
-  // anchor even before we ship per-game illustrations in Sprint 6.
-  const cells = Array.from({ length: rows * cols }, (_, i) => i);
+function BoardPreview({
+  gameId,
+  cols,
+  cells,
+}: {
+  gameId: string;
+  cols: number;
+  cells: readonly (string | null)[];
+}) {
+  // Decorative mid-game snapshot — purely cosmetic, aria-hidden, never
+  // routed through any game module. Side-id → glyph mapping is per-game
+  // knowledge the landing page is allowed to know (it already enumerates
+  // each game by id/slug/name).
   return (
     <div
       aria-hidden
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 3,
-        width: 80,
-        height: 80,
-        margin: '0 auto 0.5rem',
-      }}
+      className="game-card__preview"
+      style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
     >
-      {cells.map((i) => (
-        <div
-          key={i}
-          style={{
-            background: 'var(--highlight)',
-            border: '1px solid var(--border)',
-            borderRadius: 3,
-          }}
-        />
+      {cells.map((side, i) => (
+        <div key={i} className="game-card__preview-cell">
+          <PreviewToken gameId={gameId} side={side} />
+        </div>
       ))}
     </div>
   );
+}
+
+function PreviewToken({ gameId, side }: { gameId: string; side: string | null }) {
+  if (side === null) return null;
+  if (gameId === 'tictactoe') {
+    return <span className="game-card__preview-glyph">{side === 'x' ? '✕' : '◯'}</span>;
+  }
+  if (gameId === 'connect4') {
+    return <span className={`game-card__preview-disc game-card__preview-disc--c4-${side}`} />;
+  }
+  if (gameId === 'reversi') {
+    return <span className={`game-card__preview-disc game-card__preview-disc--rv-${side}`} />;
+  }
+  return null;
 }
