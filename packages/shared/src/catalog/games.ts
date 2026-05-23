@@ -17,6 +17,13 @@ export interface GameCatalogEntry {
   /** Board dimensions for the configure-page preview / room renderer. */
   readonly rows: number;
   readonly cols: number;
+  /**
+   * Decorative mid-game position for the landing-page card. Flat row-major
+   * cells of length rows*cols, each entry a side id from `sides` or null.
+   * Purely cosmetic — not parsed by any game module and not bound to
+   * server state.
+   */
+  readonly preview: readonly (string | null)[];
 }
 
 export const GAME_CATALOG: readonly GameCatalogEntry[] = [
@@ -39,6 +46,10 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     defaultHostSide: 'x',
     rows: 3,
     cols: 3,
+    // X _ O
+    // _ X _
+    // _ _ O
+    preview: ['x', null, 'o', null, 'x', null, null, null, 'o'],
   },
   {
     id: 'connect4',
@@ -53,6 +64,21 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     defaultHostSide: 'red',
     rows: 6,
     cols: 7,
+    // Gravity-valid mid-game position.
+    // . . . . . . .
+    // . . . . . . .
+    // . . . R . . .
+    // . . R Y R . .
+    // . Y R Y Y . .
+    // R Y R R Y Y .
+    preview: [
+      null, null, null, null,    null,    null,    null,
+      null, null, null, null,    null,    null,    null,
+      null, null, null, 'red',   null,    null,    null,
+      null, null, 'red', 'yellow', 'red', null,    null,
+      null, 'yellow', 'red', 'yellow', 'yellow', null, null,
+      'red', 'yellow', 'red', 'red', 'yellow', 'yellow', null,
+    ],
   },
   {
     id: 'reversi',
@@ -67,6 +93,27 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     defaultHostSide: 'dark',
     rows: 8,
     cols: 8,
+    // Mid-game spread that preserves the standard Reversi opening in the
+    // centre 2×2 (L D / D L at (3,3)..(4,4)) — the initial position dictated
+    // by the rules — with a few additional moves rippling outward.
+    // . . . . . . . .
+    // . . . . . . . .
+    // . . . D D . . .
+    // . . . L D D . .
+    // . . D D L . . .
+    // . . . L D . . .
+    // . . . . . . . .
+    // . . . . . . . .
+    preview: [
+      null, null, null, null,    null,    null,   null, null,
+      null, null, null, null,    null,    null,   null, null,
+      null, null, null, 'dark',  'dark',  null,   null, null,
+      null, null, null, 'light', 'dark',  'dark', null, null,
+      null, null, 'dark', 'dark', 'light', null,  null, null,
+      null, null, null, 'light', 'dark',  null,   null, null,
+      null, null, null, null,    null,    null,   null, null,
+      null, null, null, null,    null,    null,   null, null,
+    ],
   },
 ];
 
