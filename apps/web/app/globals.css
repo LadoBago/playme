@@ -707,15 +707,26 @@ textarea {
   color: var(--fg-muted);
 }
 
-.match-turn {
+/* Inline status pill displayed above the board (turn indicator during
+ * play, connection hints, post-match status, outcome banner). Same
+ * shape across all of them; only the background varies by semantic.
+ * `justify-self: start` keeps the pill content-sized in the grid column
+ * — without it the item would stretch to fill the row. */
+.match-status {
+  justify-self: start;
   font-size: 0.95rem;
   padding: 0.4rem 0.8rem;
   border-radius: 999px;
   background: var(--highlight);
 }
 
-.match-turn--ended {
+.match-status--win {
   background: var(--win-highlight);
+}
+
+.match-status--error {
+  background: rgba(176, 0, 32, 0.12);
+  color: var(--danger);
 }
 
 .match-clock {
