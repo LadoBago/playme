@@ -548,19 +548,19 @@ function MatchView({
       <Clock snapshot={match.clock} callerRole={role} isFinal={match.outcome != null} />
 
       {connectionStatus !== 'live' ? (
-        <div className="banner banner--error">
+        <span className="match-status match-status--error">
           {connectionStatus === 'reconnecting'
             ? t('match.reconnecting')
             : t('match.connectionLost')}
-        </div>
+        </span>
       ) : null}
 
-      {error ? <div className="banner banner--error">{error}</div> : null}
+      {error ? <span className="match-status match-status--error">{error}</span> : null}
 
       {match.outcome ? (
         <OutcomeBanner outcome={match.outcome} mySide={mySide} />
       ) : (
-        <span className={`match-turn`}>
+        <span className="match-status">
           {isMyTurn ? t('match.yourTurn') : t('match.opponentTurn')}
         </span>
       )}
@@ -767,17 +767,17 @@ function PostMatchStatus({
   const { t } = useTranslator();
   if (room.status === 'closed') {
     return (
-      <div className="banner">
+      <span className="match-status">
         {declined ? t('match.rematch.declined') : t('match.opponentLeft')}
-      </div>
+      </span>
     );
   }
   if (room.status === 'awaitingRematch' && role != null && room.rematchOffererRole != null) {
     const isOfferer = room.rematchOffererRole === role;
     return (
-      <div className="banner">
+      <span className="match-status">
         {isOfferer ? t('match.rematch.waiting') : t('match.rematch.offered')}
-      </div>
+      </span>
     );
   }
   return null;
@@ -792,43 +792,43 @@ function OutcomeBanner({
 }) {
   const { t } = useTranslator();
   if (!outcome) return null;
-  if (outcome.kind === 'draw') return <div className="banner banner--win">{t('match.result.draw')}</div>;
+  if (outcome.kind === 'draw') return <span className="match-status match-status--win">{t('match.result.draw')}</span>;
   if (outcome.kind === 'win') {
     const youWon = mySide != null && outcome.winningSide === mySide;
     return (
-      <div className={`banner ${youWon ? 'banner--win' : ''}`}>
+      <span className={`match-status ${youWon ? 'match-status--win' : ''}`}>
         {youWon ? t('match.result.youWin') : t('match.result.youLose')}
-      </div>
+      </span>
     );
   }
   if (outcome.kind === 'timeout') {
     const youTimedOut = mySide != null && outcome.timedOutSide === mySide;
     return (
-      <div className={`banner ${youTimedOut ? '' : 'banner--win'}`}>
+      <span className={`match-status ${youTimedOut ? '' : 'match-status--win'}`}>
         {youTimedOut
           ? t('match.result.youTimedOut')
           : t('match.result.opponentTimedOut')}
-      </div>
+      </span>
     );
   }
   if (outcome.kind === 'resign') {
     const youResigned = mySide != null && outcome.resigningSide === mySide;
     return (
-      <div className={`banner ${youResigned ? '' : 'banner--win'}`}>
+      <span className={`match-status ${youResigned ? '' : 'match-status--win'}`}>
         {youResigned
           ? t('match.result.youResigned')
           : t('match.result.opponentResigned')}
-      </div>
+      </span>
     );
   }
   if (outcome.kind === 'disconnect') {
     const youLost = mySide != null && outcome.losingSide === mySide;
     return (
-      <div className={`banner ${youLost ? '' : 'banner--win'}`}>
+      <span className={`match-status ${youLost ? '' : 'match-status--win'}`}>
         {youLost
           ? t('match.result.youDisconnected')
           : t('match.result.opponentDisconnected')}
-      </div>
+      </span>
     );
   }
   return null;
@@ -845,7 +845,7 @@ function ConnectionHint({ room, role }: { room: RoomDto; role: Role | null }) {
   const opponentConnected = role === 'host' ? room.challengerConnected : room.hostConnected;
   const opponentRegistered = role === 'host' ? room.challenger != null : true;
   if (!opponentRegistered || opponentConnected) return null;
-  return <p style={{ color: 'var(--fg-muted)' }}>{t('match.opponentDisconnected')}</p>;
+  return <span className="match-status">{t('match.opponentDisconnected')}</span>;
 }
 
 function ShareLink({ url }: { url: string }) {
