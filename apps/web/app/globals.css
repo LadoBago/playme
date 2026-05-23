@@ -544,8 +544,8 @@ textarea {
   border: 1px solid #2a2a2a;
 }
 .game-card__preview-disc--rv-light {
-  background: #f5f1e8;
-  border: 1px solid #b9b3a3;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
 }
 
 .game-card__title {
@@ -950,13 +950,24 @@ textarea {
 /* ── Reversi ───────────────────────────────────────────────────────────
  * Per-cell click model on an 8x8 grid. Disc colours are stable across
  * themes (a physical disc doesn't change with the OS theme); the board
- * background uses `--bg-elevated` so the chrome reads correctly in both.
+ * surface uses a felt-green tint (`--rv-board`, defined on `.rv` below)
+ * so the board is distinct from the page in both themes — the cell
+ * interior intentionally inherits `--bg` so the discs read against the
+ * same neutral they do on the rest of the page.
  * Single source of truth for the cell size (Safari otherwise loops on
  * grid + cell aspect-ratio, same problem Connect 4 hit).
  */
 .rv {
   --rv-cell: clamp(28px, calc((100vw - 3rem - 16px) / 8), 56px);
   --rv-gap: 2px;
+  /* Board surface — a subtle felt-green tint reminiscent of a real
+   * Reversi/Othello board. Distinct from both the page (`--bg`) and the
+   * generic elevated surface (`--bg-elevated`, which is plain white in
+   * light mode and would otherwise let the cream `--bg` cells fade into
+   * the page background). Two variants so the contrast holds in both
+   * themes. */
+  --rv-board: #d8e4cf;
+  --rv-board-border: #a8bd9b;
   width: calc(8 * var(--rv-cell) + 7 * var(--rv-gap) + 16px);
   max-width: 100%;
   margin-inline: auto;
@@ -964,6 +975,18 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+}
+
+:root[data-theme='dark'] .rv {
+  --rv-board: #1f2a22;
+  --rv-board-border: rgba(244, 236, 228, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .rv {
+    --rv-board: #1f2a22;
+    --rv-board-border: rgba(244, 236, 228, 0.18);
+  }
 }
 
 .rv__toast {
@@ -981,8 +1004,8 @@ textarea {
   gap: var(--rv-gap);
   padding: 8px;
   border-radius: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: var(--rv-board);
+  border: 1px solid var(--rv-board-border);
 }
 
 .rv__cell {
@@ -1058,8 +1081,66 @@ textarea {
 }
 
 .rv__cell--light .rv__disc {
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+}
+
+/* The dark disc colour is intentionally stable across themes (see the
+ * comment on `.rv` above), but in dark mode #1a1a1a sits on top of
+ * `--bg` (#1a0f0a) with almost no contrast. Lift the disc edge with a
+ * thin foreground-tinted outer ring + brighter inner rim — affects only
+ * the dark disc and only in dark mode, so the physical-disc feel is
+ * preserved in light mode. Same treatment is applied to the catalog
+ * preview swatch (`.game-card__preview-disc--rv-dark`) and the score
+ * counter dot (`.rv__counter--dark`) so the iconography stays
+ * consistent across surfaces. */
+:root[data-theme='dark'] .rv__cell--dark .rv__disc,
+:root[data-theme='dark'] .game-card__preview-disc--rv-dark,
+:root[data-theme='dark'] .rv__counter--dark::before {
+  border-color: rgba(244, 236, 228, 0.42);
+  box-shadow:
+    inset -2px -2px 4px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(244, 236, 228, 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .rv__cell--dark
+    .rv__disc,
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .game-card__preview-disc--rv-dark,
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .rv__counter--dark::before {
+    border-color: rgba(244, 236, 228, 0.42);
+    box-shadow:
+      inset -2px -2px 4px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(244, 236, 228, 0.22);
+  }
+}
+
+/* Light disc — the default declaration above tunes the colour for light
+ * mode (where the new green felt background makes a cream-warm disc
+ * look yellow). In dark mode the off-white reads cleanly against the
+ * dark cell, so revert to a slightly warmer ivory there to keep the
+ * "physical disc" feel without going stark white on a dark surface. */
+:root[data-theme='dark'] .rv__cell--light .rv__disc,
+:root[data-theme='dark'] .game-card__preview-disc--rv-light,
+:root[data-theme='dark'] .rv__counter--light::before {
   background: #f5f1e8;
-  border: 1px solid #b9b3a3;
+  border-color: #b9b3a3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .rv__cell--light
+    .rv__disc,
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .game-card__preview-disc--rv-light,
+  :root:not([data-theme='light']):not([data-theme='dark'])
+    .rv__counter--light::before {
+    background: #f5f1e8;
+    border-color: #b9b3a3;
+  }
 }
 
 .rv__counters {
@@ -1088,8 +1169,8 @@ textarea {
 }
 
 .rv__counter--light::before {
-  background: #f5f1e8;
-  border: 1px solid #b9b3a3;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
 }
 
 .share-link {
