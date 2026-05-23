@@ -629,6 +629,8 @@ textarea {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem;
+  container-type: inline-size;
+  container-name: match;
 }
 
 .match-meta {
@@ -651,6 +653,31 @@ textarea {
 
 .match-meta__name {
   font-weight: 600;
+}
+
+/* Per-player win count shown only when the header stacks vertically —
+ * keeps each player's tally next to their name instead of leaving the
+ * central scoreboard floating between rows. Sits inline inside
+ * `.match-meta__name`, so we override its bold weight. */
+.match-meta__wins {
+  display: none;
+  font-weight: normal;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@container match (max-width: 560px) {
+  .match-meta {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+  .match-score__counts {
+    display: none;
+  }
+  .match-meta__wins {
+    display: inline;
+  }
 }
 
 /* Centred series scoreboard between the two player cards. Reads from

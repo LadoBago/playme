@@ -35,12 +35,14 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
         label={t('match.you')}
         name={myPlayer?.displayName ?? '?'}
         sideLabel={mySideLabel}
+        wins={myWins}
       />
       <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={room.score.draws} />
       <PlayerCard
         label={t('match.opponent')}
         name={opponentPlayer?.displayName ?? '…'}
         sideLabel={opponentSideLabel}
+        wins={opponentWins}
       />
     </div>
   );
@@ -78,17 +80,23 @@ function PlayerCard({
   label,
   name,
   sideLabel,
+  wins,
 }: {
   label: string;
   name: string;
   sideLabel: string | null;
+  wins: number;
 }) {
+  const { t, tf } = useTranslator();
+  const winsLabel =
+    wins === 1 ? t('match.score.wins.one') : tf('match.score.wins.other', { count: wins });
   return (
     <div className="match-meta__player">
       <span className="match-meta__role">{label}</span>
       <span className="match-meta__name">
         {name}
         {sideLabel ? ` · ${sideLabel}` : ''}
+        <span className="match-meta__wins"> — {winsLabel}</span>
       </span>
     </div>
   );
