@@ -71,6 +71,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // joining. Terminal UI; no recovery path other than "back to home".
   const [expired, setExpired] = useState(false);
   const hubRef = useRef<RoomHubClient | null>(null);
+  // Timestamp the tab became hidden; cleared on visible. Drives the
+  // visibility-recovery effect — see the comment block on that effect
+  // below for the timing rationale.
+  const hiddenAtRef = useRef<number | null>(null);
   // Drops rapid double-taps on the same cell while the previous SubmitMove
   // is still in flight. Without this gate, a lag-induced second click would
   // reach the server *after* the first move already flipped sideToMove, and
@@ -201,6 +205,86 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     // Intentionally bind only once on mount; reconnects flow through the
     // hub's automatic reconnect path. `connect` is stable for our purposes.
   }, []);
+
+  // Backgrounded-tab presence recovery. When the host taps the share
+  // sheet to send the invite, the browser backgrounds this tab and
+  // throttles the SignalR keep-alive ping. Past ~30 s — the server's
+  // default `ClientTimeoutInterval` — the server reaps the connection
+  // and marks `HostConnected=false`. If the challenger joins during
+  // that window, `RegisterPresenceHandler.TryStartMatch` returns false
+  // (HostConnected is gone) and no `MatchStarted` event fires. The
+  // host's own SignalR client still thinks the WebSocket is alive
+  // until *its* `serverTimeoutInMilliseconds` (also 30 s) elapses, so
+  // the room stays frozen for up to half a minute after the host
+  // returns — long enough that users reach for refresh.
+  //
+  // On `visibilitychange` → `visible`, proactively re-invoke
+  // `hub.joinRoom`. If the connection is healthy this is a cheap
+  // idempotent presence refresh that just flips HostConnected back to
+  // true and lets `TryStartMatch` run (or, if both were already
+  // connected, returns the current room snapshot). If the connection
+  // is half-dead the call hangs until SignalR's own timeout, so race
+  // against a 4 s timeout and force a full rebuild if it wins.
+  //
+  // The 15 s hidden-duration gate matches half the server's
+  // `ClientTimeoutInterval` — under 30 s of background no reap can have
+  // happened, so the refresh is wasted bandwidth on every alt-tab and
+  // notification dropdown. If the server-side `ClientTimeoutInterval`
+  // is ever lowered (apps/api/src/PlayMe.Api/DependencyInjection/
+  // AddApi.cs `AddSignalR`), drop this constant in lockstep.
+  useEffect(() => {
+    const HIDDEN_REFRESH_THRESHOLD_MS = 15_000;
+    const JOIN_TIMEOUT_MS = 4_000;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef.current = Date.now();
+        return;
+      }
+      const since = hiddenAtRef.current;
+      hiddenAtRef.current = null;
+      if (since === null) return;
+      if (Date.now() - since < HIDDEN_REFRESH_THRESHOLD_MS) return;
+      const hub = hubRef.current;
+      if (!hub) return;
+      void (async () => {
+        let settled = false;
+        const refresh: Promise<'ok' | 'failed'> = (async () => {
+          try {
+            const session = await hub.joinRoom(expectedRoomCode);
+            if (settled) return 'ok';
+            settled = true;
+            setRoom(session.room);
+            setRole(session.role);
+            setConnectionStatus('live');
+            return 'ok';
+          } catch {
+            if (settled) return 'failed';
+            settled = true;
+            return 'failed';
+          }
+        })();
+        const timeout: Promise<'timeout'> = new Promise((resolve) =>
+          setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            resolve('timeout');
+          }, JOIN_TIMEOUT_MS),
+        );
+        const result = await Promise.race([refresh, timeout]);
+        if (result === 'ok') return;
+        // 'failed' (server rejected, probably stale cookie) or 'timeout'
+        // (half-dead WebSocket) — tear down and rebuild from scratch.
+        // OnConnectedAsync re-adds us to the room group, JoinRoom runs
+        // RegisterPresenceHandler, and TryStartMatch fires if both
+        // sides are now connected.
+        await silentStop(hubRef.current);
+        hubRef.current = null;
+        await connect({ cancelled: false });
+      })();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [connect, expectedRoomCode]);
 
   const handleJoined = useCallback(async () => {
     setAuthStatus('pending');
