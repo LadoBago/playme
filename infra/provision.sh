@@ -152,7 +152,7 @@ REDIS_KEY="$(az redis list-keys -g "${RG}" -n "${REDIS}" --query primaryKey -o t
 REDIS_CONN="${REDIS_HOST}:6380,password=${REDIS_KEY},ssl=True,abortConnect=False"
 
 # ─── 5. app settings ────────────────────────────────────────────────────────
-log "web app: app settings (CORS, Redis, ASP.NET env)"
+log "web app: app settings (CORS, Redis, ASP.NET env, telemetry)"
 # `--settings` here REPLACES the listed keys but PRESERVES other keys already
 # on the app (e.g. WEBSITES_PORT, SCM creds). That's what we want — additive
 # in spirit, deterministic for the keys we own.
@@ -162,6 +162,13 @@ log "web app: app settings (CORS, Redis, ASP.NET env)"
 # merely misleading (the deploy workflow sets the full image path), but
 # keeping it accurate avoids "wait, why does this say mcr?" later.
 REGISTRY_URL="https://$(echo "${GHCR_IMAGE}" | cut -d/ -f1)"
+
+# Telemetry secrets are optional — empty disables the integration (Sentry
+# SDK + the API's analytics adapter both treat empty as "off"). Default to
+# empty under `set -u` rather than requiring them, so a fresh install can
+# stand up before the Sentry / PostHog projects exist. See §6.12.
+SENTRY_DSN="${SENTRY_DSN:-}"
+POSTHOG_API_KEY="${POSTHOG_API_KEY:-}"
 
 az webapp config appsettings set \
   -g "${RG}" -n "${WEBAPP}" \
@@ -173,6 +180,8 @@ az webapp config appsettings set \
     ConnectionStrings__Redis="${REDIS_CONN}" \
     Cors__AllowedOrigins__0="${WEB_ORIGIN}" \
     Cors__AllowedOrigins__1="${WEB_ORIGIN_ALT}" \
+    Sentry__Dsn="${SENTRY_DSN}" \
+    PostHog__ApiKey="${POSTHOG_API_KEY}" \
   -o none
 
 fi # end PHASE=all|resources
