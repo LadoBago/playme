@@ -182,11 +182,18 @@ export const ReversiView: GameView = ({
     onSubmitMove({ row, col });
   }
 
+  const passToastKey =
+    board.lastWasPass && board.lastPassSide
+      ? board.lastPassSide === callerSide
+        ? "games.reversi.toast.autoPassSelf"
+        : "games.reversi.toast.autoPassOpponent"
+      : null;
+
   return (
     <div className="rv">
-      {board.lastWasPass && (
+      {passToastKey && (
         <div role="status" className="rv__toast" aria-live="polite">
-          {t("games.reversi.toast.autoPass")}
+          {t(passToastKey)}
         </div>
       )}
       <div
