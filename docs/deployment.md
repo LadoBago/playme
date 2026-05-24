@@ -44,8 +44,8 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
 | TLS — `api.playme.ge` (edge) | **Cloudflare Universal SSL** (Let's Encrypt) | free | edge | Cloudflare terminates TLS at the edge. |
 | TLS — `api.playme.ge` (origin) | **Azure App Service Managed Certificate** (DigiCert) | free | West Europe | Bound to the App Service via SNI. CF→origin runs in **Full (strict)** — CF validates the origin hostname against this cert. |
 | TLS — `www.playme.ge` / apex | **Vercel** (Let's Encrypt) | free | edge | Vercel issues automatically against the domain claim. |
-| Error monitoring | **Sentry Cloud** | free | EU | One project for web, one for API. |
-| Product analytics | **PostHog Cloud** | free | EU | Web + API. The API requires `PostHog__ApiKey` on the App Service or it silently no-ops server-emitted events (§6.12). |
+| Error monitoring | **Sentry Cloud** | free | EU | One project for web, one for API. API DSN provisioned via `Sentry__Dsn`; empty = SDK disabled (§6.12). |
+| Product analytics | **PostHog Cloud** | free | EU | Web + API. Server events require `PostHog__ApiKey`; empty = NoOp client (§6.12). |
 | Alerting | **Azure Monitor + email action group** | free | n/a | See §5. |
 
 ---
@@ -154,17 +154,16 @@ The CLI no longer accepts `--no-wait` on `az redis create` (this changed at some
 
 Right after `az webapp create`, the immediate next `az webapp config set` can 404 even though the resource exists. `provision.sh` blocks with `az webapp wait --created` before configuring.
 
-### 6.12 API PostHog client silently no-ops without `PostHog__ApiKey`
+### 6.12 Telemetry secrets fail-closed silently when empty
 
-The API's analytics adapter falls back to `NoOpAnalyticsClient` whenever `PostHog__ApiKey` is empty on the App Service (`AddInfrastructure.cs:74-81`). Intentional for local dev — invisible in prod. We hit this when reversi matches weren't appearing in PostHog Trends: web-emitted events (`match_started`, `room_created`, `rematch_*`) flowed, server-emitted events (`match_ended`, `room_expired`) were dropped on the floor.
+Both API telemetry env vars are accepted as empty strings and disable the integration with no crash, no warning:
 
-Fix is one env var on the App Service:
+- **`Sentry__Dsn`** — the SDK requires `""` (not `null`) to stay disabled, so `Program.cs:13-15` coalesces a missing config key to empty. Result: no errors, no traces, no boot crash.
+- **`PostHog__ApiKey`** — the API's analytics adapter falls back to `NoOpAnalyticsClient` when empty (`AddInfrastructure.cs:74-81`).
 
-```
-PostHog__ApiKey = <project API key, same phc_… value as NEXT_PUBLIC_POSTHOG_KEY>
-```
+Symptom from outside is identical for both: the web SDK reports normally, server-emitted events / errors disappear. We hit it with PostHog when reversi matches weren't appearing in Trends — `match_started` (web) was there, `match_ended` (server) wasn't.
 
-`__` (double underscore) maps to `PostHog:ApiKey` in ASP.NET config. Restart the App Service after setting it. Host defaults to `https://eu.i.posthog.com`; set `PostHog__Host` only if you're on a different region. Historical events from before the var was set are unrecoverable.
+Both are propagated by `infra/provision.sh` from `infra/provision.env` (`SENTRY_DSN`, `POSTHOG_API_KEY`). Keep them populated there — that file is the source of truth per the script header. **A value added in the Azure Portal will be overwritten on the next `provision.sh` run** because `az webapp config appsettings set --settings` deterministically syncs the keys it owns. Restart the App Service after a change so ASP.NET picks up the new config. The `__` (double underscore) in env var names maps to `:` in ASP.NET configuration keys (`Sentry__Dsn` ↔ `Sentry:Dsn`). Historical events from before the var was set are unrecoverable.
 
 ---
 
