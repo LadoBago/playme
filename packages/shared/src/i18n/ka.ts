@@ -160,7 +160,8 @@ export const ka: Record<EnKey, string> = {
   'games.reversi.cell.legal': 'კანონიერი სვლა, მწკრივი {row}, სვეტი {col}',
   'games.reversi.score.dark': '{count} შავი',
   'games.reversi.score.light': '{count} თეთრი',
-  'games.reversi.toast.autoPass': 'კანონიერი სვლა არ არის — სვლა ავტომატურად გამოტოვდა.',
+  'games.reversi.toast.autoPassSelf': 'სვლა არ გაქვს, კვლავ მისი სვლაა.',
+  'games.reversi.toast.autoPassOpponent': 'მოწინააღმდეგეს არ აქვს სვლა, კვლავ შენ სვლაა.',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',

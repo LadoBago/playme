@@ -164,7 +164,8 @@ export const en = {
   'games.reversi.cell.legal': 'Legal move row {row} column {col}',
   'games.reversi.score.dark': '{count} dark',
   'games.reversi.score.light': '{count} light',
-  'games.reversi.toast.autoPass': 'No legal moves — passed automatically.',
+  'games.reversi.toast.autoPassSelf': 'No legal moves — opponent plays again.',
+  'games.reversi.toast.autoPassOpponent': 'Opponent has no moves — you play again.',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'Install PlayMe as an app',

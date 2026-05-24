@@ -45,6 +45,7 @@ public sealed class ReversiGameModuleTests
         state.FlippedLastTurn.Should().BeEmpty();
         state.ConsecutivePasses.Should().Be(0);
         state.MustPassSide.Should().BeNull();
+        state.LastPassSide.Should().BeNull();
         state.DarkCount.Should().Be(0);
         state.LightCount.Should().Be(0);
         state.InOpening.Should().BeTrue();
@@ -137,6 +138,7 @@ public sealed class ReversiGameModuleTests
         next.LightCount.Should().Be(1);
         next.LastPlacement.Should().Be(new ReversiCoordinate(3, 2));
         next.LastWasPass.Should().BeFalse();
+        next.LastPassSide.Should().BeNull();
         next.ConsecutivePasses.Should().Be(0);
     }
 
@@ -252,6 +254,7 @@ public sealed class ReversiGameModuleTests
         result.Accepted.Should().BeTrue();
         var next = (ReversiState)result.NewState!;
         next.LastWasPass.Should().BeTrue();
+        next.LastPassSide.Should().Be(ReversiSides.Light);
         next.LastPlacement.Should().BeNull();
         next.FlippedLastTurn.Should().BeEmpty();
         next.ConsecutivePasses.Should().Be(1);
@@ -484,6 +487,7 @@ public sealed class ReversiGameModuleTests
         restored.FlippedLastTurn.Should().BeEquivalentTo(original.FlippedLastTurn);
         restored.ConsecutivePasses.Should().Be(original.ConsecutivePasses);
         restored.MustPassSide.Should().Be(original.MustPassSide);
+        restored.LastPassSide.Should().Be(original.LastPassSide);
         restored.DarkCount.Should().Be(original.DarkCount);
         restored.LightCount.Should().Be(original.LightCount);
     }

@@ -185,11 +185,16 @@ public sealed class ReversiGameModule : IGameModule
         var nextSide = OtherSide(sideThatJustMoved);
         var inOpening = moveCount < ReversiState.OpeningMoveCount;
 
+        // When this finalize wraps an accepted pass, record which side just
+        // passed so the renderer can pick a per-side toast (passer vs.
+        // opponent). On a placement, lastPassSide stays null.
+        var lastPassSide = lastWasPass ? sideThatJustMoved : null;
+
         if (consecutivePasses >= 2 || CellsFull(cells))
         {
             var terminal = new ReversiState(
                 cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                consecutivePasses, mustPassSide: null);
+                consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
             return MoveResult.Accept(terminal, OutcomeFromCounts(terminal.DarkCount, terminal.LightCount));
         }
 
@@ -204,19 +209,19 @@ public sealed class ReversiGameModule : IGameModule
             {
                 var terminal = new ReversiState(
                     cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                    consecutivePasses, mustPassSide: null);
+                    consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
                 return MoveResult.Accept(terminal, OutcomeFromCounts(terminal.DarkCount, terminal.LightCount));
             }
 
             var stateForcedPass = new ReversiState(
                 cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                consecutivePasses, mustPassSide: nextSide);
+                consecutivePasses, mustPassSide: nextSide, lastPassSide: lastPassSide);
             return MoveResult.Accept(stateForcedPass);
         }
 
         var stateNormal = new ReversiState(
             cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-            consecutivePasses, mustPassSide: null);
+            consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
         return MoveResult.Accept(stateNormal);
     }
 
@@ -236,6 +241,7 @@ public sealed class ReversiGameModule : IGameModule
             board.FlippedLastTurn,
             board.ConsecutivePasses,
             board.MustPassSide,
+            board.LastPassSide,
             board.DarkCount,
             board.LightCount);
         return JsonSerializer.Serialize(payload, SerializerOptions);
@@ -272,7 +278,8 @@ public sealed class ReversiGameModule : IGameModule
             payload.LastWasPass,
             payload.FlippedLastTurn ?? Array.Empty<ReversiCoordinate>(),
             payload.ConsecutivePasses,
-            payload.MustPassSide);
+            payload.MustPassSide,
+            payload.LastPassSide);
     }
 
     private static bool InBounds(int row, int col) =>
@@ -409,6 +416,7 @@ public sealed class ReversiGameModule : IGameModule
         IReadOnlyList<ReversiCoordinate>? FlippedLastTurn,
         int ConsecutivePasses,
         string? MustPassSide,
+        string? LastPassSide = null,
         int DarkCount = 0,
         int LightCount = 0);
 }

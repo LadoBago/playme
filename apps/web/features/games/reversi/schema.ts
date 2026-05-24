@@ -23,6 +23,9 @@ export const ReversiBoardStateSchema = z.object({
   consecutivePasses: z.number().int().nonnegative(),
   /** Server-published flag — when set, the named side must auto-pass. */
   mustPassSide: z.string().optional(),
+  /** Side that just passed (only meaningful with `lastWasPass: true`). The
+   *  renderer keys per-side toast copy off this. */
+  lastPassSide: z.string().optional(),
   darkCount: z.number().int().nonnegative(),
   lightCount: z.number().int().nonnegative(),
 });
