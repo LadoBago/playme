@@ -771,15 +771,38 @@ textarea {
   line-height: 1;
 }
 
+/* Tic-Tac-Toe board surface — warm parchment tint distinct from both the
+ * page (`--bg`) and the elevated white cells (`--bg-elevated`). Same
+ * pattern as Reversi's `--rv-board`: a per-game surface that delineates
+ * the board from the page in both themes without rebranding the whole
+ * UI. Light: warm tan. Dark: deeper cocoa. */
 .board {
+  --ttt-board: #efe3c8;
+  --ttt-board-border: #c9b890;
   display: grid;
   gap: 6px;
   width: min(360px, 100%);
   margin-inline: auto;
   aspect-ratio: 1;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--ttt-board);
+  border: 1px solid var(--ttt-board-border);
   /* Glyph scales with grid density: ~2.2rem at 3×3, half at 6×6, third at
      9×9. Cells inherit; setting it on .board__cell would defeat scaling. */
   font-size: calc(2.2rem * 3 / var(--board-cells, 3));
+}
+
+:root[data-theme='dark'] .board {
+  --ttt-board: #2e2017;
+  --ttt-board-border: rgba(244, 236, 228, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .board {
+    --ttt-board: #2e2017;
+    --ttt-board-border: rgba(244, 236, 228, 0.16);
+  }
 }
 
 .board__cell {
@@ -850,12 +873,29 @@ textarea {
    * loop when grid + cell both declared competing aspect-ratios). */
   --c4-cell: min(56px, calc((100vw - 3rem - 16px - 36px) / 7));
   --c4-gap: 6px;
+  /* Board surface — a muted Connect-4 blue tint reminiscent of the real
+   * plastic frame. Matches the saturation level of Reversi's `--rv-board`
+   * felt so the two boards feel like siblings, not competing brands. */
+  --c4-board: #cfd8e4;
+  --c4-board-border: #9bb0c4;
   width: calc(7 * var(--c4-cell) + 6 * var(--c4-gap) + 16px);
   max-width: 100%;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+:root[data-theme='dark'] .c4 {
+  --c4-board: #1f242c;
+  --c4-board-border: rgba(244, 236, 228, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .c4 {
+    --c4-board: #1f242c;
+    --c4-board-border: rgba(244, 236, 228, 0.18);
+  }
 }
 
 .c4__columns {
@@ -896,8 +936,8 @@ textarea {
   gap: var(--c4-gap);
   padding: 8px;
   border-radius: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: var(--c4-board);
+  border: 1px solid var(--c4-board-border);
 }
 
 .c4__cell {
