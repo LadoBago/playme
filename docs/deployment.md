@@ -45,7 +45,7 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
 | TLS — `api.playme.ge` (origin) | **Azure App Service Managed Certificate** (DigiCert) | free | West Europe | Bound to the App Service via SNI. CF→origin runs in **Full (strict)** — CF validates the origin hostname against this cert. |
 | TLS — `www.playme.ge` / apex | **Vercel** (Let's Encrypt) | free | edge | Vercel issues automatically against the domain claim. |
 | Error monitoring | **Sentry Cloud** | free | EU | One project for web, one for API. |
-| Product analytics | **PostHog Cloud** | free | EU | Web only in v1. |
+| Product analytics | **PostHog Cloud** | free | EU | Web + API. The API requires `PostHog__ApiKey` on the App Service or it silently no-ops server-emitted events (§6.12). |
 | Alerting | **Azure Monitor + email action group** | free | n/a | See §5. |
 
 ---
@@ -153,6 +153,18 @@ The CLI no longer accepts `--no-wait` on `az redis create` (this changed at some
 ### 6.11 ARM eventual consistency on `webapp config set`
 
 Right after `az webapp create`, the immediate next `az webapp config set` can 404 even though the resource exists. `provision.sh` blocks with `az webapp wait --created` before configuring.
+
+### 6.12 API PostHog client silently no-ops without `PostHog__ApiKey`
+
+The API's analytics adapter falls back to `NoOpAnalyticsClient` whenever `PostHog__ApiKey` is empty on the App Service (`AddInfrastructure.cs:74-81`). Intentional for local dev — invisible in prod. We hit this when reversi matches weren't appearing in PostHog Trends: web-emitted events (`match_started`, `room_created`, `rematch_*`) flowed, server-emitted events (`match_ended`, `room_expired`) were dropped on the floor.
+
+Fix is one env var on the App Service:
+
+```
+PostHog__ApiKey = <project API key, same phc_… value as NEXT_PUBLIC_POSTHOG_KEY>
+```
+
+`__` (double underscore) maps to `PostHog:ApiKey` in ASP.NET config. Restart the App Service after setting it. Host defaults to `https://eu.i.posthog.com`; set `PostHog__Host` only if you're on a different region. Historical events from before the var was set are unrecoverable.
 
 ---
 
