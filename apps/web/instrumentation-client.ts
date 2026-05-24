@@ -8,12 +8,13 @@ import * as Sentry from '@sentry/nextjs';
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    // 1.0 = sample every transaction (browser navigations, fetches, etc.).
-    // Fine for v1 traffic. The free Sentry tier caps transactions per
-    // month; if usage approaches the cap, drop this to a fractional rate
-    // (e.g. 0.1) or back to 0 ("errors-only"). Replays stay off — those
-    // are heavier on quota and useful only when debugging UX bugs.
-    tracesSampleRate: 1.0,
+    // 0.1 = sample 10% of transactions (browser navigations, fetches, etc.).
+    // Tightened from 1.0 to stay under the free Sentry tier's 10K perf-unit
+    // monthly cap once real traffic arrives. Drop to 0 ("errors-only") if
+    // it still pushes the cap; bump back up only while investigating a
+    // specific perf issue. Replays stay off — heavier on quota and only
+    // useful when debugging UX bugs.
+    tracesSampleRate: 0.1,
     replaysOnErrorSampleRate: 0,
     replaysSessionSampleRate: 0,
     sendDefaultPii: false,

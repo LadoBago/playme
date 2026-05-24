@@ -17,7 +17,7 @@ builder.WebHost.UseSentry(options =>
 {
     options.Dsn = sentryDsn;
     options.SendDefaultPii = false;
-    options.TracesSampleRate = 0;
+    options.TracesSampleRate = 0.1;
     options.Release = typeof(Program).Assembly.GetName().Version?.ToString();
     options.Environment = builder.Environment.EnvironmentName;
 });
