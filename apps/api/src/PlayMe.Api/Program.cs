@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.DependencyInjection;
 using PlayMe.Api.Middleware;
 using PlayMe.Application.Abstractions;
@@ -20,6 +21,14 @@ builder.WebHost.UseSentry(options =>
     options.TracesSampleRate = 0.1;
     options.Release = typeof(Program).Assembly.GetName().Version?.ToString();
     options.Environment = builder.Environment.EnvironmentName;
+    // HubException is SignalR's controlled, client-facing error vehicle.
+    // Every throw in RoomHub carries an i18n key from PlatformErrors and is
+    // part of the protocol, not a server bug — `RequireSession()` in
+    // particular fires by design when the room page mounts the hub before
+    // a session cookie exists for this room. SignalR's DefaultHubDispatcher
+    // still logs the throw at Error level, which the Serilog sink below
+    // would otherwise forward to Sentry as noise.
+    options.AddExceptionFilterForType<HubException>();
 });
 
 // Serilog (CLAUDE.md §4.3): structured logging + 7-day rolling file sink.
