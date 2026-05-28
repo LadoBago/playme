@@ -24,9 +24,7 @@ public sealed class GetRoomHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        RoomCode code;
-        try { code = new RoomCode(query.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(query.RoomCode, out var code))
         {
             return AppResult<RoomDto>.Fail(PlatformErrors.RoomNotFound);
         }

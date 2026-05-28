@@ -249,7 +249,7 @@ public sealed class RematchHandlerTests
     private static Room AwaitingRematchOfferedByHost(FakeClock clock)
     {
         var room = EndedRoom(clock);
-        room.OfferRematch(Role.Host, new TicTacToeGameModule(), clock.UtcNow);
+        room.TryOfferRematch(Role.Host, new TicTacToeGameModule(), clock.UtcNow, out _);
         return room;
     }
 }

@@ -38,9 +38,7 @@ public sealed class RegisterPresenceHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.RoomNotFound);
         }

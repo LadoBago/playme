@@ -115,9 +115,7 @@ public sealed partial class RedisPostMatchExitGraceSweeperService : BackgroundSe
             return;
         }
 
-        RoomCode code;
-        try { code = new RoomCode(roomCodeValue); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(roomCodeValue, out var code))
         {
             await db.SortedSetRemoveAsync(PlayMe.Infrastructure.Redis.RedisKeys.PostMatchExit, memberValue);
             return;

@@ -19,5 +19,22 @@ public readonly record struct RoomCode
         Value = value;
     }
 
+    /// <summary>
+    /// Non-throwing factory for use at the user-input boundary (CLAUDE.md §6
+    /// "No exceptions for control flow"). Returns false with <paramref name="code"/>
+    /// set to <c>default</c> when the input is null, empty, or whitespace.
+    /// The throwing ctor remains for trusted inputs (e.g. Redis rehydration).
+    /// </summary>
+    public static bool TryCreate(string? value, out RoomCode code)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            code = default;
+            return false;
+        }
+        code = new RoomCode(value);
+        return true;
+    }
+
     public override string ToString() => Value;
 }

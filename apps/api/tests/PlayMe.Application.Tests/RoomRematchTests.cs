@@ -21,8 +21,9 @@ public sealed class RoomRematchTests
     {
         var room = EndedRoom();
 
-        var effect = room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        var accepted = room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out var effect);
 
+        accepted.Should().BeTrue();
         effect.Should().Be(RematchOfferResult.OfferRecorded);
         room.Status.Should().Be(RoomStatus.AwaitingRematch);
         room.RematchOffererRole.Should().Be(Role.Host);
@@ -35,10 +36,12 @@ public sealed class RoomRematchTests
         // also clicks "Offer rematch" — the second call lands inside the
         // lock and resolves as accept rather than producing two offers.
         var room = EndedRoom();
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
-        var effect = room.OfferRematch(Role.Challenger, Module, DateTimeOffset.UtcNow);
+        var accepted = room.TryOfferRematch(
+            Role.Challenger, Module, DateTimeOffset.UtcNow, out var effect);
 
+        accepted.Should().BeTrue();
         effect.Should().Be(RematchOfferResult.ImplicitlyAccepted);
         room.Status.Should().Be(RoomStatus.InProgress);
         room.RematchOffererRole.Should().BeNull();
@@ -46,14 +49,14 @@ public sealed class RoomRematchTests
     }
 
     [Fact]
-    public void Duplicate_offer_from_same_caller_throws()
+    public void Duplicate_offer_from_same_caller_is_rejected()
     {
         var room = EndedRoom();
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
-        var act = () => room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        var accepted = room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
-        act.Should().Throw<DomainException>();
+        accepted.Should().BeFalse();
         room.Status.Should().Be(RoomStatus.AwaitingRematch);
         room.RematchOffererRole.Should().Be(Role.Host);
     }
@@ -64,7 +67,7 @@ public sealed class RoomRematchTests
         var room = EndedRoom();
         room.Host.Side.Should().Be(TicTacToeSides.X);
         room.Challenger!.Side.Should().Be(TicTacToeSides.O);
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
         room.AcceptRematch(Role.Challenger, Module, DateTimeOffset.UtcNow);
 
@@ -81,7 +84,7 @@ public sealed class RoomRematchTests
     public void AcceptRematch_by_the_offerer_throws()
     {
         var room = EndedRoom();
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
         var act = () => room.AcceptRematch(Role.Host, Module, DateTimeOffset.UtcNow);
 
@@ -93,7 +96,7 @@ public sealed class RoomRematchTests
     public void RejectRematch_transitions_to_Closed()
     {
         var room = EndedRoom();
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
         room.RejectRematch(Role.Challenger);
 
@@ -105,7 +108,7 @@ public sealed class RoomRematchTests
     public void RejectRematch_by_the_offerer_throws()
     {
         var room = EndedRoom();
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
 
         var act = () => room.RejectRematch(Role.Host);
 
@@ -124,7 +127,7 @@ public sealed class RoomRematchTests
 
         for (var i = 0; i < 3; i++)
         {
-            room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+            room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
             room.AcceptRematch(Role.Challenger, Module, DateTimeOffset.UtcNow);
 
             // Walk the new match to a fresh Ended state for the next loop.
@@ -146,7 +149,7 @@ public sealed class RoomRematchTests
         room.EndCurrentMatch();
         room.SeriesScore.Host.Should().Be(1);
 
-        room.OfferRematch(Role.Host, Module, DateTimeOffset.UtcNow);
+        room.TryOfferRematch(Role.Host, Module, DateTimeOffset.UtcNow, out _);
         room.AcceptRematch(Role.Challenger, Module, DateTimeOffset.UtcNow);
 
         room.SeriesScore.Should().Be(new SeriesScore(Host: 1, Challenger: 0, Draws: 0));

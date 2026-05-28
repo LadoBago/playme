@@ -54,6 +54,38 @@ public readonly record struct DisplayName
     }
 
     /// <summary>
+    /// Non-throwing variant of <see cref="Create"/> for use at the user-input
+    /// boundary (CLAUDE.md §6 "No exceptions for control flow"). Returns false
+    /// with <paramref name="name"/> set to <c>default</c> when the input is null
+    /// or, after sanitization, empty or longer than <see cref="MaxLength"/>.
+    /// </summary>
+    public static bool TryCreate(string? raw, out DisplayName name)
+    {
+        if (raw is null)
+        {
+            name = default;
+            return false;
+        }
+
+        var sanitized = Sanitize(raw);
+        if (sanitized.Length == 0)
+        {
+            name = default;
+            return false;
+        }
+
+        var elements = new StringInfo(sanitized).LengthInTextElements;
+        if (elements > MaxLength)
+        {
+            name = default;
+            return false;
+        }
+
+        name = new DisplayName(sanitized);
+        return true;
+    }
+
+    /// <summary>
     /// Strip control chars (Cc, Cf), zero-width spacing chars, and the
     /// RTL/LTR/PDF override codepoints that can be used to spoof rendering.
     /// Whitespace is collapsed and trimmed.

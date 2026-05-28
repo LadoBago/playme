@@ -40,9 +40,7 @@ public sealed class JoinRoomHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<JoinRoomResult>.Fail(PlatformErrors.RoomNotFound);
         }
@@ -86,9 +84,7 @@ public sealed class JoinRoomHandler
                     return sideCheck.ToFailure<JoinRoomResult>();
                 }
 
-                DisplayName displayName;
-                try { displayName = DisplayName.Create(cmd.DisplayName); }
-                catch (ArgumentException)
+                if (!DisplayName.TryCreate(cmd.DisplayName, out var displayName))
                 {
                     return AppResult<JoinRoomResult>.Fail(PlatformErrors.ValidationDisplayName);
                 }
