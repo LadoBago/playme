@@ -47,9 +47,7 @@ public sealed class CreateRoomHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        GameId gameId;
-        try { gameId = new GameId(cmd.GameId); }
-        catch (ArgumentException)
+        if (!GameId.TryCreate(cmd.GameId, out var gameId))
         {
             return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidGameId);
         }
@@ -81,9 +79,7 @@ public sealed class CreateRoomHandler
         }
         var hostSide = sideResult.Value;
 
-        DisplayName displayName;
-        try { displayName = DisplayName.Create(cmd.HostDisplayName); }
-        catch (ArgumentException)
+        if (!DisplayName.TryCreate(cmd.HostDisplayName, out var displayName))
         {
             return AppResult<CreateRoomResult>.Fail(PlatformErrors.ValidationDisplayName);
         }

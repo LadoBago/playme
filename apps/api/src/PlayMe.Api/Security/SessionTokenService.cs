@@ -89,17 +89,12 @@ public sealed class SessionTokenService : ISessionTokenService
             return null;
         }
 
-        try
-        {
-            return new Session(
-                new RoomCode(payload.RoomCode),
-                new PlayerId(payload.PlayerId),
-                role);
-        }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(payload.RoomCode, out var code)
+            || !PlayerId.TryCreate(payload.PlayerId, out var playerId))
         {
             return null;
         }
+        return new Session(code, playerId, role);
     }
 
     private sealed record SessionPayload(string RoomCode, string PlayerId, string Role, long Exp);

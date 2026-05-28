@@ -20,5 +20,21 @@ public readonly record struct PlayerId
         Value = value;
     }
 
+    /// <summary>
+    /// Non-throwing factory for use at the user-input boundary (CLAUDE.md §6
+    /// "No exceptions for control flow"). Returns false with <paramref name="id"/>
+    /// set to <c>default</c> when the input is null, empty, or whitespace.
+    /// </summary>
+    public static bool TryCreate(string? value, out PlayerId id)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            id = default;
+            return false;
+        }
+        id = new PlayerId(value);
+        return true;
+    }
+
     public override string ToString() => Value;
 }

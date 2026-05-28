@@ -118,9 +118,7 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
 
     private async Task ProcessEntryAsync(IDatabase db, string roomCodeValue, CancellationToken ct)
     {
-        RoomCode code;
-        try { code = new RoomCode(roomCodeValue); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(roomCodeValue, out var code))
         {
             // Garbage member — drop it so we don't loop on it forever.
             await db.SortedSetRemoveAsync(PlayMe.Infrastructure.Redis.RedisKeys.Timeouts, roomCodeValue);

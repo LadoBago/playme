@@ -56,9 +56,7 @@ public sealed class SubmitMoveHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<SubmitMoveResult>.Fail(PlatformErrors.RoomNotFound);
         }

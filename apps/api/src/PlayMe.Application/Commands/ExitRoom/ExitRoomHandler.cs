@@ -43,9 +43,7 @@ public sealed class ExitRoomHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<ExitRoomResult>.Fail(PlatformErrors.RoomNotFound);
         }
@@ -72,15 +70,10 @@ public sealed class ExitRoomHandler
                     return AppResult<ExitRoomResult>.Fail(PlatformErrors.SessionUnauthorized);
                 }
 
-                // The Closed-idempotency and Ended/AwaitingRematch transition
-                // both live on the domain method; non-exitable states throw
+                // Closed-idempotency and Ended/AwaitingRematch transition both
+                // live on the domain method; non-exitable states return false
                 // and surface as a clean error key here.
-                bool transitioned;
-                try
-                {
-                    transitioned = room.Exit();
-                }
-                catch (DomainException)
+                if (!room.TryExit(out var transitioned))
                 {
                     return AppResult<ExitRoomResult>.Fail(PlatformErrors.ExitNotAllowed);
                 }

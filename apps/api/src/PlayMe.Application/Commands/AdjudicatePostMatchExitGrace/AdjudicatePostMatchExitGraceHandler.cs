@@ -46,9 +46,7 @@ public sealed partial class AdjudicatePostMatchExitGraceHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<AdjudicatePostMatchExitGraceResult>.Fail(PlatformErrors.RoomNotFound);
         }
@@ -81,7 +79,8 @@ public sealed partial class AdjudicatePostMatchExitGraceHandler
         };
         if (stillConnected) return Drop(room, cmd.Role, "reconnected");
 
-        room.Exit();
+        // Preconditions above guarantee TryExit succeeds with a transition.
+        room.TryExit(out _);
         await _rooms.SaveAsync(room, ct);
 
         return AppResult<AdjudicatePostMatchExitGraceResult>.Ok(

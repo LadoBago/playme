@@ -41,9 +41,7 @@ public sealed class AdjudicateRoomExpiryHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<AdjudicateRoomExpiryResult>.Fail(PlatformErrors.RoomNotFound);
         }

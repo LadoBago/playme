@@ -239,53 +239,61 @@ public sealed class Room
     /// <see cref="RoomStatus.Ended"/> or <see cref="RoomStatus.AwaitingRematch"/>
     /// (docs/state.md §2.4). Idempotent on <see cref="RoomStatus.Closed"/> —
     /// double-clicks of "Back to lobby" / racey tab-close-after-exit both land
-    /// the room in the same place. Returns true if this call performed the
-    /// transition so the caller knows whether to broadcast <c>OpponentExited</c>.
+    /// the room in the same place.
+    ///
+    /// Returns true on a legal call; <paramref name="transitioned"/> reports
+    /// whether the call actually flipped status (so the caller knows whether
+    /// to persist + broadcast <c>OpponentExited</c>). Returns false when the
+    /// room is in a status that does not permit exit (still waiting / in
+    /// progress) — the room is left untouched.
     /// </summary>
-    public bool Exit()
+    public bool TryExit(out bool transitioned)
     {
         if (Status == RoomStatus.Closed)
         {
-            return false;
+            transitioned = false;
+            return true;
         }
         if (Status is not (RoomStatus.Ended or RoomStatus.AwaitingRematch))
         {
-            throw new DomainException(
-                $"Cannot exit a room in status {Status}; expected Ended or AwaitingRematch.");
+            transitioned = false;
+            return false;
         }
         Status = RoomStatus.Closed;
+        transitioned = true;
         return true;
     }
 
     /// <summary>
     /// First-offer / implicit-accept dispatch for rematch (docs/platform-and-games.md
     /// §1 #10). From <see cref="RoomStatus.Ended"/> the caller is recorded
-    /// as the offerer and the room transitions to <see cref="RoomStatus.AwaitingRematch"/>.
-    /// From <see cref="RoomStatus.AwaitingRematch"/> with a different
-    /// caller, the call is treated as an implicit accept (near-simultaneous
-    /// dual offer — second one resolves the handshake under the room lock).
-    /// A duplicate offer from the original offerer throws; cancelling your
-    /// own offer is not a v1 feature.
+    /// as the offerer and the room transitions to <see cref="RoomStatus.AwaitingRematch"/>
+    /// (<paramref name="effect"/> = <see cref="RematchOfferResult.OfferRecorded"/>).
+    /// From <see cref="RoomStatus.AwaitingRematch"/> with a different caller,
+    /// the call is treated as an implicit accept — near-simultaneous dual offer
+    /// resolved under the room lock (<paramref name="effect"/> =
+    /// <see cref="RematchOfferResult.ImplicitlyAccepted"/>). Returns false (no
+    /// state change) when the room status is wrong or the same caller is
+    /// re-offering — cancelling your own offer is not a v1 feature.
     /// </summary>
-    public RematchOfferResult OfferRematch(Role caller, IGameModule module, DateTimeOffset now)
+    public bool TryOfferRematch(
+        Role caller, IGameModule module, DateTimeOffset now, out RematchOfferResult effect)
     {
         if (Status == RoomStatus.Ended)
         {
             RematchOffererRole = caller;
             Status = RoomStatus.AwaitingRematch;
-            return RematchOfferResult.OfferRecorded;
+            effect = RematchOfferResult.OfferRecorded;
+            return true;
         }
-        if (Status == RoomStatus.AwaitingRematch)
+        if (Status == RoomStatus.AwaitingRematch && RematchOffererRole != caller)
         {
-            if (RematchOffererRole == caller)
-            {
-                throw new DomainException("Offer already recorded for this role.");
-            }
             AcceptRematchInternal(module, now);
-            return RematchOfferResult.ImplicitlyAccepted;
+            effect = RematchOfferResult.ImplicitlyAccepted;
+            return true;
         }
-        throw new DomainException(
-            $"Cannot offer a rematch in status {Status}; expected Ended or AwaitingRematch.");
+        effect = default;
+        return false;
     }
 
     /// <summary>

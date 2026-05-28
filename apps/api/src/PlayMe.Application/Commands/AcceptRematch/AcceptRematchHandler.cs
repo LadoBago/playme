@@ -38,9 +38,7 @@ public sealed class AcceptRematchHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<AcceptRematchResult>.Fail(PlatformErrors.RoomNotFound);
         }

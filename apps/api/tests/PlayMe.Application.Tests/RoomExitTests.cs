@@ -7,51 +7,54 @@ using Xunit;
 namespace PlayMe.Application.Tests;
 
 /// <summary>
-/// State-machine behaviour of <see cref="Room.Exit"/>
+/// State-machine behaviour of <see cref="Room.TryExit"/>
 /// (docs/state.md §2.4). Valid in <see cref="RoomStatus.Ended"/> and
 /// <see cref="RoomStatus.AwaitingRematch"/>; idempotent on <see cref="RoomStatus.Closed"/>;
-/// throws otherwise.
+/// returns false (no transition) otherwise.
 /// </summary>
 public sealed class RoomExitTests
 {
     private static readonly TimeSpan Budget = TimeSpan.FromSeconds(60);
 
     [Fact]
-    public void Exit_from_Ended_transitions_to_Closed_and_returns_true()
+    public void Exit_from_Ended_transitions_to_Closed()
     {
         var room = EndedRoom();
 
-        var transitioned = room.Exit();
+        var legal = room.TryExit(out var transitioned);
 
+        legal.Should().BeTrue();
         transitioned.Should().BeTrue();
         room.Status.Should().Be(RoomStatus.Closed);
     }
 
     [Fact]
-    public void Exit_idempotent_on_Closed_room_returns_false()
+    public void Exit_idempotent_on_Closed_room_reports_no_transition()
     {
         var room = EndedRoom();
-        room.Exit(); // first call closes it.
+        room.TryExit(out _); // first call closes it.
 
-        var second = room.Exit();
+        var legal = room.TryExit(out var transitioned);
 
-        second.Should().BeFalse();
+        legal.Should().BeTrue();
+        transitioned.Should().BeFalse();
         room.Status.Should().Be(RoomStatus.Closed);
     }
 
     [Fact]
-    public void Exit_from_InProgress_throws()
+    public void Exit_from_InProgress_returns_false_and_leaves_status_unchanged()
     {
         var room = RoomFactory.InProgress(DateTimeOffset.UtcNow, Budget);
 
-        var act = () => room.Exit();
+        var legal = room.TryExit(out var transitioned);
 
-        act.Should().Throw<DomainException>();
+        legal.Should().BeFalse();
+        transitioned.Should().BeFalse();
         room.Status.Should().Be(RoomStatus.InProgress);
     }
 
     [Fact]
-    public void Exit_from_WaitingForOpponent_throws()
+    public void Exit_from_WaitingForOpponent_returns_false_and_leaves_status_unchanged()
     {
         var room = Room.Create(
             new RoomCode(RoomFactory.RoomCodeValue),
@@ -63,9 +66,10 @@ public sealed class RoomExitTests
                 TicTacToeSides.X),
             DateTimeOffset.UtcNow);
 
-        var act = () => room.Exit();
+        var legal = room.TryExit(out var transitioned);
 
-        act.Should().Throw<DomainException>();
+        legal.Should().BeFalse();
+        transitioned.Should().BeFalse();
         room.Status.Should().Be(RoomStatus.WaitingForOpponent);
     }
 

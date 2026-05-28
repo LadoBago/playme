@@ -46,9 +46,7 @@ public sealed class OfferRematchHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        RoomCode code;
-        try { code = new RoomCode(cmd.RoomCode); }
-        catch (ArgumentException)
+        if (!RoomCode.TryCreate(cmd.RoomCode, out var code))
         {
             return AppResult<OfferRematchHandlerResult>.Fail(PlatformErrors.RoomNotFound);
         }
@@ -78,12 +76,7 @@ public sealed class OfferRematchHandler
                 var module = _games.GetModule(room.GameId);
                 var now = _clock.UtcNow;
 
-                RematchOfferResult effect;
-                try
-                {
-                    effect = room.OfferRematch(cmd.CallerRole, module, now);
-                }
-                catch (DomainException)
+                if (!room.TryOfferRematch(cmd.CallerRole, module, now, out var effect))
                 {
                     return AppResult<OfferRematchHandlerResult>.Fail(PlatformErrors.RematchInvalidState);
                 }
