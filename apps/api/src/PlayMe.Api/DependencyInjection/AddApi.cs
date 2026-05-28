@@ -77,15 +77,13 @@ public static class ApiServiceCollectionExtensions
 
         // Controllers + JSON options aligned with PlayMeJsonOptions so
         // HTTP responses use the same shape as the Redis blob and SignalR
-        // payloads (CLAUDE.md §2.4 / §2.6 single wire format).
+        // payloads (CLAUDE.md §2.4 / §2.6 single wire format). Handler-
+        // internal validation (DisplayName.TryCreate, GameId.TryCreate,
+        // mode-vs-side rules, GameOptions size cap) returns typed
+        // PlatformErrors keys that are already i18n keys — no separate
+        // validation framework is wired into the controller pipeline.
         services.AddControllers()
             .AddJsonOptions(o => PlayMeJsonOptions.ApplyTo(o.JsonSerializerOptions));
-
-        // Note: FluentValidation auto-validation is intentionally NOT wired.
-        // Handler-internal validation (DisplayName.Create, GameId ctor,
-        // mode-vs-side rules) returns typed PlatformErrors keys that are
-        // already i18n keys — auto-validation's ValidationProblemDetails
-        // would require an extra mapping layer for no real gain.
 
         services.AddEndpointsApiExplorer();
         services.AddOpenApi();
