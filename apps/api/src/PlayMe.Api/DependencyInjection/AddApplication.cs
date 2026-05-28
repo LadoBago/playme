@@ -1,4 +1,3 @@
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.AcceptRematch;
@@ -26,9 +25,9 @@ namespace PlayMe.Api.DependencyInjection;
 public static class ApplicationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Application handlers, ports, validators, and per-game
-    /// move parsers (CLAUDE.md §2.4 dependency rule: ports defined here,
-    /// implementations live in Infrastructure / DI extension).
+    /// Registers Application handlers, ports, and per-game move parsers
+    /// (CLAUDE.md §2.4 dependency rule: ports defined here, implementations
+    /// live in Infrastructure / DI extension).
     /// </summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
@@ -51,9 +50,6 @@ public static class ApplicationServiceCollectionExtensions
 
         // Pure-compute clock facade. Singleton — stateless.
         services.AddSingleton<IClockService, ClockService>();
-
-        // Validators — discovered via assembly scan of the Application asm.
-        services.AddValidatorsFromAssemblyContaining<CreateRoomCommandValidator>();
 
         // Per-game move parsers.
         services.AddSingleton<IGameMoveParser, TicTacToeMoveParser>();

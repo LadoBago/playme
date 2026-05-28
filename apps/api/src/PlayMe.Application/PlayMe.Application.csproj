@@ -4,16 +4,13 @@
     <AssemblyName>PlayMe.Application</AssemblyName>
     <!--
       CLAUDE.md §2.4: Application references only Domain. No infrastructure
-      or framework references. Third-party SDKs forbidden (FluentValidation
-      OK — it's a library, not a service adapter, per common practice; the
-      rule is no service-adapter SDKs).
+      or framework references; no service-adapter SDKs.
     -->
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PlayMe.Domain\PlayMe.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentValidation" />
     <!--
       Pure-interface logging package (no provider, no console sink). Lets
       Application handlers inject ILogger<T> per CLAUDE.md §6 without

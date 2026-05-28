@@ -16,6 +16,15 @@ public sealed class CreateRoomHandler
 {
     private const int CodeCollisionRetryLimit = 5;
 
+    /// <summary>
+    /// Max raw JSON size of the per-room <c>gameOptions</c> blob. Surface cap
+    /// applied before the game module's shape validation runs — without it a
+    /// caller could attach megabytes of "padding" fields the module ignores
+    /// (it only inspects known keys) and Redis would persist it. 1 KiB
+    /// comfortably fits every realistic per-game options shape.
+    /// </summary>
+    private const int MaxGameOptionsRawJsonLength = 1024;
+
     private readonly IRoomRepository _rooms;
     private readonly IRoomCodeGenerator _codes;
     private readonly IPlayerIdGenerator _playerIds;
@@ -57,6 +66,16 @@ public sealed class CreateRoomHandler
             return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidGameId);
         }
         var module = _games.GetModule(gameId);
+
+        // Surface size cap before the module's shape check (see constant
+        // docstring for rationale). Reuses the same i18n key the module
+        // returns for shape-invalid options — both are "the options blob
+        // wasn't acceptable" from the caller's perspective.
+        if (cmd.GameOptions is { } gameOptions
+            && gameOptions.GetRawText().Length > MaxGameOptionsRawJsonLength)
+        {
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidGameOptions);
+        }
 
         // Per-room options are validated by the game module (CLAUDE.md §7
         // "Platform thinness"). The platform never inspects the shape — the

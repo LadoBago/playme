@@ -18,6 +18,17 @@ public readonly record struct DisplayName
 {
     public const int MaxLength = 24;
 
+    /// <summary>
+    /// Pre-sanitization cap on the raw input. Sanitize() walks the string
+    /// by text elements (Unicode-aware) and is cheap per char but linear
+    /// in length — rejecting anything past this size up front means a
+    /// multi-MB submission can't burn CPU. <see cref="MaxLength"/> × 4
+    /// leaves room for UTF-16 surrogate pairs and combining marks while
+    /// still rejecting payloads that couldn't possibly survive
+    /// sanitization down to <see cref="MaxLength"/> text elements.
+    /// </summary>
+    public const int MaxRawLength = MaxLength * 4;
+
     public string Value { get; }
 
     private DisplayName(string sanitized)
@@ -35,6 +46,13 @@ public readonly record struct DisplayName
     public static DisplayName Create(string raw)
     {
         ArgumentNullException.ThrowIfNull(raw);
+
+        if (raw.Length > MaxRawLength)
+        {
+            throw new ArgumentException(
+                $"DisplayName raw input must be at most {MaxRawLength} chars.", nameof(raw));
+        }
+
         var sanitized = Sanitize(raw);
 
         if (sanitized.Length == 0)
@@ -61,7 +79,7 @@ public readonly record struct DisplayName
     /// </summary>
     public static bool TryCreate(string? raw, out DisplayName name)
     {
-        if (raw is null)
+        if (raw is null || raw.Length > MaxRawLength)
         {
             name = default;
             return false;
