@@ -782,13 +782,14 @@ function PostMatchPanel({
 
   if (isOfferer) {
     return (
-      <div className="match-controls">
+      <div className="match-controls match-controls--split">
         <button
           type="button"
-          className="button-ghost"
+          className="text-link"
           onClick={onBackToLobby}
           disabled={exitPending}
         >
+          <span aria-hidden="true">← </span>
           {t('match.backToLobby')}
         </button>
       </div>
@@ -810,13 +811,14 @@ function PostMatchPanel({
         : false;
   const canOffer = room.status === 'ended' && opponentConnected;
   return (
-    <div className="match-controls">
+    <div className="match-controls match-controls--split">
       <button
         type="button"
-        className="button-ghost"
+        className="text-link"
         onClick={onBackToLobby}
         disabled={exitPending}
       >
+        <span aria-hidden="true">← </span>
         {t('match.backToLobby')}
       </button>
       {canOffer ? (

@@ -369,6 +369,36 @@ textarea {
   outline-offset: 2px;
 }
 
+/* Inline text link — a <button> that reads as a link. Used post-match
+ * for "← Back to lobby" where the click still has to fire onExit() (so
+ * the server can send OpponentExited) before navigating away, so it
+ * can't be a plain <a>. */
+.text-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--fg-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.text-link:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.text-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.text-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* --- Layout primitives --- */
 
 .container {
@@ -1329,6 +1359,14 @@ textarea {
   display: flex;
   gap: 0.6rem;
   justify-content: flex-end;
+}
+
+/* Post-match row that pairs a secondary back-to-lobby text link with the
+ * primary rematch CTA — push the link to the left edge of the board and
+ * keep the primary action on the right. With a single child (back-link
+ * only, no rematch available) the link still sits at flex-start. */
+.match-controls--split {
+  justify-content: space-between;
 }
 
 /* Destructive action variant — resign, reject rematch. Same shape as
