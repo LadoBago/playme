@@ -118,7 +118,7 @@ export const ka: Record<EnKey, string> = {
   'match.resign.confirm.body': 'ამ მატჩს წააგებ.',
   'match.resign.confirm.yes': 'დანებება',
   'match.resign.confirm.cancel': 'გაუქმება',
-  'match.backToLobby': 'მთავარ გვერდზე დაბრუნება',
+  'match.backToLobby': 'მთავარ გვერდზე',
   'match.opponentLeft': 'მოწინააღმდეგე გავიდა.',
   'room.expired.title': 'ოთახი ვადაგასულია',
   'room.expired.body': '30 წუთის განმავლობაში არავინ შემოვიდა, ეს ოთახი წაიშალა. ახალის შესაქმნელად დაბრუნდი მთავარზე.',
