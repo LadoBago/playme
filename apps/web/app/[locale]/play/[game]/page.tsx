@@ -25,9 +25,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const kaPath = localizedHref(path, 'ka');
   const enPath = localizedHref(path, 'en');
   const canonical = localizedHref(path, locale);
+  // SEO-only strings (metaTitle / metaDescription) carry search synonyms;
+  // the on-screen <h1> and subheading still render nameKey /
+  // shortDescriptionKey. `title.absolute` bypasses the root layout's
+  // `%s — PlayMe` suffix template since metaTitle already ends in "| PlayMe".
   return {
-    title: t(game.nameKey),
-    description: t(game.shortDescriptionKey),
+    title: { absolute: t(game.metaTitleKey) },
+    description: t(game.metaDescriptionKey),
     robots: { index: true, follow: true },
     alternates: {
       canonical,
@@ -40,15 +44,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       type: 'website',
       siteName: 'PlayMe',
+      // OG title stays the clean game name — social cards read better
+      // without the keyword-stuffed document title.
       title: t(game.nameKey),
-      description: t(game.shortDescriptionKey),
+      description: t(game.metaDescriptionKey),
       url: canonical,
       locale: locale === 'ka' ? 'ka_GE' : 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
       title: t(game.nameKey),
-      description: t(game.shortDescriptionKey),
+      description: t(game.metaDescriptionKey),
     },
   };
 }
