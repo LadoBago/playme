@@ -6,12 +6,12 @@ import type { EnKey } from './en';
 
 export const ka: Record<EnKey, string> = {
   // --- Site chrome ---
-  'site.title': 'PlayMe — ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება',
-  'site.titleShort': 'PlayMe — ითამაშე მეგობართან',
+  'site.title': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება',
+  'site.titleShort': 'PlayMe — ითამაშე ონლაინ მეგობართან',
   'site.titleSuffix': '— PlayMe',
-  'site.tagline': 'ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.tagline': 'ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
   'site.brandTagline': 'შენი ჯერია.',
-  'site.ogImageAlt': 'PlayMe — ითამაშე მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.ogImageAlt': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
   'site.howItWorks.title': 'როგორ მუშაობს PlayMe',
   'site.howItWorks.step1.title': 'აირჩიე თამაში',
   'site.howItWorks.step1.body':
