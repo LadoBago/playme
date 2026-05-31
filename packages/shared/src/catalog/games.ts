@@ -12,6 +12,16 @@ export interface GameCatalogEntry {
   readonly nameKey: I18nKey;
   readonly shortDescriptionKey: I18nKey;
   readonly rulesKey: I18nKey;
+  /**
+   * SEO-only document title for the configure page. Decoupled from
+   * `nameKey` on purpose: the on-screen `<h1>` stays the clean game name,
+   * while this can carry search synonyms / aliases (e.g. the English
+   * brand alongside the Georgian name). Used by `generateMetadata`'s
+   * `title.absolute` — never rendered as a visible label.
+   */
+  readonly metaTitleKey: I18nKey;
+  /** SEO-only meta description (and OG/Twitter description). Not a visible label. */
+  readonly metaDescriptionKey: I18nKey;
   readonly sides: readonly { readonly id: string; readonly labelKey: I18nKey }[];
   readonly defaultHostSide: string;
   /** Board dimensions for the configure-page preview / room renderer. */
@@ -39,6 +49,8 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     nameKey: 'games.tictactoe.name',
     shortDescriptionKey: 'games.tictactoe.shortDescription',
     rulesKey: 'games.tictactoe.rules',
+    metaTitleKey: 'games.tictactoe.metaTitle',
+    metaDescriptionKey: 'games.tictactoe.metaDescription',
     sides: [
       { id: 'x', labelKey: 'games.tictactoe.sideX' },
       { id: 'o', labelKey: 'games.tictactoe.sideO' },
@@ -57,6 +69,8 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     nameKey: 'games.connect4.name',
     shortDescriptionKey: 'games.connect4.shortDescription',
     rulesKey: 'games.connect4.rules',
+    metaTitleKey: 'games.connect4.metaTitle',
+    metaDescriptionKey: 'games.connect4.metaDescription',
     sides: [
       { id: 'red', labelKey: 'games.connect4.sideRed' },
       { id: 'yellow', labelKey: 'games.connect4.sideYellow' },
@@ -86,6 +100,8 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
     nameKey: 'games.reversi.name',
     shortDescriptionKey: 'games.reversi.shortDescription',
     rulesKey: 'games.reversi.rules',
+    metaTitleKey: 'games.reversi.metaTitle',
+    metaDescriptionKey: 'games.reversi.metaDescription',
     sides: [
       { id: 'dark', labelKey: 'games.reversi.sideDark' },
       { id: 'light', labelKey: 'games.reversi.sideLight' },

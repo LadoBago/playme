@@ -29,7 +29,14 @@ export const en = {
   'site.catalog.title': 'Choose a game',
 
   // --- Game names + rules ---
+  // `metaTitle` / `metaDescription` are SEO-only (document <title> +
+  // meta/OG description). They deliberately carry search synonyms the
+  // clean on-screen labels (`name` / `shortDescription`) don't, so the
+  // visible UI stays uncluttered while search queries still match.
   'games.tictactoe.name': 'Tic-Tac-Toe',
+  'games.tictactoe.metaTitle': 'Tic-Tac-Toe online — play with a friend | PlayMe',
+  'games.tictactoe.metaDescription':
+    'Play Tic-Tac-Toe (noughts and crosses) online with a friend — 3×3, 6×6, or 9×9 board. No signup, just share a link.',
   'games.tictactoe.shortDescription':
     'Pick a board size: 3×3, 6×6, or 9×9. First to align the target number of marks wins.',
   'games.tictactoe.rules':
@@ -40,6 +47,9 @@ export const en = {
   'games.tictactoe.shortSideO': 'O',
 
   'games.connect4.name': 'Connect 4',
+  'games.connect4.metaTitle': 'Connect 4 online — play with a friend | PlayMe',
+  'games.connect4.metaDescription':
+    'Play Connect 4 (Four in a Row) online with a friend — drop discs and line up four first. No signup, just share a link.',
   'games.connect4.shortDescription':
     'Drop discs into a 7×6 grid with gravity. First to line up four wins.',
   'games.connect4.rules':
@@ -50,6 +60,9 @@ export const en = {
   'games.connect4.shortSideYellow': 'Yellow',
 
   'games.reversi.name': 'Reversi',
+  'games.reversi.metaTitle': 'Reversi (Othello) online — play with a friend | PlayMe',
+  'games.reversi.metaDescription':
+    "Play Reversi (Othello) online with a friend on an 8×8 board — flip your opponent's discs. No signup, just share a link.",
   'games.reversi.shortDescription':
     "Sandwich your opponent's discs between yours to flip them. Whoever has more discs at the end wins.",
   'games.reversi.rules':
