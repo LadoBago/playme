@@ -788,9 +788,11 @@ function PostMatchPanel({
           className="text-link"
           onClick={onBackToLobby}
           disabled={exitPending}
+          aria-label={t('match.backToLobby')}
         >
           <span aria-hidden="true">← </span>
-          {t('match.backToLobby')}
+          <span className="label-full">{t('match.backToLobby')}</span>
+          <span className="label-short">{t('match.backToLobby.short')}</span>
         </button>
       </div>
     );
@@ -817,9 +819,11 @@ function PostMatchPanel({
         className="text-link"
         onClick={onBackToLobby}
         disabled={exitPending}
+        aria-label={t('match.backToLobby')}
       >
         <span aria-hidden="true">← </span>
-        {t('match.backToLobby')}
+        <span className="label-full">{t('match.backToLobby')}</span>
+        <span className="label-short">{t('match.backToLobby.short')}</span>
       </button>
       {canOffer ? (
         <button
@@ -827,8 +831,10 @@ function PostMatchPanel({
           className="button-primary"
           onClick={onOffer}
           disabled={offerPending}
+          aria-label={t('match.rematch.offer.button')}
         >
-          {t('match.rematch.offer.button')}
+          <span className="label-full">{t('match.rematch.offer.button')}</span>
+          <span className="label-short">{t('match.rematch.offer.short')}</span>
         </button>
       ) : null}
     </div>

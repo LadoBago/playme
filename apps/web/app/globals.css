@@ -708,6 +708,15 @@ textarea {
   .match-meta__wins {
     display: inline;
   }
+  /* Swap the descriptive post-match action labels for short forms so the
+   * back link + rematch CTA stay on one line on narrow boards. The full
+   * text remains each button's aria-label. */
+  .label-full {
+    display: none;
+  }
+  .label-short {
+    display: inline;
+  }
 }
 
 /* Centred series scoreboard between the two player cards. Reads from
@@ -1367,6 +1376,12 @@ textarea {
  * only, no rematch available) the link still sits at flex-start. */
 .match-controls--split {
   justify-content: space-between;
+}
+
+/* Responsive action labels: full descriptive text by default, swapped for
+ * short forms under @container match (max-width: 560px) above. */
+.label-short {
+  display: none;
 }
 
 /* Destructive action variant — resign, reject rematch. Same shape as

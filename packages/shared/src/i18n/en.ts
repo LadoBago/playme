@@ -136,11 +136,16 @@ export const en = {
   'match.resign.confirm.yes': 'Resign',
   'match.resign.confirm.cancel': 'Cancel',
   'match.backToLobby': 'Back to lobby',
+  // Short form shown on narrow boards (@container match) where the full
+  // label wraps; the full text stays the button's accessible name.
+  'match.backToLobby.short': 'Back',
   'match.opponentLeft': 'Opponent left.',
   'room.expired.title': 'Room expired',
   'room.expired.body': 'No one joined in 30 minutes, so this room is gone. Start a new one when you’re ready.',
   'room.expired.cta': 'Back to home',
   'match.rematch.offer.button': 'Offer rematch',
+  // Short form for narrow boards; full label stays the accessible name.
+  'match.rematch.offer.short': 'Rematch',
   'match.rematch.accept.button': 'Accept rematch',
   'match.rematch.reject.button': 'Reject rematch',
   'match.rematch.waiting': 'Waiting for opponent…',
