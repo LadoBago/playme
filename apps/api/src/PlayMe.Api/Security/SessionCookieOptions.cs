@@ -8,7 +8,7 @@ namespace PlayMe.Api.Security;
 /// dev (no Domain, <see cref="SameSiteMode.Lax"/>, 6 h lifespan) and for
 /// the current v1 production setup, where the API is at
 /// <c>api.playme.ge</c> (Cloudflare → Azure) and the web at
-/// <c>www.playme.ge</c>: same eTLD+1 means the cookie issued by the API
+/// <c>playme.ge</c>: same eTLD+1 means the cookie issued by the API
 /// is host-only on <c>api.playme.ge</c>, and <see cref="SameSiteMode.Lax"/>
 /// allows the browser to attach it on cross-subdomain same-site requests
 /// from the web. No production overrides required.
@@ -37,7 +37,7 @@ public sealed class SessionCookieOptions
     /// SameSite attribute on the cookie. Defaults to
     /// <see cref="SameSiteMode.Lax"/>, which is the right call when the
     /// API and web share an eTLD+1 (today's setup:
-    /// <c>api.playme.ge</c> + <c>www.playme.ge</c>). Set to
+    /// <c>api.playme.ge</c> + <c>playme.ge</c>). Set to
     /// <see cref="SameSiteMode.None"/> only if the topology ever changes
     /// to cross-site (e.g. API on <c>*.azurewebsites.net</c> directly) —
     /// required so the browser attaches the cookie on cross-site fetches

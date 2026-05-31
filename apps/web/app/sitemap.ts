@@ -6,9 +6,10 @@ import { SITE_URL } from '@/lib/site';
 // the landing page plus every per-game configure page. Room URLs are
 // noindex,nofollow and excluded here.
 //
-// hreflang pairing is wired now so the Sprint 6 /en route split is a
-// path-table swap, not a sitemap refactor. The `en` entries 404 until
-// then; Google ignores broken alternates rather than indexing them.
+// hreflang pairs both locales: ka is served unprefixed (`/`, `/play/…`)
+// and en under `/en`, both resolved by proxy.ts's locale rewrite — so
+// every alternate below is a live URL. SITE_URL is the canonical apex
+// (`playme.ge`); `www.playme.ge` 308-redirects to it.
 
 function entriesFor(path: string) {
   return {
