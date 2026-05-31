@@ -14,7 +14,7 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
        ┌──────────────┴──────────────┐
        │                             │
        ▼                             ▼
-  www.playme.ge                api.playme.ge
+    playme.ge                  api.playme.ge
    (Vercel edge)             (Cloudflare proxy)
        │                             │
        │ Next.js SSR +               │ HTTPS + WSS
@@ -28,7 +28,7 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
                           state + SignalR backplane)
 ```
 
-`www.playme.ge` is served by Vercel directly. `api.playme.ge` is fronted by Cloudflare, which proxies to the Azure App Service. The two share eTLD+1 (`playme.ge`), so the session cookie set by the API is first-party from the web's perspective and `SameSite=Lax` works (see [`security.md`](security.md) §4).
+`playme.ge` (the canonical apex) is served by Vercel directly; `www.playme.ge` 308-redirects to it. `api.playme.ge` is fronted by Cloudflare, which proxies to the Azure App Service. The two share eTLD+1 (`playme.ge`), so the session cookie set by the API is first-party from the web's perspective and `SameSite=Lax` works (see [`security.md`](security.md) §4).
 
 ---
 
@@ -36,14 +36,14 @@ For the API/web split itself, see [`architecture.md`](architecture.md). For secu
 
 | Component | Provider | Tier | Region | Notes |
 |---|---|---|---|---|
-| Web (`apps/web`) | **Vercel** | Hobby (free) | auto / closest edge | Next.js SSR + static. Custom domain: `www.playme.ge`, with apex redirect. |
+| Web (`apps/web`) | **Vercel** | Hobby (free) | auto / closest edge | Next.js SSR + static. Canonical domain: `playme.ge` (apex); `www.playme.ge` 308-redirects to it. |
 | API (`apps/api`) | **Azure App Service for Linux** | B1 (~$13/mo) | West Europe | Runs the GHCR-hosted container image. WebSockets + Always On + HTTPS-only + TLS 1.2 + system-assigned managed identity. |
 | Redis | **Azure Cache for Redis** | Basic C0 (~$15/mo) | West Europe | TLS-only, port 6380. State store + SignalR backplane. |
 | Container registry | **GitHub Container Registry (GHCR)** | free, **public package** | n/a | `ghcr.io/ladobago/playme-api`. App Service pulls anonymously — no PAT to rotate. |
 | DNS authority | **Cloudflare** | free | n/a | Moved from Vercel's nameservers during the v1 cutover (see §6 below). |
 | TLS — `api.playme.ge` (edge) | **Cloudflare Universal SSL** (Let's Encrypt) | free | edge | Cloudflare terminates TLS at the edge. |
 | TLS — `api.playme.ge` (origin) | **Azure App Service Managed Certificate** (DigiCert) | free | West Europe | Bound to the App Service via SNI. CF→origin runs in **Full (strict)** — CF validates the origin hostname against this cert. |
-| TLS — `www.playme.ge` / apex | **Vercel** (Let's Encrypt) | free | edge | Vercel issues automatically against the domain claim. |
+| TLS — `playme.ge` apex + `www` | **Vercel** (Let's Encrypt) | free | edge | Vercel issues automatically against the domain claim (both apex and www). |
 | Error monitoring | **Sentry Cloud** | free | EU | One project for web, one for API. API DSN provisioned via `Sentry__Dsn`; empty = SDK disabled (§6.12). |
 | Product analytics | **PostHog Cloud** | free | EU | Web + API. Server events require `PostHog__ApiKey`; empty = NoOp client (§6.12). |
 | Alerting | **Azure Monitor + email action group** | free | n/a | See §5. |
@@ -57,8 +57,8 @@ Cloudflare is the authoritative DNS for `playme.ge`. Records currently in the zo
 | Type | Name | Target | Proxy | Purpose |
 |---|---|---|---|---|
 | CNAME | `api` | `playme-api-prod.azurewebsites.net` | Proxied (orange) | API. Cloudflare terminates TLS for `api.playme.ge`. |
-| A | `playme.ge` (apex) | Vercel edge IPs | Proxied | Apex domain — Vercel redirects to `www`. |
-| A | `www` | Vercel edge IPs | Proxied | Web. |
+| A | `playme.ge` (apex) | Vercel edge IPs | Proxied | Canonical web host, served by Vercel. |
+| A | `www` | Vercel edge IPs | Proxied | 308-redirects to the apex. |
 | CAA | `playme.ge` | `letsencrypt.org`, `pki.goog`, `sectigo.com`, `comodoca.com`, `digicert.com`, `ssl.com` (issue + issuewild, minus `sectigo.com` on issuewild) | DNS-only | Restricts which CAs may issue certs. Covers the actual issuers in use: Let's Encrypt (Vercel apex/www), Google/Sectigo (Cloudflare edge), DigiCert (Azure managed cert for `api`). |
 
 The Azure App Service has `api.playme.ge` bound as a custom hostname even though TLS is terminated at Cloudflare — App Service routes by `Host` header, so the binding must exist or it returns "404 Web Site not found".

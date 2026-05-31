@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 /* global process */
 
-// Content-Security-Policy now lives in middleware.ts: it needs a fresh
-// per-request nonce on `script-src`, which build-time headers() can't
+// Content-Security-Policy now lives in proxy.ts (the Next.js middleware):
+// it needs a fresh per-request nonce on `script-src`, which headers() can't
 // produce. The other security headers (XFO, XCTO, Referrer-Policy,
 // HSTS, Permissions-Policy) stay here so they cover the static-asset
 // paths the middleware matcher skips (/_next/static, the OG image,
@@ -40,7 +40,8 @@ const nextConfig = {
   // In production these rules are inert: the browser is configured (via
   // NEXT_PUBLIC_API_URL=https://api.playme.ge) to call the API on its own
   // subdomain, served by Cloudflare → Azure App Service. Vercel only ever
-  // sees the www origin.
+  // sees web-origin traffic (canonical apex playme.ge; www 308-redirects
+  // to it).
   async rewrites() {
     return [
       { source: '/api/:path*', destination: `${apiUpstream}/api/:path*` },

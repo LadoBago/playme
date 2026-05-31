@@ -11,7 +11,8 @@ import {
 // async page/layout functions to validate the [locale] segment param;
 // use `getServerLocale` / `getServerTranslator` where params aren't
 // available (root layout, not-found, manifest, opengraph-image), which
-// fall back to the `x-locale` request header set by middleware.ts.
+// fall back to the `x-locale` request header set by proxy.ts (the
+// Next.js middleware).
 
 export async function resolveLocale(
   paramsPromise: Promise<{ locale: string }>,
