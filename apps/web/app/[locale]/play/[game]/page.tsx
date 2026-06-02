@@ -7,6 +7,8 @@ import {
   localeFromString,
   localizedHref,
 } from '@playme/shared';
+import { JsonLd } from '@/features/seo/json-ld';
+import { buildBreadcrumbSchema, buildVideoGameSchema } from '@/lib/structured-data';
 import { ConfigureForm } from './configure-form';
 
 interface PageProps {
@@ -72,6 +74,12 @@ export default async function ConfigurePage({ params }: PageProps) {
 
   return (
     <main className="container stack" style={{ gap: '2rem' }}>
+      <JsonLd
+        data={[
+          buildVideoGameSchema(game, t, locale),
+          buildBreadcrumbSchema(game, t, locale),
+        ]}
+      />
       <Link
         href={localizedHref('/', locale)}
         className="icon-link"

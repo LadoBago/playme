@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
 import { Wordmark } from '@/features/branding/wordmark';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
+import { JsonLd } from '@/features/seo/json-ld';
 import { resolveLocale } from '@/lib/locale';
+import { buildWebSiteSchema } from '@/lib/structured-data';
 
 // SSR + indexable (CLAUDE.md §2.5 SEO). /en/ and / (ka) both route
 // through this segment; the active locale comes from params.locale,
@@ -18,6 +20,7 @@ export default async function HomePage({ params }: PageProps) {
 
   return (
     <main className="container stack" style={{ gap: '2.5rem' }}>
+      <JsonLd data={buildWebSiteSchema(t, locale)} />
       <InstallPrompt />
 
       <section
