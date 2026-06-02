@@ -696,6 +696,14 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
+/* Responsive post-match action labels: full descriptive text by default,
+ * swapped for short forms inside the @container match query below. Defined
+ * before the container block so the narrow-board override wins on source
+ * order (equal specificity). The full text always stays the aria-label. */
+.label-short {
+  display: none;
+}
+
 @container match (max-width: 560px) {
   .match-meta {
     flex-direction: column;
@@ -1376,12 +1384,6 @@ textarea {
  * only, no rematch available) the link still sits at flex-start. */
 .match-controls--split {
   justify-content: space-between;
-}
-
-/* Responsive action labels: full descriptive text by default, swapped for
- * short forms under @container match (max-width: 560px) above. */
-.label-short {
-  display: none;
 }
 
 /* Destructive action variant — resign, reject rematch. Same shape as
