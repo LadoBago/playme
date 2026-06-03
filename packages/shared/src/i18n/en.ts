@@ -33,6 +33,20 @@ export const en = {
     'The first friend who opens your link joins. Take turns in real time.',
   'site.catalog.title': 'Choose a game',
 
+  // --- Footer ---
+  // `{year}` is interpolated at render with the current year so the
+  // notice never goes stale (see app/[locale]/copyright/page.tsx and the
+  // footer in app/layout.tsx).
+  'site.footer.copyright': '© {year} PlayMe.ge',
+
+  // --- Copyright page ---
+  'copyright.title': 'Copyright',
+  'copyright.metaDescription':
+    'Copyright and ownership information for PlayMe, a free platform for playing casual games online with a friend.',
+  'copyright.notice': '© {year} PlayMe.ge. All rights reserved.',
+  'copyright.body':
+    'PlayMe.ge is a free, anonymous platform for playing casual two-player games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi) are in the public domain; only this site’s implementation and presentation are covered.',
+
   // --- Game names + rules ---
   // `metaTitle` / `metaDescription` are SEO-only (document <title> +
   // meta/OG description). They deliberately carry search synonyms the

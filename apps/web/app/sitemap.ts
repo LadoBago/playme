@@ -34,15 +34,22 @@ function languagesFor(path: string) {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const paths = ['/', ...GAME_CATALOG.map((game) => `/play/${game.slug}`)];
+  const paths = ['/', ...GAME_CATALOG.map((game) => `/play/${game.slug}`), '/copyright'];
 
   return paths.flatMap((path) => {
     const languages = languagesFor(path);
     const isHome = path === '/';
+    // The copyright notice is near-static and low-priority for crawl —
+    // it's listed so the /en variant is discoverable, not promoted.
+    const isCopyright = path === '/copyright';
     const shared = {
       lastModified: now,
-      changeFrequency: isHome ? ('weekly' as const) : ('monthly' as const),
-      priority: isHome ? 1 : 0.8,
+      changeFrequency: isCopyright
+        ? ('yearly' as const)
+        : isHome
+          ? ('weekly' as const)
+          : ('monthly' as const),
+      priority: isCopyright ? 0.3 : isHome ? 1 : 0.8,
       alternates: { languages },
     };
     return [
