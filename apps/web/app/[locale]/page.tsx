@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
 import { Wordmark } from '@/features/branding/wordmark';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
@@ -12,6 +13,42 @@ import { buildWebSiteSchema } from '@/lib/structured-data';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+}
+
+// Homepage overrides only its description (meta + OG + Twitter) with the
+// landing-specific `site.homeMetaDescription`. `metadataBase`, `robots`,
+// and `alternates` are inherited from the root layout, whose canonical /
+// hreflang already resolve correctly for `/` and `/en`. openGraph/twitter
+// are re-declared in full because metadata objects overwrite (not deep
+// merge) across segments — the explicit locale-pinned image mirrors the
+// layout to keep a single og:image tag (see app/layout.tsx).
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const locale = await resolveLocale(params);
+  const { t } = createTranslator(locale);
+  const description = t('site.homeMetaDescription');
+  const canonical = locale === 'ka' ? '/' : '/en';
+  const image = {
+    url: `/opengraph-image/${locale}`,
+    alt: t('site.ogImageAlt'),
+  };
+  return {
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'PlayMe',
+      title: t('site.title'),
+      description,
+      url: canonical,
+      locale: locale === 'ka' ? 'ka_GE' : 'en_US',
+      images: [{ ...image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('site.title'),
+      description,
+      images: [image],
+    },
+  };
 }
 
 export default async function HomePage({ params }: PageProps) {
