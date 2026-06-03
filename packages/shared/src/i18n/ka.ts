@@ -10,6 +10,8 @@ export const ka: Record<EnKey, string> = {
   'site.titleShort': 'PlayMe — ითამაშე ონლაინ მეგობართან',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.homeMetaDescription':
+    'ითამაშე სამაგიდო, ინტელექტუალური თამაშები ონლაინ მეგობართან — რეგისტრაციის გარეშე. აირჩიე თამაში და გააზიარე ბმული. თამაში უფასოა.',
   'site.brandTagline': 'შენი ჯერია.',
   'site.ogImageAlt': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
   'site.howItWorks.title': 'როგორ მუშაობს PlayMe',
@@ -28,7 +30,7 @@ export const ka: Record<EnKey, string> = {
   'games.tictactoe.name': 'ჯვარედინა',
   'games.tictactoe.metaTitle': 'ჯვარედინა ონლაინ — Tic Tac Toe (ჯვარ-ნული) | PlayMe',
   'games.tictactoe.metaDescription':
-    'ითამაშე ჯვარედინა (ჯვარ-ნული, X და O, X და 0, Tic Tac Toe) ონლაინ მეგობართან — 3×3, 6×6 ან 9×9 დაფა. რეგისტრაცია არ გჭირდება.',
+    'ითამაშე ჯვარ-ნული (X და 0, იქსიკი და ნოლიკი) ონლაინ მეგობართან — 3×3, 6×6 ან 9×9 დაფაზე. რეგისტრაცია არ გჭირდება.',
   'games.tictactoe.shortDescription':
     'აირჩიე დაფა: 3×3, 6×6 ან 9×9. ვინც პირველი დააწყობს მითითებულ რაოდენობას — იგებს.',
   'games.tictactoe.rules':
@@ -41,7 +43,7 @@ export const ka: Record<EnKey, string> = {
   'games.connect4.name': 'ოთხის გასწორება',
   'games.connect4.metaTitle': 'ოთხის გასწორება ონლაინ — Connect 4 (ოთხი ზედიზედ) | PlayMe',
   'games.connect4.metaDescription':
-    'ითამაშე Connect 4 (ოთხის გასწორება, ოთხი ზედიზედ) ონლაინ მეგობართან — ჩამოაგდე დისკები და პირველმა დააწყვე ოთხი. რეგისტრაცია არ გჭირდება.',
+    'ითამაშე Connect 4 (ოთხი ზედიზედ) ონლაინ მეგობართან — ჩამოაგდე დისკები და დააწყე პირველმა ოთხი ქვა ერთ ხაზზე. რეგისტრაცია არ გჭირდება.',
   'games.connect4.shortDescription':
     'ჩამოაგდე დისკები 7×6 დაფაზე გრავიტაციით. ვინც პირველი დააწყობს ოთხს — იგებს.',
   'games.connect4.rules':

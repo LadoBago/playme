@@ -11,6 +11,11 @@ export const en = {
   'site.titleShort': 'PlayMe — Play casual games online with a friend',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play casual games online with a friend, no signup.',
+  // Homepage-specific meta/OG description. Distinct from `site.tagline`
+  // (which stays the site-wide OG fallback and the per-room default) so
+  // the landing page's search snippet reads on its own terms.
+  'site.homeMetaDescription':
+    'Play board and strategy games online with a friend — no signup. Pick a game and share a link. Free to play.',
   // Short brand tagline used as the OG image kicker and the landing
   // hero subtitle, where the descriptive tagline (above) is too long.
   // Brand kit voice: short, punchy, board-game flavored.
