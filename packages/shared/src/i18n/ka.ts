@@ -27,8 +27,8 @@ export const ka: Record<EnKey, string> = {
   'site.catalog.title': 'აირჩიე თამაში',
 
   // --- Game names + rules ---
-  'games.tictactoe.name': 'ჯვარედინა',
-  'games.tictactoe.metaTitle': 'ჯვარედინა ონლაინ — Tic Tac Toe (ჯვარ-ნული) | PlayMe',
+  'games.tictactoe.name': 'ჯვარ-ნული',
+  'games.tictactoe.metaTitle': 'ჯვარ-ნული ონლაინ — Tic Tac Toe | PlayMe',
   'games.tictactoe.metaDescription':
     'ითამაშე ჯვარ-ნული (X და 0, იქსიკი და ნოლიკი) ონლაინ მეგობართან — 3×3, 6×6 ან 9×9 დაფაზე. რეგისტრაცია არ გჭირდება.',
   'games.tictactoe.shortDescription':
