@@ -413,6 +413,27 @@ textarea {
   gap: 1rem;
 }
 
+/* --- Site footer ---
+ * Global, low-emphasis © link in the normal document flow (below page
+ * content). Secondary affordance, so the link tracks --fg-muted → --fg
+ * on hover rather than the brand accent. */
+
+.site-footer {
+  text-align: center;
+  padding: 2.5rem 1.5rem 1.5rem;
+  font-size: 0.85rem;
+}
+
+.site-footer a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
 .card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

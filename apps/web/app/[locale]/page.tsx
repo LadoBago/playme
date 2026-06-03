@@ -53,7 +53,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function HomePage({ params }: PageProps) {
   const locale = await resolveLocale(params);
-  const { t } = createTranslator(locale);
+  const { t, tf } = createTranslator(locale);
+  // Request-time render (the root layout pins `dynamic = 'force-dynamic'`
+  // for the whole subtree) keeps the year current without a redeploy.
+  const year = new Date().getFullYear();
 
   return (
     <main className="container stack" style={{ gap: '2.5rem' }}>
@@ -110,6 +113,15 @@ export default async function HomePage({ params }: PageProps) {
           <Step n={3} title={t('site.howItWorks.step3.title')} body={t('site.howItWorks.step3.body')} />
         </div>
       </section>
+
+      <footer className="site-footer">
+        <Link
+          href={localizedHref('/copyright', locale)}
+          aria-label={t('copyright.title')}
+        >
+          {tf('site.footer.copyright', { year })}
+        </Link>
+      </footer>
     </main>
   );
 }
