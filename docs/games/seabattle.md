@@ -48,8 +48,9 @@ The opponent's un-hit fleet **never crosses the wire pre-terminal** — projecti
 ## Wire vocabulary (module ↔ renderer agreement, opaque to the platform)
 
 - **Move payload:** `{ x: 0–9, y: 0–9 }` — a shot at the opponent's grid.
-- **Setup payload:** `{ ships: [{ x, y, length, horizontal }, …] }` — exactly 10 entries.
-- **Reject keys:** `seabattle.invalidCell`, `seabattle.alreadyShot`, `seabattle.invalidFleet`, `seabattle.alreadyCommitted`, `seabattle.notInSetup`.
+- **Setup payload:** `{ ships: [{ x, y, length, horizontal }, …] }` — exactly 10 entries; `(x, y)` is the ship's top-left anchor.
+- **Module reject keys** (`SeaBattleErrors`, following the catalog-wide `errors.*` naming so the shared i18n catalog serves them): `errors.move.alreadyShot`, `errors.setup.invalidFleet` (one key for every composition violation — legal clients generate fleets locally, so an invalid commit is a bug or tampering), plus the shared `errors.move.outOfBounds` and `errors.validation.move`. The platform owns `errors.setup.notInSetup` and `errors.setup.alreadyCommitted` (seam C rejects double commits before the module is consulted).
+- **Live projection shape** (`SerializeFor`): `{ phase: "setup"|"battle", viewerSide?, yourFleet?, shots: { first: [{x,y,result}], second: […] }, sunk: { first: [ships sunk BY first], second: […] } }` — public knowledge (shot results, sunk ships) for everyone, plus the viewer's own fleet; `result ∈ miss|hit|sunk`, with earlier hits on a finished ship retroactively reading `sunk`. The terminal reveal ships the full persisted shape instead: `{ firstFleet, secondFleet, shotsByFirst, shotsBySecond }` — the renderer handles both.
 
 State shape, result encoding, and these keys are module-owned; the platform routes them opaquely (CLAUDE.md §7 "Platform thinness").
 
