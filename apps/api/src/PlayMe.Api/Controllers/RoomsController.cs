@@ -5,9 +5,11 @@ using PlayMe.Api.Hubs;
 using PlayMe.Api.Http;
 using PlayMe.Api.RateLimiting;
 using PlayMe.Api.Security;
+using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.CreateRoom;
 using PlayMe.Application.Commands.JoinRoom;
 using PlayMe.Application.Dtos;
+using PlayMe.Application.Mapping;
 using PlayMe.Application.Queries.GetRoom;
 using PlayMe.Domain.Platform;
 
@@ -27,20 +29,26 @@ public sealed class RoomsController : ControllerBase
     private readonly JoinRoomHandler _joinRoom;
     private readonly GetRoomHandler _getRoom;
     private readonly SessionCookieWriter _cookieWriter;
+    private readonly SessionCookieReader _cookieReader;
     private readonly IHubContext<RoomHub> _hubContext;
+    private readonly IGameModuleRegistry _games;
 
     public RoomsController(
         CreateRoomHandler createRoom,
         JoinRoomHandler joinRoom,
         GetRoomHandler getRoom,
         SessionCookieWriter cookieWriter,
-        IHubContext<RoomHub> hubContext)
+        SessionCookieReader cookieReader,
+        IHubContext<RoomHub> hubContext,
+        IGameModuleRegistry games)
     {
         _createRoom = createRoom;
         _joinRoom = joinRoom;
         _getRoom = getRoom;
         _cookieWriter = cookieWriter;
+        _cookieReader = cookieReader;
         _hubContext = hubContext;
+        _games = games;
     }
 
     /// <summary>
@@ -101,14 +109,16 @@ public sealed class RoomsController : ControllerBase
         // Notify the host's already-open SignalR connection (if any) that
         // the seat is now filled. The match doesn't start until both sides
         // are *also* connected — that transition fires from RoomHub.JoinRoom
-        // (RegisterPresence) per §2.9.
+        // (RegisterPresence) per §2.9. No per-role projection needed here:
+        // a just-joined room is in WaitingForOpponent with no match, so
+        // there is no game state to hide (RoomViewProjector would no-op).
         await _hubContext.Clients
             .Group(RoomHub.GroupName(value.Room.Code.Value))
             .SendAsync(RoomHubEvents.OpponentJoined,
                 new { room = value.Room },
                 ct);
 
-        return Ok(value.Room);
+        return Ok(RoomViewProjector.ForViewer(value.Room, Role.Challenger, _games));
     }
 
     /// <summary>
@@ -125,6 +135,14 @@ public sealed class RoomsController : ControllerBase
     /// rule. The per-IP rate limit
     /// (<see cref="RateLimitingPolicies.RoomsGet"/>) caps abuse if a code
     /// leaks; entropy makes enumeration intractable.
+    /// <para>
+    /// Hidden-state games (Sprint 10 seam A): the snapshot is projected
+    /// for the caller's role when a valid session cookie for this room is
+    /// presented, and to the module's public view otherwise. Without this,
+    /// a player could fetch the full state — including the opponent's
+    /// hidden information — by hitting this endpoint with the room code
+    /// they already know.
+    /// </para>
     /// </remarks>
     [HttpGet("{code}")]
     [EnableRateLimiting(RateLimitingPolicies.RoomsGet)]
@@ -132,7 +150,19 @@ public sealed class RoomsController : ControllerBase
         [FromRoute] string code, CancellationToken ct)
     {
         var result = await _getRoom.HandleAsync(new GetRoomQuery(code), ct);
-        return result.ToActionResult();
+        if (!result.Succeeded)
+        {
+            return AppResultActionExtensions.ToProblem(result.Error!, result.Detail);
+        }
+
+        var room = result.Value!;
+        var session = _cookieReader.Read(Request);
+        Role? viewer = session is not null
+            && string.Equals(session.RoomCode.Value, room.Code.Value, StringComparison.Ordinal)
+            ? session.Role
+            : null;
+
+        return Ok(RoomViewProjector.ForViewer(room, viewer, _games));
     }
 
     /// <summary>

@@ -50,6 +50,8 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 
 Each module owns: its board representation, legal-move validation, win/draw detection, and its UI rendering. **Do not extract a shared rules engine across modules** — that decision is intentional. Common features live only in the platform layer.
 
+**Optional capabilities.** Beyond `IGameModule`, a module may opt into platform capabilities by implementing additional interfaces; the platform dispatches by capability check, never by `GameId`. Currently: `IHiddenStateGame` (Sprint 10 seam A) — per-viewer wire projection for games with hidden information; persistence keeps the full state, projection applies only while the match has no outcome, and a `null` viewer side selects the module's public view (see [`security.md`](security.md) §4 and [`state.md`](state.md) §2.3 for the delivery rules).
+
 ### 2.1 Game rules (canonical spec)
 
 The authoritative per-game rules live in one file per game under [`docs/games/`](games/) (linked from the table above). The server validates every move against them. Per-module READMEs (`apps/api/src/PlayMe.Domain/Games/<game>/RULES.md`) may expand on edge cases, but the canonical statement lives in the game's doc.
