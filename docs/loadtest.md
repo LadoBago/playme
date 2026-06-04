@@ -1,6 +1,6 @@
 # Load test
 
-Basic concurrent-rooms load test for the PlayMe API and the SignalR + Redis path. Closes the last Sprint 7 item from [`roadmap.md`](roadmap.md): _"verify the API and Redis hold up."_
+Basic concurrent-rooms load test for the PlayMe API and the SignalR + Redis path. Closes the last Sprint 7 item from [`roadmap/sprint-07-hardening.md`](roadmap/sprint-07-hardening.md): _"verify the API and Redis hold up."_
 
 The script lives in [`infra/loadtest/`](../infra/loadtest/) as a standalone `@playme/loadtest` workspace package — runnable but explicitly **not** part of the production build pipeline.
 

@@ -81,7 +81,7 @@ Hard rules:
 | [`docs/security.md`](docs/security.md) | Threat model, secrets, input validation, room/player identity & auth, rate limits, headers, CORS |
 | [`docs/observability-and-i18n.md`](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs, error code naming |
 | [`docs/deployment.md`](docs/deployment.md) | **Production topology** (Vercel + Cloudflare + Azure West Europe), DNS/TLS, deploy pipeline, alerting, non-obvious decisions and gotchas, known follow-ups, cost |
-| [`docs/roadmap.md`](docs/roadmap.md) | Implementation sprints, deferred-to-v2 questions, deferred-polish follow-ups |
+| [`docs/roadmap/`](docs/roadmap/) | Implementation sprints (one file per sprint + index), deferred-to-v2 questions (`open-questions.md`), deferred-polish follow-ups (`deferred-polish.md`) |
 
 ---
 

@@ -1,0 +1,9 @@
+# Deferred polish / known follow-ups
+
+In-scope-for-v1 items that have been deliberately postponed but should be picked up before launch (or shortly after). Distinct from [`open-questions.md`](open-questions.md) "deferred to v2" — these are smaller polishes that don't change scope, just timing. Pick from this list when there's bandwidth between sprints.
+
+- **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform.md`](../platform.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
+
+- **Host clock-picker + size-driven `tictactoe` defaults.** The configure page has no host-side time-limit picker today; the room inherits the module's `DefaultClockBudget`. Sprint 9 dropped the planned `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` size-driven preselect because there's nothing for it to *pre*-select — adding the 1/3/10-min segmented control (the platform invariant in [`platform.md`](../platform.md) §1 #3) unblocks both the per-game default and per-room time-limit selection in one go. Likely needs a new `timeLimit` field on `CreateRoomCommand` / `Room` / `RoomDto` plus the segmented control on the configure form, mirroring the side-mode picker.
+
+When picking up an item, move it into the relevant sprint file or open a feature branch directly.
