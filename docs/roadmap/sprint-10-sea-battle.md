@@ -94,3 +94,37 @@ Cross-cutting doc touches land inside the listed PRs, not after ([`sprint-09-gam
 - Setup: reroll/commit verified; both-committed starts the clock; the 2-min deadline forfeits an uncommitted side; a mid-setup disconnect adjudicates per the grace rules; rematch re-enters setup with fresh fleets.
 - Existing three games show **zero behavioral change**; each seam PR's platform diff is confined to its seam (`git diff` check per the Sprint 8/9 precedent).
 - Lighthouse green on `/play/seabattle` in both locales and both themes.
+
+## Status
+
+**Shipped 2026-06-04.** All six planned PRs plus two follow-up tunings and one dev-tooling fix, squash-merged in order:
+
+| # | PR | What |
+|---:|---|---|
+| 129 | docs | `platform-and-games.md` → `platform.md` + `docs/games/` split (pre-work) |
+| 130 | docs | `roadmap.md` → `docs/roadmap/` one-file-per-sprint split (pre-work) |
+| 131 | docs | This plan + [`games/seabattle.md`](../games/seabattle.md) canonical spec |
+| 132 | Seam A | `IHiddenStateGame` per-viewer projection, per-role SignalR groups, terminal-reveal rule, anonymous-GET projection |
+| 133 | Seam B | `MoveResult.KeepTurn`; Sprint 8 synthetic-pass note scope-limited |
+| 134 | Seam C | `SettingUp` status, `ISetupGame`, `SubmitSetup`, setup-deadline sweeper, setup-phase presence/grace rules |
+| 135 | module | `seabattle` domain module + parser + 39 tests; **platform diff vs main empty** |
+| 136 | web | Renderer (setup screen + two-grid battle), catalog cutover to 4 tiles, i18n, SEO; wide side-by-side / narrow swipe-pager board layouts |
+| 137 | fix | Dev sessions unregister leftover prod service workers (see variances) |
+| 138 | web | Hit-chain feedback line + fleet-commit pending state |
+
+Exit-criteria verification:
+
+- Full e2e (setup → hit-chains → win reveal → rematch through setup with swapped sides) played live in Chrome and Safari, both themes, 2026-06-04.
+- Hidden information: enforced by construction (seam A projection) and verified by the seam-A suite + `SeaBattleGameModuleTests` projection tests (opponent fleets absent from every live projection incl. the anonymous snapshot); a dedicated manual network-tab audit wasn't separately performed — the projection tests are the load-bearing guarantee.
+- Turn retention, setup deadline forfeit/expiry, setup disconnect-grace, fresh-fleet rematches: covered by the seam B/C and module suites (273 API tests at module merge).
+- Platform diff check: `git diff` over `Domain/Platform/`, `Api/Hubs/`, `Infrastructure/Redis/`, Application handlers/mapping empty at PR 135.
+- Lighthouse (desktop preset, `next start`, 2026-06-04): `/play/seabattle` ka **99/100/96/100**, en **99/100/96/100** (perf/a11y/BP/SEO) — the 96 Best Practices matches the known console-audit delta from Sprint 6.
+
+Variances from the plan worth recording:
+
+- **Reject keys follow the catalog-wide `errors.*` convention** (`errors.move.alreadyShot`, `errors.setup.invalidFleet`), not the spec's early `seabattle.*` placeholders — the shared i18n catalog serves them like every other key. Spec updated in PR 135.
+- **One-commit-per-side became platform-enforced** (`errors.setup.alreadyCommitted` from platform bookkeeping on `Match`) rather than module-validated — the platform owns the setup lifecycle; the module owns payload validation. `IsSetupComplete` stays the module's call, so asymmetric setup remains possible without platform changes.
+- **Setup-phase presence tracks like `InProgress`** (uncommitted disconnect → grace → `Outcome.Disconnect`; committed players owe nothing until the match starts) — decided with the product owner during planning; the deadline forfeits a lone uncommitted side via `Outcome.Timeout` with the never-started clock left untouched (`Match.EndDuringSetup`).
+- **Board-layout tunings landed post-playtest** (PRs 136/138): wide containers show fleet-left / enemy-right side by side (container query + row-reverse), narrow screens get a scroll-snap swipe pager with pill tabs; a feedback line makes hit-retains-turn legible; the commit button gained a pending state.
+- **Dev-tooling detour (PR 137):** the first smoke test surfaced that a service worker from past `next start` sessions serves `/_next/static/*` cache-first to later dev sessions (Turbopack chunk names are path-stable; Safari reloads never bypass the SW) — presenting as hydration mismatches and "stale catalog" errors. Dev sessions now actively unregister leftover workers; `sw.js` `CACHE_VERSION` bumped to v2.
+- **Setup countdown deferred** to [`deferred-polish.md`](deferred-polish.md) — an honest countdown needs a server-stamped deadline in `SetupStateDto`; a client-local timer would overstate remaining time after refresh.

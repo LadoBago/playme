@@ -18,7 +18,7 @@ One file per sprint; a sprint's file is the plan before it ships and the record 
 | [7](sprint-07-hardening.md) | Hardening for launch | Closed 2026-05-20 — public launch |
 | [8](sprint-08-reversi.md) | Reversi | Closed 2026-05-22 |
 | [9](sprint-09-game-options.md) | Per-game options + unified Tic-Tac-Toe | Shipped 2026-05-23 |
-| [10](sprint-10-sea-battle.md) | Sea Battle — first hidden-information game + three platform seams | Planned |
+| [10](sprint-10-sea-battle.md) | Sea Battle — first hidden-information game + three platform seams | Shipped 2026-06-04 |
 
 ## Roadmap rules
 

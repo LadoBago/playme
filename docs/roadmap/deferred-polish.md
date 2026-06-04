@@ -8,4 +8,6 @@ In-scope-for-v1 items that have been deliberately postponed but should be picked
 
 - **Manual fleet placement for sea battle.** Sprint 10 ships random-with-reroll placement only ([`games/seabattle.md`](../games/seabattle.md)). Manual drag-and-drop (or tap-to-place) placement reuses the same `SubmitSetup` commit endpoint and server-side validation unchanged — the diff is confined to the setup-screen UI in `apps/web/features/games/seabattle/`. Pick up once the game has proven itself in the catalog.
 
+- **Setup-phase countdown in the UI.** The 2-minute setup deadline (seam C, `ISetupGame.SetupBudget`) is invisible to players — a dawdler gets forfeited with no warning. A client-only timer counting from screen-mount would *lie* after a refresh/reconnect (showing more time than the sweeper will grant), so the honest version needs the server to expose the deadline: stamp it on the `Match` when the room enters `SettingUp`, carry it in `SetupStateDto` (additive; omitted for setup-less games), count down from it in the setup screen. ~60 lines across Domain/DTO/web + tests. Decided 2026-06-04 to park rather than block the sprint.
+
 When picking up an item, move it into the relevant sprint file or open a feature branch directly.
