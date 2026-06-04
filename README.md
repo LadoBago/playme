@@ -92,7 +92,7 @@ Detailed specs live in [`docs/`](docs/). Read the relevant one before touching t
 | [observability-and-i18n.md](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs |
 | [deployment.md](docs/deployment.md) | Production topology, DNS/TLS, deploy pipeline, gotchas, cost |
 | [loadtest.md](docs/loadtest.md) | Load-test harness |
-| [roadmap.md](docs/roadmap.md) | Sprints, deferred items |
+| [roadmap/](docs/roadmap/) | Sprints (one file each), deferred items |
 
 ## Contributing
 

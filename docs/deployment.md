@@ -2,7 +2,7 @@
 
 The production stack for **PlayMe** as it actually exists. The shape is the deliberate kind — it works around real things we hit while bringing the v1 up. State + traps, not a step-by-step runbook (the scripts under `infra/` are the runbook; runbooks rot, the reasoning behind them is what stays useful).
 
-For the API/web split itself, see [`architecture.md`](architecture.md). For security headers and CORS policy, [`security.md`](security.md). For roadmap context, [`roadmap.md`](roadmap.md).
+For the API/web split itself, see [`architecture.md`](architecture.md). For security headers and CORS policy, [`security.md`](security.md). For roadmap context, [`roadmap/`](roadmap/).
 
 ---
 
@@ -174,7 +174,7 @@ These aren't blocking launch but each is on the list:
 - ~~**Persist Data Protection keys to Redis.**~~ Done. `Microsoft.AspNetCore.DataProtection.StackExchangeRedis` is wired in `AddApi.cs` against the shared `IConnectionMultiplexer`; keys live at `playme:dp-keys` in the same Redis we use for state + the SignalR backplane. `SetApplicationName("playme-api")` namespaces them. Session cookies survive container restarts/redeploys; the key ring is also implicitly shared if we ever horizontally scale.
 - ~~**Re-create the Sensitive-flagged Vercel env vars.**~~ Done — `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` are now inlined into the client bundle.
 - ~~**Revisit Azure App Service Managed Certificate.**~~ Done on 2026-05-18 — `.ge` provisioning now works, cert is bound to `api.playme.ge` via SNI, CF→origin upgraded to **Full (strict)**. CF stays in front for WebSocket proxying (§6.2) and Tbilisi-POP latency, not for TLS termination. Path to dropping CF entirely is now clean if we ever want it (see §6.1).
-- **Move on-call channel beyond email** when a team forms. See [`security.md`](security.md) §11 / [`roadmap.md`](roadmap.md) §2.
+- **Move on-call channel beyond email** when a team forms. See [`security.md`](security.md) §11 / [`roadmap/open-questions.md`](roadmap/open-questions.md).
 - **Native-speaker pass over the rest of `packages/shared/src/i18n/ka.ts`.** Two real Georgian issues slipped past mechanical reviews; the remaining ~100 keys may have similar ones.
 
 ---
