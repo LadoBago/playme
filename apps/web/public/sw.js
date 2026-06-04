@@ -19,7 +19,7 @@
 // Bump this whenever the SW's behaviour changes — the activate
 // handler drops every cache name that doesn't match the current
 // version, which is how rollouts invalidate stale entries.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2'; // v2: bust caches poisoned by pre-2026-06-04 dev sessions
 const CACHE_NAME = `playme-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
