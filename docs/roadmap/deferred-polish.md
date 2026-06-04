@@ -6,4 +6,6 @@ In-scope-for-v1 items that have been deliberately postponed but should be picked
 
 - **Host clock-picker + size-driven `tictactoe` defaults.** The configure page has no host-side time-limit picker today; the room inherits the module's `DefaultClockBudget`. Sprint 9 dropped the planned `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` size-driven preselect because there's nothing for it to *pre*-select — adding the 1/3/10-min segmented control (the platform invariant in [`platform.md`](../platform.md) §1 #3) unblocks both the per-game default and per-room time-limit selection in one go. Likely needs a new `timeLimit` field on `CreateRoomCommand` / `Room` / `RoomDto` plus the segmented control on the configure form, mirroring the side-mode picker.
 
+- **Manual fleet placement for sea battle.** Sprint 10 ships random-with-reroll placement only ([`games/seabattle.md`](../games/seabattle.md)). Manual drag-and-drop (or tap-to-place) placement reuses the same `SubmitSetup` commit endpoint and server-side validation unchanged — the diff is confined to the setup-screen UI in `apps/web/features/games/seabattle/`. Pick up once the game has proven itself in the catalog.
+
 When picking up an item, move it into the relevant sprint file or open a feature branch directly.
