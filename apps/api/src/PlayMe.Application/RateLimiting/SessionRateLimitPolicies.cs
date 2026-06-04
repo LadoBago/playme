@@ -35,4 +35,13 @@ public static class SessionRateLimitPolicies
     /// floor tight without partitioning quota per sub-action.</summary>
     public static readonly RateLimitPolicy Rematch =
         new("rematch", Limit: 5, Window: TimeSpan.FromSeconds(10));
+
+    /// <summary>
+    /// SubmitSetup is one-shot per side per match (Sprint 10 seam C) —
+    /// rerolls are client-local and never reach the server. The limit
+    /// absorbs double-clicks on the commit button and keeps a flood off
+    /// the room-lock path.
+    /// </summary>
+    public static readonly RateLimitPolicy SubmitSetup =
+        new("setup", Limit: 5, Window: TimeSpan.FromSeconds(10));
 }

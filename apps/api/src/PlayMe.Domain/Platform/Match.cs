@@ -18,6 +18,16 @@ public sealed class Match
     public MatchClock Clock { get; private set; }
     public Outcome? Outcome { get; private set; }
 
+    /// <summary>Platform-side setup bookkeeping (Sprint 10 seam C): which
+    /// roles have committed their one-and-final setup payload. Always false
+    /// for setup-less games. Completion itself is the module's call
+    /// (<see cref="ISetupGame.IsSetupComplete"/>) — these flags exist for
+    /// double-commit rejection and deadline adjudication.</summary>
+    public bool HostSetupCommitted { get; private set; }
+
+    /// <inheritdoc cref="HostSetupCommitted"/>
+    public bool ChallengerSetupCommitted { get; private set; }
+
     public bool IsEnded => Outcome is not null;
 
     private Match(
@@ -26,7 +36,9 @@ public sealed class Match
         string sideToMove,
         int moveCount,
         MatchClock clock,
-        Outcome? outcome)
+        Outcome? outcome,
+        bool hostSetupCommitted,
+        bool challengerSetupCommitted)
     {
         GameId = gameId;
         State = state;
@@ -34,6 +46,8 @@ public sealed class Match
         MoveCount = moveCount;
         Clock = clock;
         Outcome = outcome;
+        HostSetupCommitted = hostSetupCommitted;
+        ChallengerSetupCommitted = challengerSetupCommitted;
     }
 
     public static Match Start(
@@ -49,7 +63,9 @@ public sealed class Match
             firstMoveSide,
             moveCount: 0,
             clock: MatchClock.Start(clockBudget, firstMover, startedAt),
-            outcome: null);
+            outcome: null,
+            hostSetupCommitted: false,
+            challengerSetupCommitted: false);
 
     /// <summary>
     /// Rehydrate a match snapshot from persistence. Used by the Infrastructure
@@ -61,8 +77,77 @@ public sealed class Match
         string sideToMove,
         int moveCount,
         MatchClock clock,
-        Outcome? outcome) =>
-        new(gameId, state, sideToMove, moveCount, clock, outcome);
+        Outcome? outcome,
+        bool hostSetupCommitted = false,
+        bool challengerSetupCommitted = false) =>
+        new(gameId, state, sideToMove, moveCount, clock, outcome,
+            hostSetupCommitted, challengerSetupCommitted);
+
+    /// <summary>
+    /// Commit one role's setup payload (Sprint 10 seam C): replace the
+    /// state with the module's post-<see cref="ISetupGame.ApplySetup"/>
+    /// result and record the commitment. No clock, turn, or move-count
+    /// effect — setup actions are not moves.
+    /// </summary>
+    public void ApplySetup(IGameState newState, Role committer)
+    {
+        if (IsEnded)
+        {
+            throw new DomainException("Cannot apply a setup to a finished match.");
+        }
+        if (HasCommittedSetup(committer))
+        {
+            throw new DomainException($"{committer} has already committed their setup.");
+        }
+
+        State = newState;
+        switch (committer)
+        {
+            case Role.Host: HostSetupCommitted = true; break;
+            case Role.Challenger: ChallengerSetupCommitted = true; break;
+        }
+    }
+
+    public bool HasCommittedSetup(Role role) => role switch
+    {
+        Role.Host => HostSetupCommitted,
+        Role.Challenger => ChallengerSetupCommitted,
+        _ => false,
+    };
+
+    /// <summary>
+    /// Start the chess clock when the setup phase completes
+    /// (docs/platform.md §1 #12: the clock starts when the match enters
+    /// InProgress). The clock was created at SettingUp entry with
+    /// <c>LastTickAt</c> = the entry moment; re-stamping it to
+    /// <paramref name="now"/> discards the unclocked setup time so the
+    /// first mover starts from the full budget.
+    /// </summary>
+    public void BeginPlayAfterSetup(DateTimeOffset now)
+    {
+        if (IsEnded)
+        {
+            throw new DomainException("Cannot start play on a finished match.");
+        }
+        Clock = Clock with { LastTickAt = now };
+    }
+
+    /// <summary>
+    /// End the match during the setup phase (setup-deadline forfeit →
+    /// <see cref="Timeout"/>; disconnect-grace elapse → <see cref="Disconnect"/>).
+    /// Unlike <see cref="ApplyTimeout"/> / <see cref="ApplyDisconnect"/>,
+    /// the clock is left untouched — it never started, and zeroing the
+    /// nominal first mover's time would misattribute the forfeit on the
+    /// post-match screen.
+    /// </summary>
+    public void EndDuringSetup(Outcome outcome)
+    {
+        if (IsEnded)
+        {
+            throw new DomainException("Cannot end a finished match.");
+        }
+        Outcome = outcome;
+    }
 
     /// <summary>
     /// Commit an accepted move's effect: swap the side to move, increment

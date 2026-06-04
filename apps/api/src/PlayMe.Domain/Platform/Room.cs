@@ -187,12 +187,17 @@ public sealed class Room
     }
 
     /// <summary>
-    /// Transition WaitingForOpponent → InProgress and create the first match
-    /// when both players are registered AND both currently connected via
-    /// SignalR (CLAUDE.md §2.9). Idempotent — calls when the room isn't
-    /// ready, or is already in progress, do nothing. Returns true if this
-    /// call performed the transition (so the caller can schedule the first
-    /// timeout check).
+    /// Transition WaitingForOpponent onward and create the first match when
+    /// both players are registered AND both currently connected via SignalR
+    /// (CLAUDE.md §2.9). Setup-less games go straight to
+    /// <see cref="RoomStatus.InProgress"/>; games whose module implements
+    /// <see cref="ISetupGame"/> enter <see cref="RoomStatus.SettingUp"/>
+    /// instead (Sprint 10 seam C) — the match aggregate exists from here
+    /// (it holds the accumulating setup state) but the clock only starts
+    /// at <see cref="CompleteSetup"/>. Idempotent — calls when the room
+    /// isn't ready, or has already left WaitingForOpponent, do nothing.
+    /// Returns true if this call performed the transition (the caller
+    /// checks <see cref="Status"/> to know which deadline to schedule).
     /// </summary>
     public bool TryStartMatch(IGameModule module, TimeSpan clockBudget, DateTimeOffset now)
     {
@@ -213,8 +218,39 @@ public sealed class Room
             firstMover,
             clockBudget,
             now);
-        Status = RoomStatus.InProgress;
+        Status = module is ISetupGame ? RoomStatus.SettingUp : RoomStatus.InProgress;
         return true;
+    }
+
+    /// <summary>
+    /// Transition <see cref="RoomStatus.SettingUp"/> → <see cref="RoomStatus.InProgress"/>
+    /// once the module reports setup complete (Sprint 10 seam C). Re-stamps
+    /// the clock so the first mover starts from the full budget — the setup
+    /// phase is unclocked.
+    /// </summary>
+    public void CompleteSetup(DateTimeOffset now)
+    {
+        if (Status != RoomStatus.SettingUp || CurrentMatch is null)
+        {
+            throw new DomainException($"Cannot complete setup in status {Status}.");
+        }
+        CurrentMatch.BeginPlayAfterSetup(now);
+        Status = RoomStatus.InProgress;
+    }
+
+    /// <summary>
+    /// Terminal expiry for a setup phase nobody finished (Sprint 10 seam C:
+    /// the setup deadline elapsed with neither side committed). Mirrors the
+    /// WaitingForOpponent expiry — no match outcome, no score change; the
+    /// room is simply dead.
+    /// </summary>
+    public void ExpireSetup()
+    {
+        if (Status != RoomStatus.SettingUp)
+        {
+            throw new DomainException($"Cannot expire setup in status {Status}.");
+        }
+        Status = RoomStatus.Expired;
     }
 
     public Player? PlayerFor(Role role) => role switch
@@ -366,7 +402,10 @@ public sealed class Room
             now);
 
         RematchOffererRole = null;
-        Status = RoomStatus.InProgress;
+        // Setup games re-enter the setup phase on every rematch — fresh
+        // fleets each match (docs/games/seabattle.md). The side swap above
+        // already happened, so the first-shot advantage alternates.
+        Status = module is ISetupGame ? RoomStatus.SettingUp : RoomStatus.InProgress;
     }
 
     /// <summary>End the current match and transition the room to Ended.

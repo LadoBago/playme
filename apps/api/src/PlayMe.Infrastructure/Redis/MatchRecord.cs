@@ -21,4 +21,8 @@ internal sealed record MatchRecord(
     long ChallengerClockMs,
     Role ActivePlayer,
     DateTimeOffset LastTickAt,
-    OutcomeRecord? Outcome);
+    OutcomeRecord? Outcome,
+    // Setup-phase commit flags (Sprint 10 seam C). Default false so blobs
+    // persisted before the seam deserialize unchanged.
+    bool HostSetupCommitted = false,
+    bool ChallengerSetupCommitted = false);

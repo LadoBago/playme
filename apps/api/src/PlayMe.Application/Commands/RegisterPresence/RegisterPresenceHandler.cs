@@ -14,6 +14,7 @@ public sealed class RegisterPresenceHandler
     private readonly IDisconnectGraceScheduler _graces;
     private readonly IPostMatchExitGraceScheduler _postMatchGraces;
     private readonly IRoomExpiryScheduler _expiry;
+    private readonly ISetupDeadlineScheduler _setupDeadlines;
 
     public RegisterPresenceHandler(
         IRoomRepository rooms,
@@ -22,7 +23,8 @@ public sealed class RegisterPresenceHandler
         ITimeoutScheduler timeouts,
         IDisconnectGraceScheduler graces,
         IPostMatchExitGraceScheduler postMatchGraces,
-        IRoomExpiryScheduler expiry)
+        IRoomExpiryScheduler expiry,
+        ISetupDeadlineScheduler setupDeadlines)
     {
         _rooms = rooms;
         _games = games;
@@ -31,6 +33,7 @@ public sealed class RegisterPresenceHandler
         _graces = graces;
         _postMatchGraces = postMatchGraces;
         _expiry = expiry;
+        _setupDeadlines = setupDeadlines;
     }
 
     public async Task<AppResult<RegisterPresenceResult>> HandleAsync(
@@ -59,7 +62,11 @@ public sealed class RegisterPresenceHandler
                     return AppResult<RegisterPresenceResult>.Fail(PlatformErrors.SessionUnauthorized);
                 }
 
-                var wasInProgress = room.Status == RoomStatus.InProgress;
+                // SettingUp counts as "live" for presence purposes (Sprint 10
+                // seam C): disconnects during setup are tracked like in-match
+                // disconnects, so reconnects must cancel the pending grace
+                // and surface as OpponentReconnected.
+                var wasLive = room.Status is RoomStatus.InProgress or RoomStatus.SettingUp;
                 var wasPostMatch = room.Status is RoomStatus.Ended or RoomStatus.AwaitingRematch;
                 var wasConnected = cmd.CallerRole switch
                 {
@@ -82,7 +89,7 @@ public sealed class RegisterPresenceHandler
 
                 // Cancel any pending disconnect-grace entry — the caller is
                 // back, so they haven't abandoned.
-                if (wasInProgress && !wasConnected)
+                if (wasLive && !wasConnected)
                 {
                     await _graces.CancelAsync(code, cmd.CallerRole, ct);
                 }
@@ -97,24 +104,36 @@ public sealed class RegisterPresenceHandler
                     await _postMatchGraces.CancelAsync(code, cmd.CallerRole, ct);
                 }
 
-                // Schedule the first timeout check when the match just
-                // started. Subsequent timeouts are re-scheduled in
-                // SubmitMoveHandler on every accepted move.
+                // Schedule the appropriate first deadline when the room just
+                // left WaitingForOpponent. Setup games (Sprint 10 seam C)
+                // enter SettingUp — unclocked, bounded by the module's
+                // SetupBudget; everything else starts the chess clock and
+                // gets a no-move timeout check (subsequent ones are
+                // re-scheduled in SubmitMoveHandler on every accepted move).
                 if (matchJustStarted && room.CurrentMatch is not null)
                 {
-                    await _timeouts.ScheduleAsync(
-                        code,
-                        room.CurrentMatch.Clock.ActivePlayerDeadline(),
-                        ct);
+                    if (room.Status == RoomStatus.SettingUp
+                        && _games.GetModule(room.GameId) is ISetupGame setupGame)
+                    {
+                        await _setupDeadlines.ScheduleAsync(
+                            code, now + setupGame.SetupBudget, ct);
+                    }
+                    else
+                    {
+                        await _timeouts.ScheduleAsync(
+                            code,
+                            room.CurrentMatch.Clock.ActivePlayerDeadline(),
+                            ct);
+                    }
 
-                    // Authoritative WaitingForOpponent → InProgress
-                    // transition point. Cancel the unjoined-expiry entry
-                    // so the sweeper doesn't fire room_expired for a
-                    // room that actually made it to gameplay.
+                    // Authoritative exit from WaitingForOpponent. Cancel the
+                    // unjoined-expiry entry so the sweeper doesn't fire
+                    // room_expired for a room that actually made it to
+                    // gameplay (or setup).
                     await _expiry.CancelAsync(code, room.GameId, ct);
                 }
 
-                var reconnected = wasInProgress && !wasConnected;
+                var reconnected = wasLive && !wasConnected;
 
                 return AppResult<RegisterPresenceResult>.Ok(
                     new RegisterPresenceResult(

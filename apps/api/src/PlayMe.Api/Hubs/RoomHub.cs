@@ -10,6 +10,7 @@ using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
+using PlayMe.Application.Commands.SubmitSetup;
 using PlayMe.Application.Dtos;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
@@ -37,6 +38,7 @@ public sealed class RoomHub : Hub
     private readonly RegisterPresenceHandler _registerPresence;
     private readonly ReleasePresenceHandler _releasePresence;
     private readonly SubmitMoveHandler _submitMove;
+    private readonly SubmitSetupHandler _submitSetup;
     private readonly ResignHandler _resign;
     private readonly ExitRoomHandler _exitRoom;
     private readonly OfferRematchHandler _offerRematch;
@@ -49,6 +51,7 @@ public sealed class RoomHub : Hub
         RegisterPresenceHandler registerPresence,
         ReleasePresenceHandler releasePresence,
         SubmitMoveHandler submitMove,
+        SubmitSetupHandler submitSetup,
         ResignHandler resign,
         ExitRoomHandler exitRoom,
         OfferRematchHandler offerRematch,
@@ -60,6 +63,7 @@ public sealed class RoomHub : Hub
         _registerPresence = registerPresence;
         _releasePresence = releasePresence;
         _submitMove = submitMove;
+        _submitSetup = submitSetup;
         _resign = resign;
         _exitRoom = exitRoom;
         _offerRematch = offerRematch;
@@ -174,7 +178,9 @@ public sealed class RoomHub : Hub
         var value = result.Value!;
         if (value.MatchJustStarted)
         {
-            await SendToRoomAsync(RoomHubEvents.MatchStarted,
+            // Setup games (Sprint 10 seam C) enter SettingUp instead of
+            // InProgress — same transition point, different phase event.
+            await SendToRoomAsync(StartEventFor(value.Room),
                 session.RoomCode.Value, value.Room,
                 room => new { room },
                 Context.ConnectionAborted);
@@ -223,6 +229,47 @@ public sealed class RoomHub : Hub
             await SendToRoomAsync(RoomHubEvents.MatchEnded,
                 session.RoomCode.Value, value.Room,
                 room => new { room },
+                Context.ConnectionAborted);
+        }
+
+        return ForCaller(value.Room, session);
+    }
+
+    /// <summary>
+    /// Commit the caller's setup payload (Sprint 10 seam C;
+    /// docs/games/seabattle.md). Valid only while the room is
+    /// <see cref="Domain.Platform.RoomStatus.SettingUp"/>; one commit per
+    /// side, final. On an ordinary commit the opponent learns readiness
+    /// only (<c>OpponentSetupCommitted</c> — role-projected room, never
+    /// the payload); on the commit that completes setup the room enters
+    /// <c>InProgress</c> and both players get <c>MatchStarted</c> with the
+    /// running clock.
+    /// </summary>
+    public async Task<RoomDto> SubmitSetup(MoveDto setup)
+    {
+        var session = RequireSession();
+        var cmd = new SubmitSetupCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role, setup);
+
+        var result = await _submitSetup.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        var value = result.Value!;
+        if (value.MatchStarted)
+        {
+            await SendToRoomAsync(RoomHubEvents.MatchStarted,
+                session.RoomCode.Value, value.Room,
+                room => new { room },
+                Context.ConnectionAborted);
+        }
+        else
+        {
+            await SendToOpponentAsync(RoomHubEvents.OpponentSetupCommitted,
+                session, value.Room,
+                room => new { role = session.Role, room },
                 Context.ConnectionAborted);
         }
 
@@ -320,7 +367,7 @@ public sealed class RoomHub : Hub
                     Context.ConnectionAborted);
                 break;
             case RematchOfferResult.ImplicitlyAccepted:
-                await SendToRoomAsync(RoomHubEvents.MatchStarted,
+                await SendToRoomAsync(StartEventFor(value.Room),
                     session.RoomCode.Value, value.Room,
                     room => new { room },
                     Context.ConnectionAborted);
@@ -347,7 +394,7 @@ public sealed class RoomHub : Hub
         }
 
         var value = result.Value!;
-        await SendToRoomAsync(RoomHubEvents.MatchStarted,
+        await SendToRoomAsync(StartEventFor(value.Room),
             session.RoomCode.Value, value.Room,
             room => new { room },
             Context.ConnectionAborted);
@@ -398,6 +445,16 @@ public sealed class RoomHub : Hub
 
     private static Role Opposite(Role role) =>
         role == Role.Host ? Role.Challenger : Role.Host;
+
+    /// <summary>
+    /// Phase event for a room that just left WaitingForOpponent (or
+    /// accepted a rematch): setup games surface <c>SetupStarted</c>
+    /// (Sprint 10 seam C), everything else <c>MatchStarted</c>.
+    /// </summary>
+    private static string StartEventFor(RoomDto room) =>
+        room.Status == RoomStatus.SettingUp
+            ? RoomHubEvents.SetupStarted
+            : RoomHubEvents.MatchStarted;
 
     /// <summary>
     /// Send a room-state-bearing event to both players. Perfect-information

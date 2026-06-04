@@ -17,6 +17,7 @@ public sealed class AcceptRematchHandler
     private readonly IGameModuleRegistry _games;
     private readonly IClock _clock;
     private readonly ITimeoutScheduler _timeouts;
+    private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRateLimiter _rateLimiter;
 
     public AcceptRematchHandler(
@@ -24,12 +25,14 @@ public sealed class AcceptRematchHandler
         IGameModuleRegistry games,
         IClock clock,
         ITimeoutScheduler timeouts,
+        ISetupDeadlineScheduler setupDeadlines,
         IRateLimiter rateLimiter)
     {
         _rooms = rooms;
         _games = games;
         _clock = clock;
         _timeouts = timeouts;
+        _setupDeadlines = setupDeadlines;
         _rateLimiter = rateLimiter;
     }
 
@@ -83,12 +86,21 @@ public sealed class AcceptRematchHandler
                 room.AcceptRematch(cmd.CallerRole, module, now);
                 await _rooms.SaveAsync(room, ct);
 
+                // Setup games re-enter SettingUp on rematch (Sprint 10 seam
+                // C) — bound the fresh setup phase, not the chess clock.
                 if (room.CurrentMatch is not null)
                 {
-                    await _timeouts.ScheduleAsync(
-                        code,
-                        room.CurrentMatch.Clock.ActivePlayerDeadline(),
-                        ct);
+                    if (room.Status == RoomStatus.SettingUp && module is ISetupGame setupGame)
+                    {
+                        await _setupDeadlines.ScheduleAsync(code, now + setupGame.SetupBudget, ct);
+                    }
+                    else
+                    {
+                        await _timeouts.ScheduleAsync(
+                            code,
+                            room.CurrentMatch.Clock.ActivePlayerDeadline(),
+                            ct);
+                    }
                 }
 
                 return AppResult<AcceptRematchResult>.Ok(new AcceptRematchResult(

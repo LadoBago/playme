@@ -277,6 +277,8 @@ export const en = {
   'errors.exit.notAllowed': "Can't exit right now.",
   'errors.rematch.invalidState': "Can't offer a rematch right now.",
   'errors.rematch.notResponder': 'Only your opponent can accept or reject.',
+  'errors.setup.notInSetup': 'The setup phase is over.',
+  'errors.setup.alreadyCommitted': "You've already confirmed your setup.",
 } as const;
 
 export type EnKey = keyof typeof en;

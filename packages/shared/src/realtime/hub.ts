@@ -8,9 +8,11 @@ import type {
   OpponentExitedPayload,
   OpponentJoinedPayload,
   OpponentReconnectedPayload,
+  OpponentSetupCommittedPayload,
   RematchDeclinedPayload,
   RematchOfferedPayload,
   RoomExpiredPayload,
+  SetupStartedPayload,
 } from './events';
 import { RoomHubEvent } from './events';
 import {
@@ -21,9 +23,11 @@ import {
   OpponentExitedPayloadSchema,
   OpponentJoinedPayloadSchema,
   OpponentReconnectedPayloadSchema,
+  OpponentSetupCommittedPayloadSchema,
   RematchDeclinedPayloadSchema,
   RematchOfferedPayloadSchema,
   RoomExpiredPayloadSchema,
+  SetupStartedPayloadSchema,
 } from './schemas';
 import { RoomSchema, RoomSessionSchema } from '../api/schemas';
 import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
@@ -42,6 +46,10 @@ import type { MoveDto, RoomDto, RoomSessionDto } from '../api/types';
 export interface RoomHubHandlers {
   onOpponentJoined?: (payload: OpponentJoinedPayload) => void;
   onMatchStarted?: (payload: MatchStartedPayload) => void;
+  /** Setup games only (Sprint 10 seam C): the room entered `settingUp`. */
+  onSetupStarted?: (payload: SetupStartedPayload) => void;
+  /** Setup games only: the opponent committed; readiness signal, no payload content. */
+  onOpponentSetupCommitted?: (payload: OpponentSetupCommittedPayload) => void;
   onMoveAccepted?: (payload: MoveAcceptedPayload) => void;
   onMatchEnded?: (payload: MatchEndedPayload) => void;
   onOpponentDisconnected?: (payload: OpponentDisconnectedPayload) => void;
@@ -101,6 +109,16 @@ export class RoomHubClient {
       RoomHubEvent.MatchStarted,
       MatchStartedPayloadSchema,
       handlers.onMatchStarted,
+    );
+    this._bindEvent(
+      RoomHubEvent.SetupStarted,
+      SetupStartedPayloadSchema,
+      handlers.onSetupStarted,
+    );
+    this._bindEvent(
+      RoomHubEvent.OpponentSetupCommitted,
+      OpponentSetupCommittedPayloadSchema,
+      handlers.onOpponentSetupCommitted,
     );
     this._bindEvent(
       RoomHubEvent.MoveAccepted,
@@ -247,6 +265,19 @@ export class RoomHubClient {
    */
   async submitMove(move: MoveDto): Promise<RoomDto> {
     const raw = await this._invoke<unknown>('SubmitMove', move);
+    return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.SubmitSetup — the one-and-final setup commit for setup
+   * games (Sprint 10 seam C; docs/games/seabattle.md). The payload shape
+   * is the module ↔ renderer agreement, opaque to the platform. Resolves
+   * with the new room state; rejects with i18n keys
+   * (errors.setup.notInSetup, errors.setup.alreadyCommitted, or the
+   * module's own validation keys).
+   */
+  async submitSetup(setup: MoveDto): Promise<RoomDto> {
+    const raw = await this._invoke<unknown>('SubmitSetup', setup);
     return RoomSchema.parse(raw) as unknown as RoomDto;
   }
 

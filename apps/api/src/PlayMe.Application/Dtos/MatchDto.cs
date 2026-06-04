@@ -20,10 +20,15 @@ namespace PlayMe.Application.Dtos;
 /// match (start, accepted move, timeout, match end) so clients can
 /// re-sync without a separate request.</param>
 /// <param name="Outcome">Non-null once the match terminates.</param>
+/// <param name="Setup">Setup-phase commitment flags (Sprint 10 seam C).
+/// Non-null only for games whose module implements <c>ISetupGame</c>;
+/// omitted from the JSON otherwise, so setup-less games' wire shape is
+/// unchanged.</param>
 public sealed record MatchDto(
     GameId GameId,
     string SideToMove,
     int MoveCount,
     string State,
     ClockSnapshotDto Clock,
-    OutcomeDto? Outcome);
+    OutcomeDto? Outcome,
+    SetupStateDto? Setup = null);

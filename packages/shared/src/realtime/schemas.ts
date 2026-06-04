@@ -13,15 +13,23 @@ import type {
   OpponentExitedPayload,
   OpponentJoinedPayload,
   OpponentReconnectedPayload,
+  OpponentSetupCommittedPayload,
   RematchDeclinedPayload,
   RematchOfferedPayload,
   RoomExpiredPayload,
+  SetupStartedPayload,
 } from './events';
 
 export const OpponentJoinedPayloadSchema = z.object({ room: RoomSchema });
 export const MatchStartedPayloadSchema = z.object({ room: RoomSchema });
+export const SetupStartedPayloadSchema = z.object({ room: RoomSchema });
 export const MoveAcceptedPayloadSchema = z.object({ room: RoomSchema });
 export const MatchEndedPayloadSchema = z.object({ room: RoomSchema });
+
+export const OpponentSetupCommittedPayloadSchema = z.object({
+  role: RoleSchema,
+  room: RoomSchema,
+});
 
 export const OpponentDisconnectedPayloadSchema = z.object({
   role: RoleSchema,
@@ -56,6 +64,14 @@ type _AssertOpponentJoined = z.infer<typeof OpponentJoinedPayloadSchema> extends
   ? true
   : false;
 type _AssertMatchStarted = z.infer<typeof MatchStartedPayloadSchema> extends MatchStartedPayload
+  ? true
+  : false;
+type _AssertSetupStarted = z.infer<typeof SetupStartedPayloadSchema> extends SetupStartedPayload
+  ? true
+  : false;
+type _AssertOpponentSetupCommitted = z.infer<
+  typeof OpponentSetupCommittedPayloadSchema
+> extends OpponentSetupCommittedPayload
   ? true
   : false;
 type _AssertMoveAccepted = z.infer<typeof MoveAcceptedPayloadSchema> extends MoveAcceptedPayload
@@ -96,6 +112,8 @@ type _AssertRoomExpired = z.infer<typeof RoomExpiredPayloadSchema> extends RoomE
 export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentJoined,
   _AssertMatchStarted,
+  _AssertSetupStarted,
+  _AssertOpponentSetupCommitted,
   _AssertMoveAccepted,
   _AssertMatchEnded,
   _AssertOpponentDisconnected,

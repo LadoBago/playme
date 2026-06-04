@@ -25,6 +25,7 @@ public sealed class OfferRematchHandler
     private readonly IGameModuleRegistry _games;
     private readonly IClock _clock;
     private readonly ITimeoutScheduler _timeouts;
+    private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRateLimiter _rateLimiter;
 
     public OfferRematchHandler(
@@ -32,12 +33,14 @@ public sealed class OfferRematchHandler
         IGameModuleRegistry games,
         IClock clock,
         ITimeoutScheduler timeouts,
+        ISetupDeadlineScheduler setupDeadlines,
         IRateLimiter rateLimiter)
     {
         _rooms = rooms;
         _games = games;
         _clock = clock;
         _timeouts = timeouts;
+        _setupDeadlines = setupDeadlines;
         _rateLimiter = rateLimiter;
     }
 
@@ -84,14 +87,23 @@ public sealed class OfferRematchHandler
                 await _rooms.SaveAsync(room, ct);
 
                 // Implicit accept transitioned the room into a fresh match —
-                // schedule the active player's timeout. The OfferRecorded
-                // path keeps the room post-Ended; no clock is running yet.
+                // schedule the active player's timeout (or, for setup games,
+                // the fresh setup-phase deadline; Sprint 10 seam C). The
+                // OfferRecorded path keeps the room post-Ended; no clock is
+                // running yet.
                 if (effect == RematchOfferResult.ImplicitlyAccepted && room.CurrentMatch is not null)
                 {
-                    await _timeouts.ScheduleAsync(
-                        code,
-                        room.CurrentMatch.Clock.ActivePlayerDeadline(),
-                        ct);
+                    if (room.Status == RoomStatus.SettingUp && module is ISetupGame setupGame)
+                    {
+                        await _setupDeadlines.ScheduleAsync(code, now + setupGame.SetupBudget, ct);
+                    }
+                    else
+                    {
+                        await _timeouts.ScheduleAsync(
+                            code,
+                            room.CurrentMatch.Clock.ActivePlayerDeadline(),
+                            ct);
+                    }
                 }
 
                 return AppResult<OfferRematchHandlerResult>.Ok(new OfferRematchHandlerResult(

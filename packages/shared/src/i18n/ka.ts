@@ -252,4 +252,6 @@ export const ka: Record<EnKey, string> = {
   'errors.exit.notAllowed': 'ახლა გასვლა შეუძლებელია.',
   'errors.rematch.invalidState': 'ახლა რევანშის შეთავაზება შეუძლებელია.',
   'errors.rematch.notResponder': 'მხოლოდ შენს მოწინააღმდეგეს შეუძლია მიიღოს ან უარყოს.',
+  'errors.setup.notInSetup': 'განლაგების ეტაპი დასრულებულია.',
+  'errors.setup.alreadyCommitted': 'განლაგება უკვე დაადასტურე.',
 };
