@@ -4,7 +4,7 @@ namespace PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 
 /// <summary>
 /// Sweeper-side dispatch when a <c>playme:grace</c> entry expires
-/// (state.md §2.3, platform-and-games.md §1 #7). The sweeper has already
+/// (state.md §2.3, platform.md §1 #7). The sweeper has already
 /// acquired the per-room distributed lock; this handler decides whether
 /// the disconnected player is still gone after the 30 s window.
 ///

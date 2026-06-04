@@ -8,7 +8,7 @@ using PlayMe.Domain.Platform;
 namespace PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 
 /// <summary>
-/// Reconnect-grace adjudication (docs/platform-and-games.md §1 #7). Called
+/// Reconnect-grace adjudication (docs/platform.md §1 #7). Called
 /// by the grace sweeper inside the room lock when a scheduled grace entry
 /// has reached its deadline. Re-verifies every precondition under the lock
 /// — a reconnect or a turn-flip since the entry was scheduled can have

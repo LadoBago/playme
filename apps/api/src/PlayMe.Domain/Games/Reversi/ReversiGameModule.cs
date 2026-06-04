@@ -9,7 +9,7 @@ namespace PlayMe.Domain.Games.Reversi;
 /// two-sided discs. The first four placements are restricted to the central
 /// 2×2 squares (rows 3–4 × cols 3–4) and flip nothing — the classic free
 /// opening; standard bracketing play begins on move 5. Dark moves first
-/// (see <see href="../../../../../docs/platform-and-games.md">platform-and-games.md §2.1</see>).
+/// (see <see href="../../../../../docs/games/reversi.md">games/reversi.md</see>).
 ///
 /// <para>
 /// Auto-pass: when the next side-to-move has no legal placement, the

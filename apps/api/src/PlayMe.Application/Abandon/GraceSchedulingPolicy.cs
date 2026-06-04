@@ -4,7 +4,7 @@ namespace PlayMe.Application.Abandon;
 
 /// <summary>
 /// Shared policy for the conditional scheduling of disconnect-grace entries
-/// (docs/platform-and-games.md §1 #7). Called by:
+/// (docs/platform.md §1 #7). Called by:
 /// <list type="bullet">
 ///   <item><see cref="Commands.ReleasePresence.ReleasePresenceHandler"/> at
 ///   disconnect-moment, when the disconnected role is the active player.</item>

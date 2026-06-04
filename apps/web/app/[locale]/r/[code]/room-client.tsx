@@ -715,7 +715,7 @@ function MatchView({
 
 /**
  * Post-match panel — branches on room status + offerer role. Per
- * docs/platform-and-games.md §1 #10 the rematch handshake's asymmetric
+ * docs/platform.md §1 #10 the rematch handshake's asymmetric
  * exit lives entirely on the client side: the rejector auto-routes (via
  * the parent's handleConfirmReject) and the offerer stays here with the
  * decline notice + a manual "Back to lobby" button.

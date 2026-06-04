@@ -8,7 +8,7 @@ namespace PlayMe.Application.Commands.AcceptRematch;
 
 /// <summary>
 /// Responder-side accept of the current rematch offer
-/// (docs/platform-and-games.md §1 #10). Swaps sides and starts a fresh
+/// (docs/platform.md §1 #10). Swaps sides and starts a fresh
 /// match under the room lock; the hub broadcasts <c>MatchStarted</c>.
 /// </summary>
 public sealed class AcceptRematchHandler

@@ -11,7 +11,7 @@ public static class PlatformConstants
 {
     /// <summary>
     /// Tiered abandon-grace window by per-side clock budget
-    /// (docs/platform-and-games.md §1 #7). Returns <c>null</c> for very
+    /// (docs/platform.md §1 #7). Returns <c>null</c> for very
     /// short games where a grace would be a meaningful fraction of the
     /// clock itself — the chess-clock timeout sweeper catches the abandon
     /// naturally and emits <c>Outcome.Timeout</c> instead.

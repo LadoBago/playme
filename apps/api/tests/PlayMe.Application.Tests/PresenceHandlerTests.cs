@@ -89,7 +89,7 @@ public sealed class PresenceHandlerTests
     }
 
     // OneMin-tier coverage (no grace for budgets ≤ 1 min, per
-    // docs/platform-and-games.md §1 #7) moved to GraceSchedulingPolicyTests
+    // docs/platform.md §1 #7) moved to GraceSchedulingPolicyTests
     // — the previous handler-level test depended on the legacy
     // tictactoe-3x3 module having DefaultClockBudget = 60s. With that
     // module gone in Sprint 9 PR3, no remaining module returns the tier

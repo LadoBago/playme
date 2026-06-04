@@ -1,6 +1,6 @@
 # Architecture
 
-Detailed architecture spec for PlayMe. Covers Clean Architecture layers, project structure, RoomHub method index, and the shared package. For platform invariants and game rules see [`platform-and-games.md`](platform-and-games.md). For frontend specifics see [`frontend.md`](frontend.md). For Redis schema and state machine see [`state.md`](state.md).
+Detailed architecture spec for PlayMe. Covers Clean Architecture layers, project structure, RoomHub method index, and the shared package. For platform invariants and game rules see [`platform.md`](platform.md). For frontend specifics see [`frontend.md`](frontend.md). For Redis schema and state machine see [`state.md`](state.md).
 
 ---
 

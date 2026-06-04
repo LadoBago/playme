@@ -75,7 +75,8 @@ Hard rules:
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Clean Architecture layers, project structure, RoomHub method index, shared package, DTO source of truth |
 | [`docs/frontend.md`](docs/frontend.md) | Web pages, SEO (metadata, hreflang, sitemap, JSON-LD, Core Web Vitals), theming, PWA |
-| [`docs/platform-and-games.md`](docs/platform-and-games.md) | Platform invariants (clock, reconnect grace, rematch, side selection, scoreboard), per-game rules, cross-game UX, domain vocabulary |
+| [`docs/platform.md`](docs/platform.md) | Platform invariants (clock, reconnect grace, rematch, side selection, scoreboard), game-module catalog, cross-game UX, domain vocabulary |
+| [`docs/games/<game>.md`](docs/games/) | Canonical per-game rules and module specs (one file per game module) |
 | [`docs/state.md`](docs/state.md) | Redis key schema, room lifecycle / state machine, clock model, timeout sweeper, server-emitted events |
 | [`docs/security.md`](docs/security.md) | Threat model, secrets, input validation, room/player identity & auth, rate limits, headers, CORS |
 | [`docs/observability-and-i18n.md`](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs, error code naming |

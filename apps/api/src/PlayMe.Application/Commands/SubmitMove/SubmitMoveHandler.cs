@@ -172,7 +172,7 @@ public sealed class SubmitMoveHandler
                         ct);
 
                     // Abandon-grace tracks the active player's turn
-                    // (docs/platform-and-games.md §1 #7). The caller (who
+                    // (docs/platform.md §1 #7). The caller (who
                     // just moved) is now inactive — drop any grace entry
                     // standing against them. If the new active player is
                     // offline, the grace timer now starts; schedule if

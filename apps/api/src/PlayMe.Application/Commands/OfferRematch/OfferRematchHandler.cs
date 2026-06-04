@@ -7,7 +7,7 @@ using PlayMe.Domain.Platform;
 namespace PlayMe.Application.Commands.OfferRematch;
 
 /// <summary>
-/// First step of the rematch handshake (docs/platform-and-games.md §1 #10).
+/// First step of the rematch handshake (docs/platform.md §1 #10).
 /// Under the room lock:
 /// <list type="bullet">
 ///   <item>From <c>Ended</c>: record the caller as the offerer and flip the

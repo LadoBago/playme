@@ -4,7 +4,7 @@ namespace PlayMe.Application.Abstractions;
 
 /// <summary>
 /// Schedule a future grace-window check for a disconnected player. The
-/// 30 s grace from platform-and-games.md §1 #7: if the player hasn't
+/// 30 s grace from platform.md §1 #7: if the player hasn't
 /// reconnected by the deadline, the sweeper dispatches the
 /// <c>AdjudicateDisconnectGraceHandler</c>.
 ///

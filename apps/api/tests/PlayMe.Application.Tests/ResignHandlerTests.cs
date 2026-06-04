@@ -12,7 +12,7 @@ using Xunit;
 namespace PlayMe.Application.Tests;
 
 /// <summary>
-/// Behaviour of the resignation pipeline (docs/platform-and-games.md §1 #8).
+/// Behaviour of the resignation pipeline (docs/platform.md §1 #8).
 /// The handler mirrors the move pipeline's authorization + lock + stale-clock
 /// conversion structure, minus per-game module lookup — resign is platform-level.
 /// </summary>

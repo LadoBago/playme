@@ -1,6 +1,6 @@
 # State: Redis schema, room lifecycle, clock model
 
-Authoritative spec for how PlayMe's runtime state is stored, mutated, and transitioned. For the platform rules that produce these transitions, see [`platform-and-games.md`](platform-and-games.md). For the Hub methods that drive them, see [`architecture.md`](architecture.md) §3.3.
+Authoritative spec for how PlayMe's runtime state is stored, mutated, and transitioned. For the platform rules that produce these transitions, see [`platform.md`](platform.md). For the Hub methods that drive them, see [`architecture.md`](architecture.md) §3.3.
 
 ---
 
@@ -10,7 +10,7 @@ All keys are prefixed `playme:` to namespace the application. Use `:` as the seg
 
 | Pattern | Purpose | TTL |
 |---|---|---|
-| `playme:room:{roomCode}` | Full room state (players including `hostPlayerId` / `challengerPlayerId` (see [`platform-and-games.md`](platform-and-games.md) §4), `hostSide` / `challengerSide`, display names, status, current match, clock snapshot, last-tick timestamp, series scoreboard for rematches). Stored as a JSON string. | 30 min while `WaitingForOpponent`, 1 h while `InProgress` (refreshed on every interaction), 5 min after `Ended`. |
+| `playme:room:{roomCode}` | Full room state (players including `hostPlayerId` / `challengerPlayerId` (see [`platform.md`](platform.md) §4), `hostSide` / `challengerSide`, display names, status, current match, clock snapshot, last-tick timestamp, series scoreboard for rematches). Stored as a JSON string. | 30 min while `WaitingForOpponent`, 1 h while `InProgress` (refreshed on every interaction), 5 min after `Ended`. |
 | `playme:room:{roomCode}:lock` | Distributed lock for atomic move processing (prevents racing `SubmitMove` calls). | ≤ 5 s (auto-expires; held only for the duration of a single move) |
 | `playme:rate:{policy}:{key}` | Rate-limit counters (e.g. `playme:rate:move:{playerId}`, `playme:rate:join-code:{roomCode}`). | matches the rate-limit window |
 | `playme:timeouts` | Sorted set of scheduled clock-timeout checks. Score = unix-ms deadline, value = `roomCode`. Swept by a `BackgroundService` (see §2 Clock model). | entries are removed by the sweeper after firing; stale entries expire when the room is `Closed`/`Expired` and the sweeper drops them |
@@ -61,7 +61,7 @@ Every room follows a small finite-state machine, enforced server-side. Handlers 
 ### 2.1 States
 
 - **`WaitingForOpponent`** — the initial state after room creation. **Governed purely by the room TTL** (default 30 min from creation, refreshed on challenger registration). Player disconnects in this state are **transparent**: host or challenger may close their tab and return at any time before the TTL elapses — the session cookie ties them to their role. Challenger registration (completing the join-onboarding form per [`frontend.md`](frontend.md) §1) consumes the invite link; the seat is sticky and no one else can take it. **Transition to `InProgress` requires both: (1) both players have completed registration, AND (2) both currently have an active SignalR connection in the room.** Until both conditions hold, the room stays in `WaitingForOpponent`. If the TTL elapses before that, the room goes terminal to `Expired`.
-- **`InProgress`** — both players joined; a match is being played. Clocks tick. The first-mover's clock starts immediately on entry (platform rule [`platform-and-games.md`](platform-and-games.md) §1 #12).
+- **`InProgress`** — both players joined; a match is being played. Clocks tick. The first-mover's clock starts immediately on entry (platform rule [`platform.md`](platform.md) §1 #12).
 - **`Ended`** — the current match has concluded. Post-match UI is shown. Either player can offer a rematch or exit.
 - **`AwaitingRematch`** — one player offered a rematch; waiting for the opponent's accept/reject.
 - **`Closed`** *(terminal)* — the room is cleaned up; both invite links are dead. Reached when (a) anyone exits without a rematch, (b) a rematch is rejected, (c) the post-`Ended` cleanup TTL elapses.
@@ -87,7 +87,7 @@ Broadcast to both clients via SignalR unless noted:
 | Event | When | Payload |
 |---|---|---|
 | `OpponentJoined` | challenger join | challenger display name, side/color |
-| `MatchStarted` | entering `InProgress` (initial or after rematch accept) | starting clock snapshot, both players' sides (**swapped on each rematch** per [`platform-and-games.md`](platform-and-games.md) §1 #15), who moves first |
+| `MatchStarted` | entering `InProgress` (initial or after rematch accept) | starting clock snapshot, both players' sides (**swapped on each rematch** per [`platform.md`](platform.md) §1 #15), who moves first |
 | `MoveAccepted` | server accepts a `SubmitMove` | move, updated board state, who's next, clock snapshot |
 | `MoveRejected` | server rejects a `SubmitMove` | reason code (illegal cell, full column, not-your-turn) — sent to submitter only |
 | `ClockTick` *(reserved — not emitted today)* | Event name reserved for a future drift-correction sweep. **Not implemented by design** — every state-mutating event in this table already carries a `ClockSnapshotDto`, and the client interpolates between snapshots locally. Only add a periodic broadcast if a measurable drift problem appears in the wild (see §2.2). | per-player remaining time |
@@ -96,7 +96,7 @@ Broadcast to both clients via SignalR unless noted:
 | `RematchAccepted` | `AwaitingRematch` → `InProgress` (new match) | (followed by `MatchStarted`) |
 | `RematchDeclined` | `AwaitingRematch` → `Closed` | sent to the offerer; the rejector is auto-routed to the lobby |
 | `OpponentDisconnected` | a player's SignalR connection drops | sent to the still-connected player |
-| ~~`OpponentAbandoned`~~ | *(removed)* The reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7) is a **hard cutoff**: when it elapses the server auto-ends the match with `Outcome.Disconnect(disconnectedSide)` and emits `MatchEnded` directly — there is no intermediate notice to the still-connected player. |
+| ~~`OpponentAbandoned`~~ | *(removed)* The reconnect grace ([`platform.md`](platform.md) §1 #7) is a **hard cutoff**: when it elapses the server auto-ends the match with `Outcome.Disconnect(disconnectedSide)` and emits `MatchEnded` directly — there is no intermediate notice to the still-connected player. |
 | `OpponentReconnected` | dropped player rejoins (before *or after* grace, while match is still `InProgress`) | sent to the still-connected player |
 | `OpponentExited` | a player leaves the room while in `Ended` or `AwaitingRematch` — either via an explicit `ExitRoom()` call (immediate) or via a SignalR disconnect that doesn't reconnect within the post-match reconnect grace (10 s, see §2.4 invariants) | sent to the still-present player; their UI shows "opponent left" + a manual "Back to lobby" button. Room transitions to `Closed`. |
 | `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | reason |
@@ -106,8 +106,8 @@ Broadcast to both clients via SignalR unless noted:
 - All transitions are server-driven. Clients can *request* transitions (`SubmitMove`, `OfferRematch`) but cannot *perform* them.
 - A move is only accepted in `InProgress`.
 - A rematch offer is only accepted in `Ended` and transitions to `AwaitingRematch`.
-- The clock keeps running during `OpponentDisconnected` (platform rule [`platform-and-games.md`](platform-and-games.md) §1 #7).
-- The reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7) is a server-side hard cutoff: when it elapses, `AdjudicateDisconnectGraceHandler` ends the match with `Outcome.Disconnect(disconnectedSide)`. No client-driven `ClaimVictory` affordance exists.
+- The clock keeps running during `OpponentDisconnected` (platform rule [`platform.md`](platform.md) §1 #7).
+- The reconnect grace ([`platform.md`](platform.md) §1 #7) is a server-side hard cutoff: when it elapses, `AdjudicateDisconnectGraceHandler` ends the match with `Outcome.Disconnect(disconnectedSide)`. No client-driven `ClaimVictory` affordance exists.
 - `ExitRoom()` is valid only in `Ended` or `AwaitingRematch`. It transitions the room directly to `Closed` and emits `OpponentExited` to the still-present player.
-- **A SignalR disconnect from `Ended` or `AwaitingRematch` is NOT treated as an immediate exit.** Refresh, locale toggle, route change, and brief network blips all manifest as a disconnect at the SignalR layer; treating them as exits would tear the room down on legitimate UX flows. Instead, `ReleasePresenceHandler` marks the role disconnected and schedules a 10 s post-match reconnect grace (`playme:postmatch_exit` sorted set). If the player reconnects in time, `RegisterPresenceHandler` cancels the entry and the still-present player sees nothing. If the grace elapses without a reconnect, the post-match-exit sweeper dispatches `AdjudicatePostMatchExitGraceHandler`, which transitions the room to `Closed`; the sweeper then broadcasts `OpponentExited` to the room group via `IRoomNotifier.BroadcastOpponentExitedAsync`. The defensive precondition re-check (status still post-match, role still disconnected) covers the race where the player reconnects in parallel with the sweeper. Different from the `InProgress` reconnect grace ([`platform-and-games.md`](platform-and-games.md) §1 #7), which adjudicates a match outcome — this one only handles the room exit.
+- **A SignalR disconnect from `Ended` or `AwaitingRematch` is NOT treated as an immediate exit.** Refresh, locale toggle, route change, and brief network blips all manifest as a disconnect at the SignalR layer; treating them as exits would tear the room down on legitimate UX flows. Instead, `ReleasePresenceHandler` marks the role disconnected and schedules a 10 s post-match reconnect grace (`playme:postmatch_exit` sorted set). If the player reconnects in time, `RegisterPresenceHandler` cancels the entry and the still-present player sees nothing. If the grace elapses without a reconnect, the post-match-exit sweeper dispatches `AdjudicatePostMatchExitGraceHandler`, which transitions the room to `Closed`; the sweeper then broadcasts `OpponentExited` to the room group via `IRoomNotifier.BroadcastOpponentExitedAsync`. The defensive precondition re-check (status still post-match, role still disconnected) covers the race where the player reconnects in parallel with the sweeper. Different from the `InProgress` reconnect grace ([`platform.md`](platform.md) §1 #7), which adjudicates a match outcome — this one only handles the room exit.
 - Once `Closed`, the room is non-joinable, all subsequent Hub calls return `ErrorCode.RoomClosed`, and the post-`Ended` TTL (5 min per §1) eventually deletes the Redis state.

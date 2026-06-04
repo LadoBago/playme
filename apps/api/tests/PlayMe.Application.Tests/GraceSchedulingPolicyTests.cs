@@ -6,7 +6,7 @@ namespace PlayMe.Application.Tests;
 
 /// <summary>
 /// Pure-policy unit tests for the tiered grace decision
-/// (docs/platform-and-games.md §1 #7). The integration paths — when
+/// (docs/platform.md §1 #7). The integration paths — when
 /// callers actually invoke the policy — live in <c>PresenceHandlerTests</c>,
 /// <c>SubmitMoveHandler*Tests</c>, and <c>AdjudicateDisconnectGraceHandlerTests</c>.
 /// </summary>

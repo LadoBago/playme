@@ -42,7 +42,7 @@ The recommended construction sequence. Each sprint should land an **end-to-end v
 
 **Sprint 3 — Connect 4 (~1 week).**
 
-- New self-contained game module `connect4` (gravity, red/yellow discs, the disc-vs-ring rendering from [`platform-and-games.md`](platform-and-games.md) §2.1).
+- New self-contained game module `connect4` (gravity, red/yellow discs, the disc-vs-ring rendering from [`games/connect4.md`](games/connect4.md)).
 - Reuses the platform layer entirely. **If you need to modify the platform to add it, that's a design bug — fix the seam first.**
 - Landing grid grows to two cards.
 
@@ -57,11 +57,11 @@ The recommended construction sequence. Each sprint should land an **end-to-end v
 
 **Sprint 5 — Rematch + resign (~1 week).**
 
-- Rematch handshake: `OfferRematch`, `AcceptRematch`, `RejectRematch`. The asymmetric exit from [`platform-and-games.md`](platform-and-games.md) §1 #10 (rejector auto-redirects; offerer stays with a notice and a manual exit button).
-- Resign with the confirmation step ([`platform-and-games.md`](platform-and-games.md) §1 #8).
+- Rematch handshake: `OfferRematch`, `AcceptRematch`, `RejectRematch`. The asymmetric exit from [`platform.md`](platform.md) §1 #10 (rejector auto-redirects; offerer stays with a notice and a manual exit button).
+- Resign with the confirmation step ([`platform.md`](platform.md) §1 #8).
 - `Ended` and `AwaitingRematch` states wired per [`state.md`](state.md) §2.
-- **Series scoreboard** ([`platform-and-games.md`](platform-and-games.md) §1 #13): server-side counter in the room state (`{ host, challenger, draws }`), updated on every `MatchEnded`, displayed in the in-match UI for both players. Reset only when the room reaches `Closed`/`Expired`.
-- **Side swap on rematch** ([`platform-and-games.md`](platform-and-games.md) §1 #15): on every accepted rematch, the server swaps `hostSide` and `challengerSide` before emitting `MatchStarted`. UI shows each player's current side in the HUD so the swap is obvious to both players.
+- **Series scoreboard** ([`platform.md`](platform.md) §1 #13): server-side counter in the room state (`{ host, challenger, draws }`), updated on every `MatchEnded`, displayed in the in-match UI for both players. Reset only when the room reaches `Closed`/`Expired`.
+- **Side swap on rematch** ([`platform.md`](platform.md) §1 #15): on every accepted rematch, the server swaps `hostSide` and `challengerSide` before emitting `MatchStarted`. UI shows each player's current side in the HUD so the swap is obvious to both players.
 
 **Exit criteria:** All four games can be played, resigned, finished, rematched (accepted/rejected), and exited cleanly.
 
@@ -100,7 +100,7 @@ Shipped (as of 2026-05-20):
 
 **Exit criteria:** Public launch on playme.ge at the cost target from the deployment table in `CLAUDE.md` §4. **Sprint 7 closed 2026-05-20.**
 
-**Sprint 8 — Reversi (~1–2 weeks).** First post-MVP game. Canonical rules in [`platform-and-games.md`](platform-and-games.md) §2.1.
+**Sprint 8 — Reversi (~1–2 weeks).** First post-MVP game. Canonical rules in [`games/reversi.md`](games/reversi.md).
 
 - New self-contained game module `reversi` (8×8, classic free central-square opening, dark/light discs, auto-pass via renderer-emitted + server-validated synthetic move, draw on tie). `DefaultClockBudget` = 10:00 per side.
 - Reuses the platform layer entirely. **If you need to modify the platform to add it, that's a design bug — fix the seam first.**
@@ -119,7 +119,7 @@ Lands as three PRs, in order, each squash-merged to `main`:
 - **PR3 — delete the old three modules.** Lands no sooner than 2 weeks after PR2 to honour the redirect window. Removes domain projects (`PlayMe.Domain/Games/TicTacToe{3x3,6x6,9x9}/`), the matching `apps/web/features/games/tictactoe-{3x3,6x6,9x9}/` folders, DI registrations, the redirect rules, the old i18n keys, and the old catalog entries.
 
 Cross-cutting doc touches (land inside the sprint PRs, not after):
-- [`platform-and-games.md`](platform-and-games.md) §2.1 catalog table: collapse the three TTT rows. §1 #3 time-limit defaults: note that per-game defaults live in the module now, not the doc.
+- [`platform.md`](platform.md) §2 catalog table: collapse the three TTT rows. §1 #3 time-limit defaults: note that per-game defaults live in the module now, not the doc.
 - [`CLAUDE.md`](CLAUDE.md) §1 catalog mention: "Tic-Tac-Toe 3×3 / 6×6 / 9×9" → "Tic-Tac-Toe (configurable board size: 3×3 / 6×6 / 9×9)".
 - §2 below: revise the "New games are net-new modules, not parameterizations of existing ones" line — net-new modules remain the default for genuinely different games, but per-game configurable knobs (board size, variant toggles) now go through `gameOptions` on the existing module rather than spawning siblings. Also update "fixed at four modules for MVP" — stale since Sprint 8.
 
@@ -181,8 +181,8 @@ When a decision is made, update the relevant doc in the same PR.
 
 In-scope-for-v1 items that have been deliberately postponed but should be picked up before launch (or shortly after). Distinct from §2 "deferred to v2" — these are smaller polishes that don't change scope, just timing. Pick from this list when there's bandwidth between sprints.
 
-- **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform-and-games.md`](platform-and-games.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
+- **Disconnect-grace countdown in the UI.** Sprint 5 wired the tiered abandon-grace server-side ([`platform.md`](platform.md) §1 #7) — the server auto-ends the match with `Outcome.Disconnect` after the grace elapses. The still-connected player today only sees a muted "Opponent disconnected." hint. A visible countdown ("Match ends in 1:23") would let them decide whether to wait it out. Two designs surveyed: (A) extend the `OpponentDisconnected` event payload with the grace deadline + add `OpponentGraceStarted` for the turn-flip case (~100 LOC, ephemeral state); (B) store `HostGraceDeadline` / `ChallengerGraceDeadline` on the `Room` aggregate so every `RoomDto` snapshot carries them (~200 LOC, watertight across reconnects). Suppress entirely for the 1-min "no grace tier."
 
-- **Host clock-picker + size-driven `tictactoe` defaults.** The configure page has no host-side time-limit picker today; the room inherits the module's `DefaultClockBudget`. Sprint 9 dropped the planned `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` size-driven preselect because there's nothing for it to *pre*-select — adding the 1/3/10-min segmented control (the platform invariant in [`platform-and-games.md`](platform-and-games.md) §1 #3) unblocks both the per-game default and per-room time-limit selection in one go. Likely needs a new `timeLimit` field on `CreateRoomCommand` / `Room` / `RoomDto` plus the segmented control on the configure form, mirroring the side-mode picker.
+- **Host clock-picker + size-driven `tictactoe` defaults.** The configure page has no host-side time-limit picker today; the room inherits the module's `DefaultClockBudget`. Sprint 9 dropped the planned `boardSize: 3 → 3 min, 6 → 3 min, 9 → 10 min` size-driven preselect because there's nothing for it to *pre*-select — adding the 1/3/10-min segmented control (the platform invariant in [`platform.md`](platform.md) §1 #3) unblocks both the per-game default and per-room time-limit selection in one go. Likely needs a new `timeLimit` field on `CreateRoomCommand` / `Room` / `RoomDto` plus the segmented control on the configure form, mirroring the side-mode picker.
 
 When picking up an item, move it under the relevant sprint header or open a feature branch directly.

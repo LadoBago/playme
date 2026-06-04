@@ -19,8 +19,8 @@ export function connect4SideLabel(side: string, locale: Locale): string | null {
 
 /**
  * Connect 4 web renderer. Owns the state shape (parsed from
- * `MatchDto.state`), the disc/ring iconography (per platform-and-games.md
- * §2.1 — red as a solid disc, yellow as a ring so the two are
+ * `MatchDto.state`), the disc/ring iconography (per docs/games/connect4.md
+ * — red as a solid disc, yellow as a ring so the two are
  * distinguishable for the most common forms of color-blindness), and the
  * move payload shape (`{ column: int }`) — all per-module contract with
  * the API-side `Connect4GameModule` and `Connect4MoveParser`. The

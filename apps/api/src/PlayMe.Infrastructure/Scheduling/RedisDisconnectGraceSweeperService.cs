@@ -16,7 +16,7 @@ namespace PlayMe.Infrastructure.Scheduling;
 /// <c>playme:grace</c> sorted set. Each entry encodes
 /// <c>{roomCode}:{role}</c> via <see cref="GraceMemberKey"/>. Fires the
 /// <c>AdjudicateDisconnectGraceHandler</c> under the room lock per
-/// docs/platform-and-games.md §1 #7 and broadcasts <c>MatchEnded</c>
+/// docs/platform.md §1 #7 and broadcasts <c>MatchEnded</c>
 /// when the handler ended the match.
 /// </summary>
 public sealed partial class RedisDisconnectGraceSweeperService : BackgroundService

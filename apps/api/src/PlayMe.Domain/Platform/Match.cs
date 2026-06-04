@@ -117,7 +117,7 @@ public sealed class Match
 
     /// <summary>
     /// End the match because the reconnect-grace hard cutoff elapsed
-    /// (docs/platform-and-games.md §1 #7). Records which side lost so the
+    /// (docs/platform.md §1 #7). Records which side lost so the
     /// outcome reads correctly for both clients.
     /// </summary>
     public void ApplyDisconnect(string losingSide, DateTimeOffset now)
