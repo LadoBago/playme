@@ -142,7 +142,13 @@ public sealed class SubmitMoveHandler
                     return AppResult<SubmitMoveResult>.Fail(moveResult.RejectKey!);
                 }
 
-                var nextSide = module.OtherSide(callerSide);
+                // Seam B (Sprint 10): the module may retain the mover's turn
+                // (e.g. sea battle's hit-shoots-again). MatchClock.AfterMove
+                // handles nextActive == ActivePlayer correctly — the mover's
+                // elapsed slice is committed and their clock keeps draining.
+                var nextSide = moveResult.KeepTurn
+                    ? callerSide
+                    : module.OtherSide(callerSide);
                 var nextActive = room.RoleForSide(nextSide);
                 match.ApplyAcceptedMove(moveResult.NewState!, nextSide, nextActive, now, moveResult.Ending);
 
@@ -164,19 +170,21 @@ public sealed class SubmitMoveHandler
                 else
                 {
                     await _rooms.SaveAsync(room, ct);
-                    // The opponent's clock is now ticking — re-schedule the
-                    // timeout check at their new deadline.
+                    // The next active player's clock is now ticking (the
+                    // opponent's, or the caller's again on a retained turn)
+                    // — re-schedule the timeout check at their new deadline.
                     await _timeouts.ScheduleAsync(
                         code,
                         match.Clock.ActivePlayerDeadline(),
                         ct);
 
                     // Abandon-grace tracks the active player's turn
-                    // (docs/platform.md §1 #7). The caller (who
-                    // just moved) is now inactive — drop any grace entry
-                    // standing against them. If the new active player is
-                    // offline, the grace timer now starts; schedule if
-                    // the tier policy allows.
+                    // (docs/platform.md §1 #7). Drop any grace entry
+                    // standing against the caller — it was computed for a
+                    // turn that just ended. If the new active player is
+                    // offline (on a retained turn that can only be the
+                    // caller racing a disconnect), the grace timer now
+                    // starts; schedule if the tier policy allows.
                     await _graces.CancelAsync(code, cmd.CallerRole, ct);
 
                     var newActiveConnected = nextActive switch
