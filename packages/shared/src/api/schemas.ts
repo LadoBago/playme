@@ -6,6 +6,13 @@
 // bottom of this file catch shape drift at compile time.
 
 import { z } from 'zod';
+
+// Strict CSP (script-src nonce + strict-dynamic, no unsafe-eval): tell Zod
+// v4 up front that JIT-compiled validators are off the table. Without this
+// it probes `new Function` once at startup — the throw is caught and Zod
+// falls back gracefully, but the browser still reports the (swallowed) CSP
+// violation in the console on every page load.
+z.config({ jitless: true });
 import type {
   ClockSnapshotDto,
   MatchDto,
