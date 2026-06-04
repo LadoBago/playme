@@ -107,6 +107,12 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         // docs/observability-and-i18n.md §1.2, so this client does not.
         track({ name: 'match_started', props: { gameId: r.gameId } });
       },
+      // Setup games (Sprint 10 seam C): SetupStarted replaces MatchStarted
+      // when the room enters settingUp; OpponentSetupCommitted is the
+      // role-level readiness ping. Both just refresh the snapshot — the
+      // game view renders the placement screen off room.status + state.
+      onSetupStarted: ({ room: r }) => setRoom(r),
+      onOpponentSetupCommitted: ({ room: r }) => setRoom(r),
       onMoveAccepted: ({ room: r }) => {
         setRoom(r);
         track({ name: 'move_made', props: { gameId: r.gameId } });
@@ -311,6 +317,25 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     })();
   }, []);
 
+  // The one-and-final setup commit for setup games (Sprint 10 seam C).
+  // Mirrors the move pipeline: opaque payload, error key in the banner.
+  const handleSubmitSetup = useCallback((payload: unknown) => {
+    if (movePendingRef.current) return;
+    movePendingRef.current = true;
+    void (async () => {
+      setError(null);
+      try {
+        const updated = await hubRef.current?.submitSetup({ payload });
+        if (updated) setRoom(updated);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'errors.unknown';
+        setError(t(message as I18nKey));
+      } finally {
+        movePendingRef.current = false;
+      }
+    })();
+  }, []);
+
   // Resign throws if the hub call fails; MatchView shows the dialog
   // while it's in flight and surfaces the error in the same banner the
   // move pipeline uses. Promise-returning so the dialog can `await`
@@ -441,6 +466,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       role={role}
       declined={declined}
       onSubmitMove={handleSubmitMove}
+      onSubmitSetup={handleSubmitSetup}
       onResign={handleResign}
       onExit={handleExit}
       onOfferRematch={handleOfferRematch}
@@ -457,6 +483,7 @@ interface MatchViewProps {
   role: Role | null;
   declined: boolean;
   onSubmitMove: (payload: unknown) => void;
+  onSubmitSetup: (payload: unknown) => void;
   onResign: () => Promise<void>;
   onExit: () => Promise<void>;
   onOfferRematch: () => Promise<void>;
@@ -471,6 +498,7 @@ function MatchView({
   role,
   declined,
   onSubmitMove,
+  onSubmitSetup,
   onResign,
   onExit,
   onOfferRematch,
@@ -485,8 +513,14 @@ function MatchView({
   const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
   const opponent = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
   const mySide = myPlayer?.side ?? null;
-  const isMyTurn = match != null && match.outcome == null && mySide != null && mySide === match.sideToMove;
-  const matchInProgress = match != null && match.outcome == null;
+  // settingUp (Sprint 10 seam C): the match aggregate exists but the clock
+  // isn't running and there are no turns — the game view owns the whole
+  // placement screen, so the turn line, clock, and resign control all sit
+  // this phase out.
+  const inSetup = room.status === 'settingUp';
+  const isMyTurn =
+    !inSetup && match != null && match.outcome == null && mySide != null && mySide === match.sideToMove;
+  const matchInProgress = match != null && match.outcome == null && !inSetup;
 
   const [confirmResignOpen, setConfirmResignOpen] = useState(false);
   const [resignPending, setResignPending] = useState(false);
@@ -629,7 +663,9 @@ function MatchView({
     <div className="match-layout stack">
       <MatchHeader room={room} role={role} />
 
-      <Clock snapshot={match.clock} callerRole={role} isFinal={match.outcome != null} />
+      {inSetup ? null : (
+        <Clock snapshot={match.clock} callerRole={role} isFinal={match.outcome != null} />
+      )}
 
       {connectionStatus !== 'live' ? (
         <span className="match-status match-status--error">
@@ -643,7 +679,7 @@ function MatchView({
 
       {match.outcome ? (
         <OutcomeBanner outcome={match.outcome} mySide={mySide} />
-      ) : (
+      ) : inSetup ? null : (
         <span className="match-status">
           {isMyTurn ? t('match.yourTurn') : t('match.opponentTurn')}
         </span>
@@ -659,6 +695,21 @@ function MatchView({
         canPlay={isMyTurn}
         matchEnded={match.outcome != null}
         onSubmitMove={onSubmitMove}
+        setup={
+          match.setup
+            ? {
+                mineCommitted:
+                  role === 'challenger'
+                    ? match.setup.challengerCommitted
+                    : match.setup.hostCommitted,
+                opponentCommitted:
+                  role === 'challenger'
+                    ? match.setup.hostCommitted
+                    : match.setup.challengerCommitted,
+              }
+            : null
+        }
+        onSubmitSetup={onSubmitSetup}
       />
 
       {matchInProgress ? (

@@ -1434,7 +1434,7 @@ textarea {
  * carries the meaning. */
 .button-danger {
   background: var(--danger);
-  color: #ffffff;
+  color: var(--accent-fg);
   border: none;
   border-radius: 8px;
   padding: 0.6rem 1.2rem;
@@ -1486,4 +1486,230 @@ textarea {
   gap: 0.6rem;
   justify-content: flex-end;
   margin-top: 0.5rem;
+}
+
+/* --- Sea Battle (seabattle) ------------------------------------------------
+ * Two stacked 10×10 grids: enemy waters (targeting) above, own fleet below.
+ * Single source of truth for the cell size (Safari otherwise loops on
+ * grid + cell aspect-ratio — same fix as Reversi / Connect 4). Hit/miss/
+ * sunk are shape-coded (✕ / dot / filled cell) so the exchange stays
+ * legible without relying on hue.
+ */
+.sb {
+  --sb-cell: clamp(22px, calc((100vw - 3rem - 18px) / 10), 40px);
+  --sb-gap: 2px;
+  --sb-water: var(--bg);
+  --sb-ship: var(--fg);
+  --sb-hit: var(--danger);
+  width: calc(10 * var(--sb-cell) + 9 * var(--sb-gap) + 18px);
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sb__heading {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.sb__hint {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+
+.sb__board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sb__board-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.sb__grid {
+  display: grid;
+  grid-template-columns: repeat(10, var(--sb-cell));
+  gap: var(--sb-gap);
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  width: max-content;
+  max-width: 100%;
+}
+
+.sb__cell {
+  position: relative;
+  width: var(--sb-cell);
+  height: var(--sb-cell);
+  background: var(--sb-water);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: default;
+  color: inherit;
+}
+
+button.sb__cell:disabled {
+  opacity: 1; /* shot results must stay fully legible on a disabled cell */
+}
+
+.sb__cell--fireable {
+  cursor: pointer;
+}
+
+.sb__cell--fireable:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.sb__cell--ship {
+  background: var(--sb-ship);
+  border-color: var(--sb-ship);
+}
+
+.sb__cell--sunk {
+  background: var(--sb-hit);
+  border-color: var(--sb-hit);
+}
+
+.sb__cell--deduced {
+  background: color-mix(in srgb, var(--sb-water) 55%, var(--border));
+}
+
+.sb__cell--last {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  animation: lastMovePulse 1.2s ease-out 1;
+}
+
+.sb__miss {
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: var(--fg-muted);
+}
+
+.sb__hit {
+  font-size: calc(var(--sb-cell) * 0.6);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-fg);
+}
+
+.sb__cell:not(.sb__cell--ship):not(.sb__cell--sunk) .sb__hit {
+  color: var(--sb-hit);
+}
+
+.sb__setup-controls {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.sb__status {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.sb__status--muted {
+  color: var(--fg-muted);
+}
+
+/* Landing-card preview tokens */
+.game-card__preview-sb {
+  width: 70%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  font-weight: 700;
+  border-radius: 2px;
+}
+
+.game-card__preview-sb--ship {
+  background: var(--fg);
+}
+
+.game-card__preview-sb--hit {
+  background: var(--danger);
+  color: var(--accent-fg);
+  width: 85%;
+  height: 85%;
+}
+
+.game-card__preview-sb--miss {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: var(--fg-muted);
+}
+
+/* Sea Battle: side-by-side boards when the match container is wide enough
+ * for two 10×10 grids (each ≤ ~436px at the 40px cell cap). Keyed on the
+ * match container, not the viewport, so it composes with any future
+ * sidebar. row-reverse keeps the targeting board first in the DOM (top of
+ * the mobile stack, first in tab order) while showing own fleet left /
+ * enemy waters right — the paper-game convention. */
+/* Narrow (default): the two boards form a horizontal scroll-snap pager —
+ * one full board per swipe, tab pills above for discoverability and
+ * non-touch input. Native momentum scrolling, no JS carousel. */
+.sb__boards {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.sb__boards::-webkit-scrollbar {
+  display: none;
+}
+
+.sb__boards .sb__board {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.sb__tabs {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+@container match (min-width: 880px) {
+  .sb--battle {
+    width: auto;
+  }
+
+  /* Wide: both boards visible side by side — pager off, pills gone. */
+  .sb__tabs {
+    display: none;
+  }
+
+  .sb--battle .sb__boards {
+    flex-direction: row-reverse;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.5rem;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .sb--battle .sb__boards .sb__board {
+    flex: 0 0 auto;
+  }
 }

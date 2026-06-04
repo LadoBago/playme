@@ -202,6 +202,34 @@ export const ka: Record<EnKey, string> = {
   'games.reversi.score.light': '{count} თეთრი',
   'games.reversi.toast.autoPassSelf': 'სვლა არ გაქვს, კვლავ მისი სვლაა.',
   'games.reversi.toast.autoPassOpponent': 'მოწინააღმდეგეს არ აქვს სვლა, კვლავ შენ სვლაა.',
+  'games.seabattle.name': 'ჩაძირობანა',
+  'games.seabattle.metaTitle': 'ჩაძირობანა (გემების ჩაძირვა) ონლაინ — ითამაშე მეგობართან | PlayMe',
+  'games.seabattle.metaDescription':
+    'ითამაშე ჩაძირობანა ონლაინ მეგობართან — დამალე ფლოტი, ისროლე და ჩაძირე ათივე გემი. რეგისტრაციის გარეშე, უბრალოდ გაუზიარე ბმული.',
+  'games.seabattle.shortDescription':
+    'ფარულად განალაგე ათი გემი და მორიგეობით ისროლეთ. მოხვედრა დამატებით გასროლას გაძლევს — ჩაძირე მთელი ფლოტი და მოიგებ.',
+  'games.seabattle.rules':
+    'თითოეული მოთამაშე ფარულად ალაგებს ათ გემს საკუთარ 10×10 ბადეზე: ერთი ოთხუჯრიანი, ორი სამუჯრიანი, სამი ორუჯრიანი და ოთხი ერთუჯრიანი. გემები სწორი ხაზებია და ერთმანეთს ვერ შეეხებიან — ვერც დიაგონალზე. შემდეგ მოთამაშეები მორიგეობით ისვრიან მოწინააღმდეგის ბადეზე; ყოველ გასროლას პასუხი მოჰყვება: აცილება, მოხვედრა ან ჩაიძირა. მოხვედრა ან ჩაძირვა დამატებით გასროლას გაძლევს — ისვრი, სანამ არ ააცილებ. ერთსა და იმავე უჯრაზე ორჯერ სროლა არ შეიძლება. იგებს ის, ვინც პირველი ჩაძირავს მოწინააღმდეგის მთელ ფლოტს — ოცივე უჯრას. ფრე შეუძლებელია.',
+  'games.seabattle.sideFirst': 'პირველი (პირველი ისვრის)',
+  'games.seabattle.sideSecond': 'მეორე',
+  'games.seabattle.shortSideFirst': 'პირველი',
+  'games.seabattle.shortSideSecond': 'მეორე',
+  'games.seabattle.setup.title': 'განალაგე შენი ფლოტი',
+  'games.seabattle.setup.hint':
+    'გემები შემთხვევით ლაგდება — აურიე, სანამ განლაგება მოგეწონება, და დაადასტურე. მოწინააღმდეგე შენს ფლოტს ვერასდროს ხედავს.',
+  'games.seabattle.setup.reroll': 'გემების არევა',
+  'games.seabattle.setup.commit': 'ფლოტის დადასტურება',
+  'games.seabattle.setup.committed': 'ფლოტი დადასტურებულია — ველოდებით მოწინააღმდეგეს…',
+  'games.seabattle.setup.opponentReady': 'მოწინააღმდეგე მზადაა.',
+  'games.seabattle.setup.opponentPlacing': 'მოწინააღმდეგე გემებს ალაგებს.',
+  'games.seabattle.board.yours': 'შენი ფლოტი',
+  'games.seabattle.board.target': 'მოწინააღმდეგის წყლები',
+  'games.seabattle.cell.fire': 'ისროლე: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.cell.miss': 'აცილება: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.cell.hit': 'მოხვედრა: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.cell.sunk': 'ჩაძირული გემის უჯრა: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.cell.ship': 'შენი გემი: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.cell.water': 'წყალი: სტრიქონი {row}, სვეტი {col}',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',
@@ -245,6 +273,7 @@ export const ka: Record<EnKey, string> = {
   'errors.move.mustBracket': 'უნდა მოაქცე მინიმუმ ერთი მოწინააღმდეგის დისკი შენებს შორის.',
   'errors.move.openingMustBeCentral': 'საწყისი სვლები ცენტრალურ ოთხ უჯრაში სრულდება.',
   'errors.move.passNotAllowed': 'სვლის გამოტოვება არ შეიძლება — კანონიერი სვლა გაქვს.',
+  'errors.move.alreadyShot': 'ამ უჯრაზე უკვე ისროლე.',
   'errors.move.notYourTurn': 'შენი რიგი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',
@@ -254,4 +283,5 @@ export const ka: Record<EnKey, string> = {
   'errors.rematch.notResponder': 'მხოლოდ შენს მოწინააღმდეგეს შეუძლია მიიღოს ან უარყოს.',
   'errors.setup.notInSetup': 'განლაგების ეტაპი დასრულებულია.',
   'errors.setup.alreadyCommitted': 'განლაგება უკვე დაადასტურე.',
+  'errors.setup.invalidFleet': 'გემების განლაგება არასწორია. აურიე და სცადე თავიდან.',
 };

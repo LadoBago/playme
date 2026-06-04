@@ -26,6 +26,16 @@ export interface GameViewProps {
    *  matching `IGameMoveParser` on the API side — the platform passes it
    *  through opaquely to `RoomHub.SubmitMove`. */
   readonly onSubmitMove: (payload: unknown) => void;
+  /** Setup-phase readiness (Sprint 10 seam C), already resolved to the
+   *  caller's perspective. Null/undefined for setup-less games and once a
+   *  setup game's room shape no longer carries the flags. A view whose own
+   *  parsed state reports the setup phase renders its placement screen off
+   *  these. */
+  readonly setup?: { readonly mineCommitted: boolean; readonly opponentCommitted: boolean } | null;
+  /** Submit the one-and-final setup commit (`RoomHub.SubmitSetup`). The
+   *  payload shape is the module ↔ `ISetupGame` agreement; the platform
+   *  passes it through opaquely. Undefined for setup-less games. */
+  readonly onSubmitSetup?: (payload: unknown) => void;
 }
 
 export type GameView = (props: GameViewProps) => ReactNode;

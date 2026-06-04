@@ -32,6 +32,16 @@ describe('findGame', () => {
     expect(entry?.defaultHostSide).toBe('dark');
   });
 
+  it('finds Sea Battle by its id with first/second sides on a 10×10 board', () => {
+    const entry = findGame('seabattle');
+    expect(entry).toBeDefined();
+    expect(entry?.rows).toBe(10);
+    expect(entry?.cols).toBe(10);
+    expect(entry?.preview).toHaveLength(100);
+    expect(entry?.sides.map((s) => s.id)).toEqual(['first', 'second']);
+    expect(entry?.defaultHostSide).toBe('first');
+  });
+
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });
