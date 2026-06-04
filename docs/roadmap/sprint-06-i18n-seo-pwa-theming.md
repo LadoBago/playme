@@ -18,3 +18,5 @@
 | `/en` | dark | 100 | 100 | 96 | 100 |
 
 All four categories ≥ 90 across both locales and both themes. The Best Practices delta on the ka pages (92 vs 96) traces to `errors-in-console` / `inspector-issues` audits — not investigated; if anyone wants to push everything to 100, that's the lead.
+
+**Resolved 2026-06-05:** the console issue was Zod v4's `new Function` JIT probe tripping the strict CSP (caught and harmless, but reported). Fixed via `z.config({ jitless: true })` in #140 — production Lighthouse now reads **100/100/100/100**.
