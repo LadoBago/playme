@@ -220,6 +220,34 @@ export const en = {
   'games.reversi.score.light': '{count} light',
   'games.reversi.toast.autoPassSelf': 'No legal moves — opponent plays again.',
   'games.reversi.toast.autoPassOpponent': 'Opponent has no moves — you play again.',
+  'games.seabattle.name': 'Sea Battle',
+  'games.seabattle.metaTitle': 'Sea Battle (Battleship) online — play with a friend | PlayMe',
+  'games.seabattle.metaDescription':
+    'Play Sea Battle (Battleship) online with a friend — hide your fleet, call your shots, sink all ten ships. No signup, just share a link.',
+  'games.seabattle.shortDescription':
+    'Hide a fleet of ten ships, then trade shots. A hit earns another shot — sink the whole enemy fleet to win.',
+  'games.seabattle.rules':
+    'Each player secretly places a fleet of ten ships on their own 10×10 grid: one four-decker, two three-deckers, three two-deckers, and four single-deckers. Ships are straight lines and may not touch each other — not even diagonally. Players then take turns calling shots at the opponent’s grid; each shot is answered miss, hit, or sunk. A hit or a sunk ship earns you another shot — you keep firing until you miss. Shooting the same cell twice is not allowed. The first player to sink the entire enemy fleet — all twenty ship cells — wins. A draw is impossible.',
+  'games.seabattle.sideFirst': 'First (shoots first)',
+  'games.seabattle.sideSecond': 'Second',
+  'games.seabattle.shortSideFirst': 'First',
+  'games.seabattle.shortSideSecond': 'Second',
+  'games.seabattle.setup.title': 'Place your fleet',
+  'games.seabattle.setup.hint':
+    'Your ships are placed randomly — shuffle until you like the layout, then confirm. Your opponent never sees your fleet.',
+  'games.seabattle.setup.reroll': 'Shuffle ships',
+  'games.seabattle.setup.commit': 'Confirm fleet',
+  'games.seabattle.setup.committed': 'Fleet confirmed — waiting for your opponent…',
+  'games.seabattle.setup.opponentReady': 'Your opponent is ready.',
+  'games.seabattle.setup.opponentPlacing': 'Your opponent is placing their fleet.',
+  'games.seabattle.board.yours': 'Your fleet',
+  'games.seabattle.board.target': 'Enemy waters',
+  'games.seabattle.cell.fire': 'Fire at row {row}, column {col}',
+  'games.seabattle.cell.miss': 'Miss at row {row}, column {col}',
+  'games.seabattle.cell.hit': 'Hit at row {row}, column {col}',
+  'games.seabattle.cell.sunk': 'Sunk ship cell at row {row}, column {col}',
+  'games.seabattle.cell.ship': 'Your ship at row {row}, column {col}',
+  'games.seabattle.cell.water': 'Water at row {row}, column {col}',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'Install PlayMe as an app',
@@ -270,6 +298,7 @@ export const en = {
     "You can only place where you'd flip at least one of the opponent's discs.",
   'errors.move.openingMustBeCentral': 'Opening moves go in the central four squares.',
   'errors.move.passNotAllowed': "You can't pass — you still have a legal move.",
+  'errors.move.alreadyShot': "You've already fired at that cell.",
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',
@@ -279,6 +308,7 @@ export const en = {
   'errors.rematch.notResponder': 'Only your opponent can accept or reject.',
   'errors.setup.notInSetup': 'The setup phase is over.',
   'errors.setup.alreadyCommitted': "You've already confirmed your setup.",
+  'errors.setup.invalidFleet': 'That fleet placement is invalid. Shuffle and try again.',
 } as const;
 
 export type EnKey = keyof typeof en;

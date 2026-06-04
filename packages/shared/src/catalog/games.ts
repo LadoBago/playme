@@ -131,6 +131,38 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
       null, null, null, null,    null,    null,   null, null,
     ],
   },
+  // Sprint 10: Sea Battle (ჩაძირობანა) — first hidden-information game.
+  // The post-Soviet ruleset: hidden 10-ship fleet, no-touch placement,
+  // hit = extra shot (docs/games/seabattle.md). Sides carry no asymmetry
+  // beyond who shoots first. Preview tokens: 's' ship, 'h' hit, 'm' miss.
+  {
+    id: 'seabattle',
+    slug: 'seabattle',
+    nameKey: 'games.seabattle.name',
+    shortDescriptionKey: 'games.seabattle.shortDescription',
+    rulesKey: 'games.seabattle.rules',
+    metaTitleKey: 'games.seabattle.metaTitle',
+    metaDescriptionKey: 'games.seabattle.metaDescription',
+    sides: [
+      { id: 'first', labelKey: 'games.seabattle.sideFirst' },
+      { id: 'second', labelKey: 'games.seabattle.sideSecond' },
+    ],
+    defaultHostSide: 'first',
+    rows: 10,
+    cols: 10,
+    preview: [
+      's', 's', 's', 's', null, null, null, 'm', null, null,
+      null, null, null, null, null, null, null, null, null, null,
+      null, 's', 's', null, null, 'h', 'h', 'h', null, null,
+      null, null, null, null, null, null, null, null, null, 'm',
+      'm', null, null, 's', null, null, null, null, null, null,
+      null, null, null, null, null, null, 'm', null, null, null,
+      null, 's', null, null, null, null, null, null, 's', null,
+      null, 's', null, null, 'm', null, null, null, 's', null,
+      null, null, null, null, null, null, null, null, null, null,
+      null, null, 'h', null, null, null, 's', 's', null, 'm',
+    ],
+  },
 ];
 
 export function findGame(slugOrId: string): GameCatalogEntry | undefined {

@@ -1,6 +1,7 @@
 import type { GameModule, GameView } from './types';
 import { Connect4View, connect4SideLabel } from './connect4/view';
 import { ReversiView, reversiSideLabel } from './reversi/view';
+import { SeaBattleView, seabattleSideLabel } from './seabattle/view';
 import { TicTacToeView, tictactoeSideLabel } from './tictactoe/view';
 
 /**
@@ -14,6 +15,7 @@ const MODULES = new Map<string, GameModule>([
   ['tictactoe', { View: TicTacToeView, getSideLabel: tictactoeSideLabel }],
   ['connect4', { View: Connect4View, getSideLabel: connect4SideLabel }],
   ['reversi', { View: ReversiView, getSideLabel: reversiSideLabel }],
+  ['seabattle', { View: SeaBattleView, getSideLabel: seabattleSideLabel }],
 ]);
 
 export function findGameModule(gameId: string): GameModule | undefined {

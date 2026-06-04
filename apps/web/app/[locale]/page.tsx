@@ -179,5 +179,12 @@ function PreviewToken({ gameId, side }: { gameId: string; side: string | null })
   if (gameId === 'reversi') {
     return <span className={`game-card__preview-disc game-card__preview-disc--rv-${side}`} />;
   }
+  if (gameId === 'seabattle') {
+    // 's' ship cell, 'h' hit, 'm' miss — shape-coded like the live board.
+    if (side === 's') return <span className="game-card__preview-sb game-card__preview-sb--ship" />;
+    if (side === 'h') return <span className="game-card__preview-sb game-card__preview-sb--hit">✕</span>;
+    if (side === 'm') return <span className="game-card__preview-sb game-card__preview-sb--miss" />;
+    return null;
+  }
   return null;
 }
