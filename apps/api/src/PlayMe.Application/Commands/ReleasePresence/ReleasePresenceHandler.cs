@@ -103,7 +103,8 @@ public sealed class ReleasePresenceHandler
                     return Effect(room, PresenceReleaseEffect.None);
                 }
 
-                var notifyOpponent = room.Status == RoomStatus.InProgress;
+                var notifyOpponent =
+                    room.Status is RoomStatus.InProgress or RoomStatus.SettingUp;
                 room.MarkDisconnected(cmd.CallerRole);
                 await _rooms.SaveAsync(room, ct);
 
@@ -115,7 +116,7 @@ public sealed class ReleasePresenceHandler
                 // clock is strictly greater than the grace window (otherwise the
                 // chess-clock timeout sweeper already catches the abandon as a
                 // Timeout outcome).
-                if (notifyOpponent && room.CurrentMatch is not null
+                if (room.Status == RoomStatus.InProgress && room.CurrentMatch is not null
                     && room.CurrentMatch.Clock.ActivePlayer == cmd.CallerRole)
                 {
                     var module = _games.GetModule(room.GameId);
@@ -123,6 +124,32 @@ public sealed class ReleasePresenceHandler
                     var remaining = room.CurrentMatch.Clock.EffectiveRemaining(cmd.CallerRole, now);
                     var deadline = GraceSchedulingPolicy.ComputeDeadline(
                         module.DefaultClockBudget, remaining, now);
+                    if (deadline is not null)
+                    {
+                        await _graces.ScheduleAsync(code, cmd.CallerRole, deadline.Value, ct);
+                    }
+                }
+
+                // Setup-phase disconnect (Sprint 10 seam C): tracked like an
+                // in-match disconnect, not like the transparent
+                // WaitingForOpponent kind. The §1 #7 turn condition doesn't
+                // apply — setup has no turns, so the grace starts
+                // immediately — but only against a player who still owes a
+                // commit. A player who already committed owes nothing until
+                // the match starts; if setup completes while they're
+                // offline, the in-match clock + grace rules take over from
+                // InProgress entry. The setup clock never drains, so the
+                // policy's remaining-time guard is fed the full budget; for
+                // budgets at the no-grace tier (≤ 1 min) the setup deadline
+                // is the only backstop.
+                if (room.Status == RoomStatus.SettingUp
+                    && room.CurrentMatch is not null
+                    && !room.CurrentMatch.HasCommittedSetup(cmd.CallerRole))
+                {
+                    var module = _games.GetModule(room.GameId);
+                    var now = _clock.UtcNow;
+                    var deadline = GraceSchedulingPolicy.ComputeDeadline(
+                        module.DefaultClockBudget, module.DefaultClockBudget, now);
                     if (deadline is not null)
                     {
                         await _graces.ScheduleAsync(code, cmd.CallerRole, deadline.Value, ct);

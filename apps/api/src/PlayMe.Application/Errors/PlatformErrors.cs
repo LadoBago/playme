@@ -43,6 +43,12 @@ public static class PlatformErrors
     public const string MoveNotYourTurn = "errors.move.notYourTurn";
     public const string MoveMatchNotInProgress = "errors.move.matchNotInProgress";
 
+    // --- Setup phase (Sprint 10 seam C). One commit per side is a
+    //     platform rule, so its rejection key is platform-owned; payload
+    //     validation failures use the module's own reject keys. ---
+    public const string SetupNotInSetup = "errors.setup.notInSetup";
+    public const string SetupAlreadyCommitted = "errors.setup.alreadyCommitted";
+
     // --- Session / authorization ---
     public const string SessionUnauthorized = "errors.session.unauthorized";
 

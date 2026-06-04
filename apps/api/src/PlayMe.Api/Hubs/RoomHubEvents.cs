@@ -9,6 +9,8 @@ public static class RoomHubEvents
 {
     public const string OpponentJoined = "OpponentJoined";
     public const string MatchStarted = "MatchStarted";
+    public const string SetupStarted = "SetupStarted";
+    public const string OpponentSetupCommitted = "OpponentSetupCommitted";
     public const string MoveAccepted = "MoveAccepted";
     public const string MatchEnded = "MatchEnded";
     public const string ClockTick = "ClockTick";

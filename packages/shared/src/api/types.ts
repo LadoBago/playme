@@ -9,6 +9,7 @@
 
 export type RoomStatus =
   | 'waitingForOpponent'
+  | 'settingUp'
   | 'inProgress'
   | 'ended'
   | 'awaitingRematch'
@@ -60,6 +61,19 @@ export interface MatchDto {
   state: string;
   clock: ClockSnapshotDto;
   outcome?: OutcomeDto;
+  /**
+   * Setup-phase commitment flags (Sprint 10 seam C). Present only for
+   * games whose module implements `ISetupGame` (e.g. sea battle); absent
+   * for setup-less games. Role-level readiness only — setup payloads live
+   * inside the opaque per-game `state` and, for hidden-state games, never
+   * reach the opponent.
+   */
+  setup?: SetupStateDto;
+}
+
+export interface SetupStateDto {
+  hostCommitted: boolean;
+  challengerCommitted: boolean;
 }
 
 /**

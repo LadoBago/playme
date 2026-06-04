@@ -176,6 +176,9 @@ public sealed partial class RedisRoomRepository : IRoomRepository
     private static TimeSpan TtlFor(RoomStatus status) => status switch
     {
         RoomStatus.WaitingForOpponent => RoomLifetimes.WaitingForOpponent,
+        // SettingUp is live play-adjacent (Sprint 10 seam C) — same
+        // refresh-on-activity TTL as InProgress.
+        RoomStatus.SettingUp => TimeSpan.FromHours(1),
         RoomStatus.InProgress => TimeSpan.FromHours(1),
         RoomStatus.Ended => TimeSpan.FromMinutes(5),
         RoomStatus.AwaitingRematch => TimeSpan.FromMinutes(5),

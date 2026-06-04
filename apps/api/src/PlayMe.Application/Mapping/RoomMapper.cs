@@ -47,7 +47,10 @@ public static class RoomMapper
             MoveCount: match.MoveCount,
             State: module.Serialize(match.State),
             Clock: ToClockSnapshotDto(match.Clock, now, match.IsEnded),
-            Outcome: match.Outcome is null ? null : ToOutcomeDto(match.Outcome));
+            Outcome: match.Outcome is null ? null : ToOutcomeDto(match.Outcome),
+            Setup: module is ISetupGame
+                ? new SetupStateDto(match.HostSetupCommitted, match.ChallengerSetupCommitted)
+                : null);
     }
 
     /// <summary>

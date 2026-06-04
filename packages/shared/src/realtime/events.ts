@@ -6,6 +6,8 @@ import type { Role, RoomDto } from '../api/types';
 export const RoomHubEvent = {
   OpponentJoined: 'OpponentJoined',
   MatchStarted: 'MatchStarted',
+  SetupStarted: 'SetupStarted',
+  OpponentSetupCommitted: 'OpponentSetupCommitted',
   MoveAccepted: 'MoveAccepted',
   MatchEnded: 'MatchEnded',
   ClockTick: 'ClockTick',
@@ -24,6 +26,27 @@ export interface OpponentJoinedPayload {
 }
 
 export interface MatchStartedPayload {
+  room: RoomDto;
+}
+
+/**
+ * Fired instead of MatchStarted when a setup game's room enters
+ * `settingUp` (Sprint 10 seam C) — both players are present and the
+ * placement screen should mount. For hidden-state games the room payload
+ * is the receiving player's projection.
+ */
+export interface SetupStartedPayload {
+  room: RoomDto;
+}
+
+/**
+ * The opponent committed their setup (Sprint 10 seam C). Role-level
+ * readiness only — the payload never contains the opponent's setup
+ * content. The commit that completes the setup phase sends MatchStarted
+ * instead.
+ */
+export interface OpponentSetupCommittedPayload {
+  role: Role;
   room: RoomDto;
 }
 

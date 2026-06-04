@@ -54,6 +54,17 @@ internal static class RedisKeys
     public const string Expires = $"{Prefix}expires";
 
     /// <summary>
+    /// Sorted set: score = unix-ms deadline, value = roomCode (Sprint 10
+    /// seam C). One entry per room in
+    /// <see cref="PlayMe.Domain.Platform.RoomStatus.SettingUp"/> — enrolled
+    /// at SettingUp entry (deadline = entry + <c>ISetupGame.SetupBudget</c>),
+    /// ZREM'd when setup completes or the match ends during setup. The
+    /// sweeper forfeits the uncommitted side (or expires the room when
+    /// neither side committed).
+    /// </summary>
+    public const string SetupDeadlines = $"{Prefix}setup_deadlines";
+
+    /// <summary>
     /// Per-session rate-limit sliding-window sorted set
     /// (docs/security.md §5). One key per policy × subject; each member
     /// is a single recent acquisition timestamp.

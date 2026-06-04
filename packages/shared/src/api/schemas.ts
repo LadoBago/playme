@@ -22,6 +22,7 @@ export const RoleSchema = z.enum(['host', 'challenger']);
 
 export const RoomStatusSchema = z.enum([
   'waitingForOpponent',
+  'settingUp',
   'inProgress',
   'ended',
   'awaitingRematch',
@@ -58,6 +59,11 @@ export const ClockSnapshotSchema = z.object({
   serverNowAt: z.string(),
 });
 
+export const SetupStateSchema = z.object({
+  hostCommitted: z.boolean(),
+  challengerCommitted: z.boolean(),
+});
+
 export const MatchSchema = z.object({
   gameId: z.string(),
   sideToMove: z.string(),
@@ -67,6 +73,9 @@ export const MatchSchema = z.object({
   state: z.string(),
   clock: ClockSnapshotSchema,
   outcome: OutcomeSchema.optional(),
+  // Setup-phase readiness flags (Sprint 10 seam C); present only for
+  // ISetupGame modules.
+  setup: SetupStateSchema.optional(),
 });
 
 export const ScoreSchema = z.object({

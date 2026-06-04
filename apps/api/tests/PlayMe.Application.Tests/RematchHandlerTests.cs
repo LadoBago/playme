@@ -25,12 +25,12 @@ public sealed class RematchHandlerTests
     private static OfferRematchHandler BuildOfferHandler(
         FakeClock clock, FakeRoomRepository rooms,
         RecordingTimeoutScheduler timeouts, IRateLimiter? limiter = null) =>
-        new(rooms, new SingleGameRegistry(), clock, timeouts, limiter ?? new RecordingRateLimiter());
+        new(rooms, new SingleGameRegistry(), clock, timeouts, new RecordingSetupDeadlineScheduler(), limiter ?? new RecordingRateLimiter());
 
     private static AcceptRematchHandler BuildAcceptHandler(
         FakeClock clock, FakeRoomRepository rooms,
         RecordingTimeoutScheduler timeouts, IRateLimiter? limiter = null) =>
-        new(rooms, new SingleGameRegistry(), clock, timeouts, limiter ?? new RecordingRateLimiter());
+        new(rooms, new SingleGameRegistry(), clock, timeouts, new RecordingSetupDeadlineScheduler(), limiter ?? new RecordingRateLimiter());
 
     private static RejectRematchHandler BuildRejectHandler(
         FakeClock clock, FakeRoomRepository rooms, IRateLimiter? limiter = null) =>

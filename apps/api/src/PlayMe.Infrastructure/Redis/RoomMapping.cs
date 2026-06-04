@@ -68,7 +68,9 @@ internal static class RoomMapping
         ChallengerClockMs: (long)match.Clock.ChallengerRemaining.TotalMilliseconds,
         ActivePlayer: match.Clock.ActivePlayer,
         LastTickAt: match.Clock.LastTickAt,
-        Outcome: match.Outcome is null ? null : ToOutcomeRecord(match.Outcome));
+        Outcome: match.Outcome is null ? null : ToOutcomeRecord(match.Outcome),
+        HostSetupCommitted: match.HostSetupCommitted,
+        ChallengerSetupCommitted: match.ChallengerSetupCommitted);
 
     private static Match FromMatchRecord(MatchRecord record, IGameModule module) => Match.Rehydrate(
         gameId: record.GameId,
@@ -80,7 +82,9 @@ internal static class RoomMapping
             ChallengerRemaining: TimeSpan.FromMilliseconds(record.ChallengerClockMs),
             ActivePlayer: record.ActivePlayer,
             LastTickAt: record.LastTickAt),
-        outcome: record.Outcome is null ? null : FromOutcomeRecord(record.Outcome));
+        outcome: record.Outcome is null ? null : FromOutcomeRecord(record.Outcome),
+        hostSetupCommitted: record.HostSetupCommitted,
+        challengerSetupCommitted: record.ChallengerSetupCommitted);
 
     private static OutcomeRecord ToOutcomeRecord(Outcome outcome) => outcome switch
     {
