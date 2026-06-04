@@ -51,8 +51,13 @@ public sealed class FakeHiddenStateModule : IGameModule, IHiddenStateGame
 public sealed class StubModuleRegistry : IGameModuleRegistry
 {
     private readonly IGameModule _module;
+    private readonly IGameMoveParser? _parser;
 
-    public StubModuleRegistry(IGameModule module) => _module = module;
+    public StubModuleRegistry(IGameModule module, IGameMoveParser? parser = null)
+    {
+        _module = module;
+        _parser = parser;
+    }
 
     public bool IsRegistered(GameId id) => id == _module.Id;
 
@@ -66,5 +71,6 @@ public sealed class StubModuleRegistry : IGameModuleRegistry
     }
 
     public IGameMoveParser GetMoveParser(GameId id) =>
-        throw new NotSupportedException("Seam-A tests never parse moves.");
+        _parser ?? throw new NotSupportedException(
+            "This stub was constructed without a move parser.");
 }
