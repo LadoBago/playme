@@ -47,6 +47,23 @@ export const en = {
   'copyright.body':
     'PlayMe.ge is a free, anonymous platform for playing casual two-player games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi) are in the public domain; only this site’s implementation and presentation are covered.',
 
+  // --- About page ---
+  // First-person: this is a personal learning project, so the voice is the
+  // author's own. Each bullet is a bold lead-in (`*.label`) plus body text.
+  'about.title': 'About',
+  'about.metaDescription':
+    'About PlayMe.ge — a personal learning project for playing casual two-player games online with a friend, built with AI pair-programming.',
+  'about.intro':
+    'PlayMe.ge is a personal project: a platform for playing online with a friend — no signup, just share a link and play a variety of board and strategy games.',
+  'about.why.label': 'What I built it for',
+  'about.why.body':
+    'To explore the capabilities of AI — and for the fun of it. Not with abstract examples, but by building a real product.',
+  'about.how.label': 'How I built it',
+  'about.how.body': 'With the help of AI, from start to finish. I used Claude Code.',
+  'about.stack.label': 'Under the hood',
+  'about.stack.body':
+    'A Next.js web app on the frontend, an ASP.NET Core API on the backend, real-time play over SignalR, and match state in Redis.',
+
   // --- Game names + rules ---
   // `metaTitle` / `metaDescription` are SEO-only (document <title> +
   // meta/OG description). They deliberately carry search synonyms the

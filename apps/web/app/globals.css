@@ -414,9 +414,9 @@ textarea {
 }
 
 /* --- Site footer ---
- * Global, low-emphasis © link in the normal document flow (below page
- * content). Secondary affordance, so the link tracks --fg-muted → --fg
- * on hover rather than the brand accent. */
+ * Low-emphasis footer on the landing page: an About link and the © notice,
+ * separated by a middot. Secondary affordances, so the links track
+ * --fg-muted → --fg on hover rather than the brand accent. */
 
 .site-footer {
   text-align: center;
@@ -432,6 +432,28 @@ textarea {
 .site-footer a:hover {
   color: var(--fg);
   text-decoration: underline;
+}
+
+.site-footer__sep {
+  margin: 0 0.6rem;
+  color: var(--fg-muted);
+}
+
+/* --- About page bullets ---
+ * Each item is a bold lead-in plus muted body text. Comfortable line
+ * spacing for prose; the disc marker sits in the muted ink. */
+
+.about-points {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  line-height: 1.6;
+}
+
+.about-points li::marker {
+  color: var(--fg-muted);
 }
 
 .card {

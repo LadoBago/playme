@@ -115,6 +115,10 @@ export default async function HomePage({ params }: PageProps) {
       </section>
 
       <footer className="site-footer">
+        <Link href={localizedHref('/about', locale)}>{t('about.title')}</Link>
+        <span className="site-footer__sep" aria-hidden>
+          ·
+        </span>
         <Link
           href={localizedHref('/copyright', locale)}
           aria-label={t('copyright.title')}
