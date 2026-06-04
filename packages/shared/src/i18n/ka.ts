@@ -230,6 +230,10 @@ export const ka: Record<EnKey, string> = {
   'games.seabattle.cell.sunk': 'ჩაძირული გემის უჯრა: სტრიქონი {row}, სვეტი {col}',
   'games.seabattle.cell.ship': 'შენი გემი: სტრიქონი {row}, სვეტი {col}',
   'games.seabattle.cell.water': 'წყალი: სტრიქონი {row}, სვეტი {col}',
+  'games.seabattle.feedback.hit': 'მოხვედრა — ისროლე კიდევ!',
+  'games.seabattle.feedback.sunk': 'ჩაიძირა — ისროლე კიდევ!',
+  'games.seabattle.feedback.miss': 'აცილება.',
+  'games.seabattle.setup.committing': 'დასტურდება…',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',

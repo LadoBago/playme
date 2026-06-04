@@ -138,6 +138,18 @@ export const SeaBattleView: GameView = ({
   // until the single commit (docs/games/seabattle.md "Setup phase").
   const [draftFleet, setDraftFleet] = useState<Ship[]>(() => generateFleet());
 
+  // Visual pending state for the commit button. There's no explicit
+  // "commit failed" signal back into the view (errors surface in the
+  // platform banner), so pending self-clears after a short window — the
+  // success path replaces this whole branch via setup.mineCommitted.
+  const [commitPending, setCommitPending] = useState(false);
+  const commitFleet = () => {
+    if (commitPending) return;
+    setCommitPending(true);
+    onSubmitSetup?.({ ships: draftFleet });
+    window.setTimeout(() => setCommitPending(false), 4000);
+  };
+
   // Narrow-screen board pager: the two grids form a scroll-snap carousel
   // (one board per swipe); these track which slide is in view so the tab
   // pills reflect it. On wide containers the boards sit side by side and
@@ -181,6 +193,7 @@ export const SeaBattleView: GameView = ({
             <button
               type="button"
               className="button-ghost"
+              disabled={commitPending}
               onClick={() => setDraftFleet(generateFleet())}
             >
               {t('games.seabattle.setup.reroll')}
@@ -188,9 +201,12 @@ export const SeaBattleView: GameView = ({
             <button
               type="button"
               className="button-primary"
-              onClick={() => onSubmitSetup?.({ ships: draftFleet })}
+              disabled={commitPending}
+              onClick={commitFleet}
             >
-              {t('games.seabattle.setup.commit')}
+              {commitPending
+                ? t('games.seabattle.setup.committing')
+                : t('games.seabattle.setup.commit')}
             </button>
           </div>
         )}
@@ -203,8 +219,25 @@ export const SeaBattleView: GameView = ({
     );
   }
 
+  // Shot feedback: the result of MY latest shot, shown while the match
+  // runs. Makes the hit-shoots-again rule legible — "Hit — shoot again!"
+  // explains why the turn didn't flip.
+  const lastShot = model.myShots.length > 0 ? model.myShots[model.myShots.length - 1] : null;
+  const feedback =
+    !matchEnded && lastShot
+      ? t(`games.seabattle.feedback.${lastShot.result}`)
+      : null;
+
   return (
     <div className="sb sb--battle stack">
+      {feedback ? (
+        <p
+          className={`sb__status ${lastShot?.result === 'miss' ? 'sb__status--muted' : 'sb__status--hit'}`}
+          role="status"
+        >
+          {feedback}
+        </p>
+      ) : null}
       <div className="sb__tabs" role="tablist" aria-hidden>
         <button
           type="button"
