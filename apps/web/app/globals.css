@@ -1713,3 +1713,8 @@ button.sb__cell:disabled {
     flex: 0 0 auto;
   }
 }
+
+.sb__status--hit {
+  color: var(--accent);
+  font-weight: 600;
+}

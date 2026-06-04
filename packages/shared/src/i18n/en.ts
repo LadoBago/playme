@@ -248,6 +248,10 @@ export const en = {
   'games.seabattle.cell.sunk': 'Sunk ship cell at row {row}, column {col}',
   'games.seabattle.cell.ship': 'Your ship at row {row}, column {col}',
   'games.seabattle.cell.water': 'Water at row {row}, column {col}',
+  'games.seabattle.feedback.hit': 'Hit — shoot again!',
+  'games.seabattle.feedback.sunk': 'Ship sunk — shoot again!',
+  'games.seabattle.feedback.miss': 'Miss.',
+  'games.seabattle.setup.committing': 'Confirming…',
 
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'Install PlayMe as an app',
