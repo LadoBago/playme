@@ -18,6 +18,7 @@ using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Commands.SubmitSetup;
 using PlayMe.Application.Games.Connect4;
 using PlayMe.Application.Games.Reversi;
+using PlayMe.Application.Games.SeaBattle;
 using PlayMe.Application.Games.TicTacToe;
 using PlayMe.Application.Queries.GetRoom;
 using PlayMe.Application.Time;
@@ -59,6 +60,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IGameMoveParser, TicTacToeMoveParser>();
         services.AddSingleton<IGameMoveParser, Connect4MoveParser>();
         services.AddSingleton<IGameMoveParser, ReversiMoveParser>();
+        services.AddSingleton<IGameMoveParser, SeaBattleMoveParser>();
 
         return services;
     }
