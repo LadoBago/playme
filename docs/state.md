@@ -82,7 +82,7 @@ This pattern means **one scheduled task per active room — not a per-room 1-sec
 
 ### 2.3 Server-emitted events
 
-Broadcast to both clients via SignalR unless noted:
+Broadcast to both clients via SignalR unless noted. **Hidden-state games** (modules implementing `IHiddenStateGame`, Sprint 10 seam A): while the match has no outcome, events that carry a room payload are delivered to the per-role groups `room:{code}:host` / `room:{code}:challenger` — one per-viewer projection each — instead of one payload to the room group; once the match is terminal, delivery and payload revert to the shared full state. Perfect-information games are unaffected.
 
 | Event | When | Payload |
 |---|---|---|

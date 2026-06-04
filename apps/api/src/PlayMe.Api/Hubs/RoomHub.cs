@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.Security;
 using PlayMe.Application;
+using PlayMe.Application.Abstractions;
 using PlayMe.Application.Commands.AcceptRematch;
 using PlayMe.Application.Commands.ExitRoom;
 using PlayMe.Application.Commands.OfferRematch;
@@ -11,6 +12,7 @@ using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Dtos;
 using PlayMe.Application.Errors;
+using PlayMe.Application.Mapping;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Api.Hubs;
@@ -40,6 +42,7 @@ public sealed class RoomHub : Hub
     private readonly OfferRematchHandler _offerRematch;
     private readonly AcceptRematchHandler _acceptRematch;
     private readonly RejectRematchHandler _rejectRematch;
+    private readonly IGameModuleRegistry _games;
 
     public RoomHub(
         SessionCookieReader sessionReader,
@@ -50,7 +53,8 @@ public sealed class RoomHub : Hub
         ExitRoomHandler exitRoom,
         OfferRematchHandler offerRematch,
         AcceptRematchHandler acceptRematch,
-        RejectRematchHandler rejectRematch)
+        RejectRematchHandler rejectRematch,
+        IGameModuleRegistry games)
     {
         _sessionReader = sessionReader;
         _registerPresence = registerPresence;
@@ -61,6 +65,7 @@ public sealed class RoomHub : Hub
         _offerRematch = offerRematch;
         _acceptRematch = acceptRematch;
         _rejectRematch = rejectRematch;
+        _games = games;
     }
 
     public override async Task OnConnectedAsync()
@@ -79,6 +84,12 @@ public sealed class RoomHub : Hub
         {
             Context.Items[SessionContextKey] = session;
             await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(session.RoomCode.Value));
+            // Role group (Sprint 10 seam A): hidden-state games deliver
+            // per-viewer projections to room:{code}:host / :challenger
+            // instead of one payload to the room group. Registered for
+            // every game so membership never depends on the game module.
+            await Groups.AddToGroupAsync(
+                Context.ConnectionId, RoleGroupName(session.RoomCode.Value, session.Role));
         }
 
         await base.OnConnectedAsync();
@@ -107,16 +118,16 @@ public sealed class RoomHub : Hub
                 switch (value.Effect)
                 {
                     case PresenceReleaseEffect.OpponentDisconnected:
-                        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-                            .SendAsync(RoomHubEvents.OpponentDisconnected,
-                                new { role = session.Role, room = value.Room },
-                                CancellationToken.None);
+                        await SendToOpponentAsync(RoomHubEvents.OpponentDisconnected,
+                            session, value.Room,
+                            room => new { role = session.Role, room },
+                            CancellationToken.None);
                         break;
                     case PresenceReleaseEffect.OpponentExited:
-                        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-                            .SendAsync(RoomHubEvents.OpponentExited,
-                                new { role = session.Role, room = value.Room },
-                                CancellationToken.None);
+                        await SendToOpponentAsync(RoomHubEvents.OpponentExited,
+                            session, value.Room,
+                            room => new { role = session.Role, room },
+                            CancellationToken.None);
                         break;
                     case PresenceReleaseEffect.None:
                         break;
@@ -163,20 +174,20 @@ public sealed class RoomHub : Hub
         var value = result.Value!;
         if (value.MatchJustStarted)
         {
-            await Clients.Group(GroupName(session.RoomCode.Value))
-                .SendAsync(RoomHubEvents.MatchStarted,
-                    new { room = value.Room },
-                    Context.ConnectionAborted);
+            await SendToRoomAsync(RoomHubEvents.MatchStarted,
+                session.RoomCode.Value, value.Room,
+                room => new { room },
+                Context.ConnectionAborted);
         }
         else if (value.Reconnected)
         {
-            await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-                .SendAsync(RoomHubEvents.OpponentReconnected,
-                    new { role = session.Role, room = value.Room },
-                    Context.ConnectionAborted);
+            await SendToOpponentAsync(RoomHubEvents.OpponentReconnected,
+                session, value.Room,
+                room => new { role = session.Role, room },
+                Context.ConnectionAborted);
         }
 
-        return new RoomSessionDto(value.CallerRole, value.Room);
+        return new RoomSessionDto(value.CallerRole, ForCaller(value.Room, session));
     }
 
     /// <summary>
@@ -201,21 +212,21 @@ public sealed class RoomHub : Hub
         var value = result.Value!;
         if (!value.TimedOut)
         {
-            await Clients.Group(GroupName(session.RoomCode.Value))
-                .SendAsync(RoomHubEvents.MoveAccepted,
-                    new { room = value.Room },
-                    Context.ConnectionAborted);
+            await SendToRoomAsync(RoomHubEvents.MoveAccepted,
+                session.RoomCode.Value, value.Room,
+                room => new { room },
+                Context.ConnectionAborted);
         }
 
         if (value.MatchEnded)
         {
-            await Clients.Group(GroupName(session.RoomCode.Value))
-                .SendAsync(RoomHubEvents.MatchEnded,
-                    new { room = value.Room },
-                    Context.ConnectionAborted);
+            await SendToRoomAsync(RoomHubEvents.MatchEnded,
+                session.RoomCode.Value, value.Room,
+                room => new { room },
+                Context.ConnectionAborted);
         }
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -238,12 +249,12 @@ public sealed class RoomHub : Hub
         }
 
         var value = result.Value!;
-        await Clients.Group(GroupName(session.RoomCode.Value))
-            .SendAsync(RoomHubEvents.MatchEnded,
-                new { room = value.Room },
-                Context.ConnectionAborted);
+        await SendToRoomAsync(RoomHubEvents.MatchEnded,
+            session.RoomCode.Value, value.Room,
+            room => new { room },
+            Context.ConnectionAborted);
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -270,13 +281,13 @@ public sealed class RoomHub : Hub
         var value = result.Value!;
         if (value.Transitioned)
         {
-            await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-                .SendAsync(RoomHubEvents.OpponentExited,
-                    new { role = session.Role, room = value.Room },
-                    Context.ConnectionAborted);
+            await SendToOpponentAsync(RoomHubEvents.OpponentExited,
+                session, value.Room,
+                room => new { role = session.Role, room },
+                Context.ConnectionAborted);
         }
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -303,20 +314,20 @@ public sealed class RoomHub : Hub
         switch (value.Effect)
         {
             case RematchOfferResult.OfferRecorded:
-                await Clients.Group(GroupName(session.RoomCode.Value))
-                    .SendAsync(RoomHubEvents.RematchOffered,
-                        new { offerer = session.Role, room = value.Room },
-                        Context.ConnectionAborted);
+                await SendToRoomAsync(RoomHubEvents.RematchOffered,
+                    session.RoomCode.Value, value.Room,
+                    room => new { offerer = session.Role, room },
+                    Context.ConnectionAborted);
                 break;
             case RematchOfferResult.ImplicitlyAccepted:
-                await Clients.Group(GroupName(session.RoomCode.Value))
-                    .SendAsync(RoomHubEvents.MatchStarted,
-                        new { room = value.Room },
-                        Context.ConnectionAborted);
+                await SendToRoomAsync(RoomHubEvents.MatchStarted,
+                    session.RoomCode.Value, value.Room,
+                    room => new { room },
+                    Context.ConnectionAborted);
                 break;
         }
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -336,12 +347,12 @@ public sealed class RoomHub : Hub
         }
 
         var value = result.Value!;
-        await Clients.Group(GroupName(session.RoomCode.Value))
-            .SendAsync(RoomHubEvents.MatchStarted,
-                new { room = value.Room },
-                Context.ConnectionAborted);
+        await SendToRoomAsync(RoomHubEvents.MatchStarted,
+            session.RoomCode.Value, value.Room,
+            room => new { room },
+            Context.ConnectionAborted);
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -362,12 +373,12 @@ public sealed class RoomHub : Hub
         }
 
         var value = result.Value!;
-        await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
-            .SendAsync(RoomHubEvents.RematchDeclined,
-                new { room = value.Room },
-                Context.ConnectionAborted);
+        await SendToOpponentAsync(RoomHubEvents.RematchDeclined,
+            session, value.Room,
+            room => new { room },
+            Context.ConnectionAborted);
 
-        return value.Room;
+        return ForCaller(value.Room, session);
     }
 
     /// <summary>
@@ -376,6 +387,65 @@ public sealed class RoomHub : Hub
     /// after an HTTP join) so the name stays a single source of truth.
     /// </summary>
     public static string GroupName(string roomCode) => $"room:{roomCode}";
+
+    /// <summary>
+    /// Per-role SignalR group (Sprint 10 seam A). Hidden-state games send
+    /// per-viewer projections here instead of one payload to
+    /// <see cref="GroupName"/>; perfect-information games never use it.
+    /// </summary>
+    public static string RoleGroupName(string roomCode, Role role) =>
+        $"room:{roomCode}:{(role == Role.Host ? "host" : "challenger")}";
+
+    private static Role Opposite(Role role) =>
+        role == Role.Host ? Role.Challenger : Role.Host;
+
+    /// <summary>
+    /// Send a room-state-bearing event to both players. Perfect-information
+    /// games (and terminal matches) broadcast one payload to the room group
+    /// — byte-identical to the pre-seam behavior. Live hidden-state games
+    /// send each role group its own projection.
+    /// </summary>
+    private Task SendToRoomAsync(
+        string evt, string roomCode, RoomDto room,
+        Func<RoomDto, object> payload, CancellationToken ct)
+    {
+        if (!RoomViewProjector.RequiresProjection(room, _games))
+        {
+            return Clients.Group(GroupName(roomCode)).SendAsync(evt, payload(room), ct);
+        }
+
+        return Task.WhenAll(
+            Clients.Group(RoleGroupName(roomCode, Role.Host))
+                .SendAsync(evt, payload(RoomViewProjector.ForViewer(room, Role.Host, _games)), ct),
+            Clients.Group(RoleGroupName(roomCode, Role.Challenger))
+                .SendAsync(evt, payload(RoomViewProjector.ForViewer(room, Role.Challenger, _games)), ct));
+    }
+
+    /// <summary>
+    /// Send a room-state-bearing event to the caller's opponent. Perfect-
+    /// information games keep the pre-seam <c>OthersInGroup</c> delivery;
+    /// live hidden-state games target the opposite role group with that
+    /// role's projection (which also excludes any second tab the caller
+    /// has open — strictly safer for hidden state).
+    /// </summary>
+    private Task SendToOpponentAsync(
+        string evt, Session session, RoomDto room,
+        Func<RoomDto, object> payload, CancellationToken ct)
+    {
+        if (!RoomViewProjector.RequiresProjection(room, _games))
+        {
+            return Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                .SendAsync(evt, payload(room), ct);
+        }
+
+        var opponent = Opposite(session.Role);
+        return Clients.Group(RoleGroupName(session.RoomCode.Value, opponent))
+            .SendAsync(evt, payload(RoomViewProjector.ForViewer(room, opponent, _games)), ct);
+    }
+
+    /// <summary>Project a handler-returned room for the calling player.</summary>
+    private RoomDto ForCaller(RoomDto room, Session session) =>
+        RoomViewProjector.ForViewer(room, session.Role, _games);
 
     private Session RequireSession()
     {
