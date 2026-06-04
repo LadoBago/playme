@@ -1,8 +1,8 @@
-# Platform layer, game rules, and domain vocabulary
+# Platform layer and domain vocabulary
 
 Every game shares a **platform layer**. Game code never reimplements platform features. Each game is a **self-contained module** for its rules and UI.
 
-For the state machine and Redis schema, see [`state.md`](state.md). For Hub methods, see [`architecture.md`](architecture.md) §3.3.
+For the state machine and Redis schema, see [`state.md`](state.md). For Hub methods, see [`architecture.md`](architecture.md) §3.3. For the canonical per-game rules, see the per-game specs in [`games/`](games/) (§2 below).
 
 ---
 
@@ -42,33 +42,19 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 
 ## 2. Game modules (independent, no shared engine)
 
-| Module | Game |
-|---|---|
-| `tictactoe` | Tic-Tac-Toe on N×N. `gameOptions: { boardSize ∈ {3, 6, 9} }` picks the grid; win length is derived deterministically (3→3, 6→4, 9→5). Sides: **X** and **O**. |
-| `connect4` | Connect 4 on 7×6 with gravity, win = 4 in a row. Colors: **red** and **yellow** (traditional pair). |
-| `reversi` | Classic Reversi on 8×8 with free central-square opening, win by majority disc count. Colors: **dark** and **light**. |
+| Module | Game | Canonical spec |
+|---|---|---|
+| `tictactoe` | Tic-Tac-Toe on N×N. `gameOptions: { boardSize ∈ {3, 6, 9} }` picks the grid; win length is derived deterministically (3→3, 6→4, 9→5). Sides: **X** and **O**. | [`games/tictactoe.md`](games/tictactoe.md) |
+| `connect4` | Connect 4 on 7×6 with gravity, win = 4 in a row. Colors: **red** and **yellow** (traditional pair). | [`games/connect4.md`](games/connect4.md) |
+| `reversi` | Classic Reversi on 8×8 with free central-square opening, win by majority disc count. Colors: **dark** and **light**. | [`games/reversi.md`](games/reversi.md) |
 
 Each module owns: its board representation, legal-move validation, win/draw detection, and its UI rendering. **Do not extract a shared rules engine across modules** — that decision is intentional. Common features live only in the platform layer.
 
 ### 2.1 Game rules (canonical spec)
 
-These are the authoritative rules. The server validates every move against them. Per-module READMEs (`apps/api/src/PlayMe.Domain/Games/<game>/RULES.md`) may expand on edge cases, but the canonical statement lives here.
+The authoritative per-game rules live in one file per game under [`docs/games/`](games/) (linked from the table above). The server validates every move against them. Per-module READMEs (`apps/api/src/PlayMe.Domain/Games/<game>/RULES.md`) may expand on edge cases, but the canonical statement lives in the game's doc.
 
-**`tictactoe`** — N×N grid, players alternate placing X / O. Host picks `boardSize ∈ {3, 6, 9}` via `gameOptions` at room creation; win length derives deterministically:
-
-- **3×3** — first to align **3 consecutive** marks wins.
-- **6×6** — first to align **at least 4 consecutive** marks wins. A run of 5 or 6 in a row counts as a single win, not separately.
-- **9×9** — first to align **at least 5 consecutive** marks wins (Gomoku-style first-to-5). Longer runs (6 / 7 / 8 / 9 in a row) also count as a single win. First-player advantage exists on 9×9 and is accepted for casual play; no swap / pro / balancing rule in v1.
-
-Lines count horizontally, vertically, or along either diagonal. No wraparound. Board fills with no line → **draw**. **X moves first** regardless of board size.
-
-**`connect4`** — 7-column × 6-row board with **gravity**: a dropped disc occupies the lowest empty cell of the chosen column. Players alternate dropping **red** and **yellow** discs. First to align **4 consecutive** discs (horizontal, vertical, or either diagonal) wins. A column with no empty cells is not a legal target. Whole board fills with no line → **draw**. **Red moves first** by Hasbro convention; the host's color choice at room creation therefore implicitly decides who starts (platform rule §1 #11).
-
-**Connect 4 piece rendering (accessibility).** Red and yellow are perceptually close for the most common forms of color-blindness (deuteranopia / protanopia, ~5% of male players), so the two sides must be distinguishable without relying on hue alone. Render **red as a solid disc** and **yellow as a ring (donut)** — same outer circle, yellow has a transparent inner hole. This preserves Connect 4's "stacked discs" visual identity, keeps both sides symmetric in shape, and remains legible in monochrome, high-contrast mode, screenshots, and at small mobile sizes. The win-line highlight should glow around both shapes equally. Do **not** distinguish the two players by changing the outer shape (e.g. circle vs. triangle) — that breaks the gravity/stacking intuition that defines Connect 4.
-
-**`reversi`** — 8×8 grid, two sides **dark** and **light** placing two-sided discs. **Classic free opening:** the first four placements are restricted to the central 2×2 squares (d4/d5/e4/e5). Players alternate (dark, light, dark, light); no flipping occurs during the opening because no brackets can form on an otherwise-empty board. **Standard placement (move 5+):** a legal move must bracket ≥1 contiguous opponent disc in some straight line (horizontal, vertical, or diagonal) between the placed disc and another disc of the mover's color. **All** bracketed opponent discs in **every** direction flip in a single move. A placement that flips nothing is illegal. **Auto-pass:** when a side has no legal placement, that side passes — without any user-facing action. The server publishes a `mustPassSide` flag on the per-game state when the side-to-move is forced to pass; the renderer reads the flag and submits a synthetic pass move on the player's behalf. The pass is a regular module-owned `GameMove` shape (`{ pass: true }` on the wire); the server re-validates that the side genuinely has no legal placements and rejects the pass otherwise. The platform never sees pass vocabulary — it routes the move opaquely (CLAUDE.md §7 "Platform thinness"). **End:** the game ends when the board is full or both sides pass consecutively. Higher disc count wins; equal counts → **draw**. **Dark moves first.**
-
-### 2.2 Rules shared by all five games
+### 2.2 Rules shared by all games
 
 - A move that lands in an occupied cell (Tic-Tac-Toe, Reversi), a full column (Connect 4), or — for Reversi post-opening — that doesn't bracket an opponent disc, is **rejected by the server**, the player's clock keeps running, and the client must surface a clear inline error — not silently retry.
 - Terminal detection runs **after every accepted move**, on the server. For the line-based games (Tic-Tac-Toe, Connect 4) the server emits `MatchEnded` with the winning line coordinates so the client can highlight them. For Reversi the server emits the final disc counts (`{ dark, light }`) instead; there is no winning line.

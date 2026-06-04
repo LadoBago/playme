@@ -66,7 +66,7 @@ export interface MatchDto {
  * Session-only series scoreboard. Counts roll up across rematches in the
  * same room and reset only when the room itself dies. Win = 1 point;
  * Draw = 0 points but `draws` is tracked for display context.
- * See docs/platform-and-games.md §1 #13.
+ * See docs/platform.md §1 #13.
  */
 export interface ScoreDto {
   host: number;
@@ -87,7 +87,7 @@ export interface RoomDto {
   createdAt: string;
   score: ScoreDto;
   /** Role that offered the current rematch — set while status is
-   * `awaitingRematch`, null otherwise. See docs/platform-and-games.md §1 #10. */
+   * `awaitingRematch`, null otherwise. See docs/platform.md §1 #10. */
   rematchOffererRole?: Role;
   /**
    * Opaque per-room game-options blob the host chose at room creation

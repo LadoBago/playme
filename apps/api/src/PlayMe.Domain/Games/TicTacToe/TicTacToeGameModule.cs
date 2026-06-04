@@ -206,7 +206,7 @@ public sealed class TicTacToeGameModule : IGameModule
 
     /// <summary>
     /// Derive the win length from the board size — the canonical mapping
-    /// per docs/platform-and-games.md §2.1: 3→3, 6→4, 9→5.
+    /// per docs/games/tictactoe.md: 3→3, 6→4, 9→5.
     /// </summary>
     public static int WinLengthFor(int boardSize) => boardSize switch
     {

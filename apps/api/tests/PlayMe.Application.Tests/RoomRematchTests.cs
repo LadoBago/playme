@@ -8,7 +8,7 @@ namespace PlayMe.Application.Tests;
 
 /// <summary>
 /// Domain state-machine + side-swap behaviour of the rematch handshake
-/// (docs/platform-and-games.md §1 #10 / #15). Per-handler authorization
+/// (docs/platform.md §1 #10 / #15). Per-handler authorization
 /// and rate-limit behaviour live in the dedicated handler tests.
 /// </summary>
 public sealed class RoomRematchTests

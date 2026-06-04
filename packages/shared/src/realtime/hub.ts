@@ -252,7 +252,7 @@ export class RoomHubClient {
 
   /**
    * Call Hub.Resign — voluntary in-progress concession
-   * (docs/platform-and-games.md §1 #8). Caller is expected to have
+   * (docs/platform.md §1 #8). Caller is expected to have
    * collected an explicit confirmation before invoking. Resolves with
    * the post-resign room state; rejects with i18n keys
    * (errors.move.matchNotInProgress, errors.rate.exceeded, ...).
@@ -275,7 +275,7 @@ export class RoomHubClient {
 
   /**
    * Call Hub.OfferRematch — first step of the rematch handshake
-   * (docs/platform-and-games.md §1 #10). Returns the room post-call;
+   * (docs/platform.md §1 #10). Returns the room post-call;
    * resolves with status `awaitingRematch` on the first offer, or with
    * status `inProgress` if a simultaneous offer from the opposite role
    * raced this one (implicit accept).

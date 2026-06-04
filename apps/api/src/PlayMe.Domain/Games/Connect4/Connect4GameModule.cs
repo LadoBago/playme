@@ -10,7 +10,7 @@ namespace PlayMe.Domain.Games.Connect4;
 /// row of the chosen column). First to align four consecutive discs of
 /// their colour — horizontally, vertically, or on either diagonal — wins.
 /// A full board with no aligned four → draw. Red moves first (Hasbro
-/// convention; see <see href="../../../../../docs/platform-and-games.md">platform-and-games.md §2.1</see>).
+/// convention; see <see href="../../../../../docs/games/connect4.md">games/connect4.md</see>).
 ///
 /// All vocabulary (sides, reject keys, state shape, winning-line shape) is
 /// per-module — the platform never inspects any of it (CLAUDE.md §7

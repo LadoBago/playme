@@ -34,7 +34,7 @@ public static class PlatformErrors
     public const string RoomBusy = "errors.room.busy";
     public const string ExitNotAllowed = "errors.exit.notAllowed";
 
-    // --- Rematch handshake (docs/platform-and-games.md §1 #10) ---
+    // --- Rematch handshake (docs/platform.md §1 #10) ---
     public const string RematchInvalidState = "errors.rematch.invalidState";
     public const string RematchNotResponder = "errors.rematch.notResponder";
 

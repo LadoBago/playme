@@ -85,7 +85,8 @@ Detailed specs live in [`docs/`](docs/). Read the relevant one before touching t
 |---|---|
 | [architecture.md](docs/architecture.md) | Clean Architecture layers, `RoomHub` surface, shared package, DTO source of truth |
 | [frontend.md](docs/frontend.md) | Web pages, SEO, theming, PWA |
-| [platform-and-games.md](docs/platform-and-games.md) | Platform invariants (clock, reconnect, rematch, sides, scoreboard), per-game rules |
+| [platform.md](docs/platform.md) | Platform invariants (clock, reconnect, rematch, sides, scoreboard), game-module catalog |
+| [games/](docs/games/) | Canonical per-game rules and module specs (one file per game) |
 | [state.md](docs/state.md) | Redis key schema, room lifecycle, clock model, server events |
 | [security.md](docs/security.md) | Threat model, auth, rate limits, headers, CORS |
 | [observability-and-i18n.md](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs |

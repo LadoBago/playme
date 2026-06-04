@@ -8,7 +8,7 @@ using PlayMe.Domain.Platform;
 namespace PlayMe.Application.Commands.Resign;
 
 /// <summary>
-/// Resignation pipeline (docs/platform-and-games.md §1 #8). Mirrors the
+/// Resignation pipeline (docs/platform.md §1 #8). Mirrors the
 /// move pipeline's authorization + lock + stale-clock conversion structure,
 /// but doesn't consult any per-game module — resign is a platform-level
 /// outcome, not a rules-engine decision.

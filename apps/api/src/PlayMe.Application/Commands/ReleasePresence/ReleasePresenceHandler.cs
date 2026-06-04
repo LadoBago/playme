@@ -107,7 +107,7 @@ public sealed class ReleasePresenceHandler
                 room.MarkDisconnected(cmd.CallerRole);
                 await _rooms.SaveAsync(room, ct);
 
-                // Conditional abandon-grace per docs/platform-and-games.md §1 #7:
+                // Conditional abandon-grace per docs/platform.md §1 #7:
                 // only schedule when (a) it's the disconnected player's turn at
                 // the disconnect moment (mirrors the lazy chess clock — no point
                 // ticking grace when the game is waiting on the still-connected

@@ -39,7 +39,7 @@ public sealed class Room
     public bool ChallengerConnected { get; private set; }
 
     /// <summary>Session-only series scoreboard. Survives across rematches
-    /// in the same room (docs/platform-and-games.md §1 #13). Resets only
+    /// in the same room (docs/platform.md §1 #13). Resets only
     /// when the room reaches <see cref="RoomStatus.Closed"/> /
     /// <see cref="RoomStatus.Expired"/> (i.e. when the room itself dies).</summary>
     public SeriesScore SeriesScore { get; private set; }
@@ -47,7 +47,7 @@ public sealed class Room
     /// <summary>The role that offered the current rematch — set when the
     /// room enters <see cref="RoomStatus.AwaitingRematch"/>, cleared on
     /// transition out. The opposite role is the responder authorised to
-    /// accept or reject (docs/platform-and-games.md §1 #10).</summary>
+    /// accept or reject (docs/platform.md §1 #10).</summary>
     public Role? RematchOffererRole { get; private set; }
 
     private Room(
@@ -265,7 +265,7 @@ public sealed class Room
     }
 
     /// <summary>
-    /// First-offer / implicit-accept dispatch for rematch (docs/platform-and-games.md
+    /// First-offer / implicit-accept dispatch for rematch (docs/platform.md
     /// §1 #10). From <see cref="RoomStatus.Ended"/> the caller is recorded
     /// as the offerer and the room transitions to <see cref="RoomStatus.AwaitingRematch"/>
     /// (<paramref name="effect"/> = <see cref="RematchOfferResult.OfferRecorded"/>).
@@ -297,7 +297,7 @@ public sealed class Room
     }
 
     /// <summary>
-    /// Responder-side accept (docs/platform-and-games.md §1 #10 / #15).
+    /// Responder-side accept (docs/platform.md §1 #10 / #15).
     /// Valid only in <see cref="RoomStatus.AwaitingRematch"/> when the
     /// caller is not the original offerer. Swaps host/challenger sides
     /// deterministically and starts a fresh match — the platform skeleton
@@ -321,7 +321,7 @@ public sealed class Room
 
     /// <summary>
     /// Responder-side reject. Valid only in <see cref="RoomStatus.AwaitingRematch"/>
-    /// when the caller is not the original offerer (docs/platform-and-games.md
+    /// when the caller is not the original offerer (docs/platform.md
     /// §1 #10). Transitions directly to <see cref="RoomStatus.Closed"/>;
     /// the rejector's UI auto-routes to the lobby while the offerer stays
     /// with a manual exit and a "declined" notice.
@@ -371,7 +371,7 @@ public sealed class Room
 
     /// <summary>End the current match and transition the room to Ended.
     /// Updates the series scoreboard from the just-concluded match's outcome
-    /// (docs/platform-and-games.md §1 #13).</summary>
+    /// (docs/platform.md §1 #13).</summary>
     public void EndCurrentMatch()
     {
         if (CurrentMatch is null || !CurrentMatch.IsEnded)

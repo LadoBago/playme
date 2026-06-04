@@ -8,7 +8,7 @@ namespace PlayMe.Application.Commands.RejectRematch;
 
 /// <summary>
 /// Responder-side reject of the current rematch offer
-/// (docs/platform-and-games.md §1 #10). Closes the room; the hub broadcasts
+/// (docs/platform.md §1 #10). Closes the room; the hub broadcasts
 /// <c>RematchDeclined</c> to the still-present offerer.
 /// </summary>
 public sealed class RejectRematchHandler

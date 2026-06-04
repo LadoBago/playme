@@ -9,7 +9,7 @@ namespace PlayMe.Application.Tests;
 /// <summary>
 /// <see cref="Room.EndCurrentMatch"/> updates the series scoreboard by
 /// translating the just-concluded match's <see cref="Outcome"/> into a
-/// role-keyed counter update (docs/platform-and-games.md §1 #13). The room
+/// role-keyed counter update (docs/platform.md §1 #13). The room
 /// uses Host=X, Challenger=O via <see cref="RoomFactory.InProgress"/>.
 /// </summary>
 public sealed class RoomScoreTests

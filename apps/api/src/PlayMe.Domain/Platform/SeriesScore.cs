@@ -2,7 +2,7 @@ namespace PlayMe.Domain.Platform;
 
 /// <summary>
 /// Session-only win counter that survives rematches inside a single
-/// <see cref="Room"/> (docs/platform-and-games.md §1 #13). Win = 1 point;
+/// <see cref="Room"/> (docs/platform.md §1 #13). Win = 1 point;
 /// Draw = 0 points but is tracked for display context. <c>Resign</c>,
 /// <c>Timeout</c>, and <c>Disconnect</c> roll into the opponent's win
 /// — from the player's POV "I won that game" reads the same regardless

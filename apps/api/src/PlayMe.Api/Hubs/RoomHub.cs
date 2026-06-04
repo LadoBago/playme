@@ -219,7 +219,7 @@ public sealed class RoomHub : Hub
     }
 
     /// <summary>
-    /// Voluntary in-progress concession (docs/platform-and-games.md §1 #8).
+    /// Voluntary in-progress concession (docs/platform.md §1 #8).
     /// The caller's confirmation step lives on the web — the server only
     /// authorizes and applies. Always broadcasts <c>MatchEnded</c>; the
     /// outcome payload distinguishes <c>resign</c> from a stale-clock
@@ -280,7 +280,7 @@ public sealed class RoomHub : Hub
     }
 
     /// <summary>
-    /// First step of the rematch handshake (docs/platform-and-games.md §1 #10).
+    /// First step of the rematch handshake (docs/platform.md §1 #10).
     /// From <c>Ended</c> the call records the offer and broadcasts
     /// <c>RematchOffered</c> to both clients. A near-simultaneous offer
     /// from the opposite role lands as an implicit accept — the room
@@ -320,7 +320,7 @@ public sealed class RoomHub : Hub
     }
 
     /// <summary>
-    /// Responder accept (docs/platform-and-games.md §1 #10 / #15).
+    /// Responder accept (docs/platform.md §1 #10 / #15).
     /// Swaps sides, starts a fresh match, broadcasts <c>MatchStarted</c>.
     /// </summary>
     public async Task<RoomDto> AcceptRematch()
@@ -345,7 +345,7 @@ public sealed class RoomHub : Hub
     }
 
     /// <summary>
-    /// Responder reject (docs/platform-and-games.md §1 #10). Closes the
+    /// Responder reject (docs/platform.md §1 #10). Closes the
     /// room and broadcasts <c>RematchDeclined</c> to the offerer; the
     /// rejector auto-routes via the returned room state.
     /// </summary>

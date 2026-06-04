@@ -971,7 +971,7 @@ textarea {
 }
 
 /* --- Board (Connect 4) ---
- * Disc/ring iconography per platform-and-games.md §2.1: red as solid disc,
+ * Disc/ring iconography per games/connect4.md: red as solid disc,
  * yellow as a ring (donut). The two are distinguishable without relying on
  * hue alone, so the board stays legible for deuteranopia / protanopia and
  * in monochrome.
