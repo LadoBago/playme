@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { t as translate, type Locale } from '@playme/shared';
 import { useTranslator } from '@/lib/use-locale';
 import type { GameView, GameViewProps } from '../types';
@@ -138,6 +138,23 @@ export const SeaBattleView: GameView = ({
   // until the single commit (docs/games/seabattle.md "Setup phase").
   const [draftFleet, setDraftFleet] = useState<Ship[]>(() => generateFleet());
 
+  // Narrow-screen board pager: the two grids form a scroll-snap carousel
+  // (one board per swipe); these track which slide is in view so the tab
+  // pills reflect it. On wide containers the boards sit side by side and
+  // the pills are hidden — the scroll state simply never changes.
+  const boardsRef = useRef<HTMLDivElement | null>(null);
+  const [activeBoard, setActiveBoard] = useState<'target' | 'fleet'>('target');
+  const onBoardsScroll = () => {
+    const el = boardsRef.current;
+    if (!el) return;
+    setActiveBoard(el.scrollLeft > el.clientWidth / 2 ? 'fleet' : 'target');
+  };
+  const scrollToBoard = (board: 'target' | 'fleet') => {
+    const el = boardsRef.current;
+    if (!el) return;
+    el.scrollTo({ left: board === 'target' ? 0 : el.scrollWidth, behavior: 'smooth' });
+  };
+
   if (!model) {
     return <p className="banner banner--error">{t('errors.unknown')}</p>;
   }
@@ -187,22 +204,44 @@ export const SeaBattleView: GameView = ({
   }
 
   return (
-    <div className="sb stack">
-      <TargetGrid
-        myShots={model.myShots}
-        revealedShips={model.revealedOpponentShips}
-        canFire={canPlay && !matchEnded}
-        onFire={(x, y) => onSubmitMove({ x, y })}
-        revealAll={matchEnded}
-        label={t('games.seabattle.board.target')}
-        t={{ t, tf }}
-      />
-      <FleetGrid
-        fleet={model.myFleet ?? []}
-        shotsAtMe={model.shotsAtMe}
-        label={t('games.seabattle.board.yours')}
-        t={{ t, tf }}
-      />
+    <div className="sb sb--battle stack">
+      <div className="sb__tabs" role="tablist" aria-hidden>
+        <button
+          type="button"
+          className={`radio-pill ${activeBoard === 'target' ? 'radio-pill--active' : ''}`}
+          onClick={() => scrollToBoard('target')}
+        >
+          {t('games.seabattle.board.target')}
+        </button>
+        <button
+          type="button"
+          className={`radio-pill ${activeBoard === 'fleet' ? 'radio-pill--active' : ''}`}
+          onClick={() => scrollToBoard('fleet')}
+        >
+          {t('games.seabattle.board.yours')}
+        </button>
+      </div>
+      {/* DOM order keeps enemy waters first (first slide of the narrow
+          carousel and first in tab order — it's the action board); the
+          wide-container row-reverse puts the own fleet on the left, enemy
+          waters on the right, matching the paper-game convention. */}
+      <div className="sb__boards" ref={boardsRef} onScroll={onBoardsScroll}>
+        <TargetGrid
+          myShots={model.myShots}
+          revealedShips={model.revealedOpponentShips}
+          canFire={canPlay && !matchEnded}
+          onFire={(x, y) => onSubmitMove({ x, y })}
+          revealAll={matchEnded}
+          label={t('games.seabattle.board.target')}
+          t={{ t, tf }}
+        />
+        <FleetGrid
+          fleet={model.myFleet ?? []}
+          shotsAtMe={model.shotsAtMe}
+          label={t('games.seabattle.board.yours')}
+          t={{ t, tf }}
+        />
+      </div>
     </div>
   );
 };

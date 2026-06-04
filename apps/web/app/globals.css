@@ -1654,3 +1654,62 @@ button.sb__cell:disabled {
   border-radius: 50%;
   background: var(--fg-muted);
 }
+
+/* Sea Battle: side-by-side boards when the match container is wide enough
+ * for two 10×10 grids (each ≤ ~436px at the 40px cell cap). Keyed on the
+ * match container, not the viewport, so it composes with any future
+ * sidebar. row-reverse keeps the targeting board first in the DOM (top of
+ * the mobile stack, first in tab order) while showing own fleet left /
+ * enemy waters right — the paper-game convention. */
+/* Narrow (default): the two boards form a horizontal scroll-snap pager —
+ * one full board per swipe, tab pills above for discoverability and
+ * non-touch input. Native momentum scrolling, no JS carousel. */
+.sb__boards {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.sb__boards::-webkit-scrollbar {
+  display: none;
+}
+
+.sb__boards .sb__board {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.sb__tabs {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+@container match (min-width: 880px) {
+  .sb--battle {
+    width: auto;
+  }
+
+  /* Wide: both boards visible side by side — pager off, pills gone. */
+  .sb__tabs {
+    display: none;
+  }
+
+  .sb--battle .sb__boards {
+    flex-direction: row-reverse;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.5rem;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .sb--battle .sb__boards .sb__board {
+    flex: 0 0 auto;
+  }
+}
