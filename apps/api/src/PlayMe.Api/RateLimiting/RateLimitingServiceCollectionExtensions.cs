@@ -2,6 +2,7 @@ using System.Net;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace PlayMe.Api.RateLimiting;
 
@@ -17,6 +18,12 @@ public static class RateLimitingServiceCollectionExtensions
 {
     public static IServiceCollection AddPlayMeRateLimiting(this IServiceCollection services)
     {
+        // Permit counts come from configuration (defaults in the options
+        // class match docs/security.md §5) so a load-test window can widen
+        // them without a redeploy — see IpRateLimitingOptions.
+        services.AddOptions<IpRateLimitingOptions>()
+            .BindConfiguration(IpRateLimitingOptions.SectionName);
+
         services.AddRateLimiter(options =>
         {
             // 429 with a JSON body (HTML-free; the API never serves HTML).
@@ -39,7 +46,7 @@ public static class RateLimitingServiceCollectionExtensions
                     PartitionKey(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 10,
+                        PermitLimit = Limits(ctx).RoomsCreatePermitLimit,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0,
                         AutoReplenishment = true,
@@ -50,7 +57,7 @@ public static class RateLimitingServiceCollectionExtensions
                     PartitionKey(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 5,
+                        PermitLimit = Limits(ctx).RoomsJoinPermitLimit,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0,
                         AutoReplenishment = true,
@@ -65,7 +72,7 @@ public static class RateLimitingServiceCollectionExtensions
                     PartitionKey(ctx),
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 60,
+                        PermitLimit = Limits(ctx).RoomsGetPermitLimit,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0,
                         AutoReplenishment = true,
@@ -74,6 +81,15 @@ public static class RateLimitingServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Resolve the configured permit limits for this request. Read per
+    /// partition creation (the factory lambda runs once per new partition
+    /// key), so the cost is a scoped service lookup on first sight of an
+    /// IP — not per request.
+    /// </summary>
+    private static IpRateLimitingOptions Limits(HttpContext ctx) =>
+        ctx.RequestServices.GetRequiredService<IOptions<IpRateLimitingOptions>>().Value;
 
     /// <summary>
     /// Partition key for per-IP policies. Prefers

@@ -62,6 +62,8 @@ Rate limits operate at three distinct scopes, each with a different lifetime. Pi
 
 **Concrete policies (initial starting points — tune from real traffic):**
 
+The three per-IP middleware permit counts are configurable via the `RateLimiting:Ip` section (`IpRateLimitingOptions`; e.g. env var `RateLimiting__Ip__RoomsJoinPermitLimit`), with the values below as code defaults — a deliberate load-test window (docs/loadtest.md §6) widens them temporarily without a redeploy. Per-session and per-connection limits are intentionally not configurable.
+
 | Action | Layer | Scope | Limit |
 |---|---|---|---|
 | `POST /api/rooms` | ASP.NET rate-limit middleware | per IP | 10 / min |
