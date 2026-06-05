@@ -7,6 +7,9 @@
 - Frontend (`apps/web`) wires Sentry via `@sentry/nextjs`. Source maps uploaded on deploy.
 - Backend (`apps/api`) wires Sentry via `Sentry.AspNetCore`. Releases tagged with the deployed commit SHA.
 - Sentry retention is platform-controlled (Sentry free tier ≈ 30 days). Don't try to configure it from code.
+- **Noise filters (keep Sentry signal-rich).** Two classes of expected-by-design exception are dropped in `Program.cs` so they don't bury real faults:
+  - `HubException` — SignalR's client-facing error vehicle. Every `RoomHub` throw carries a `PlatformErrors` i18n key and is part of the protocol (e.g. `RequireSession()` firing before a cookie exists), not a server bug. Dropped via `AddExceptionFilterForType<HubException>()`.
+  - **Client-abort `OperationCanceledException`** — a player closing the tab, locking the phone, or dropping WiFi mid-request cancels `RequestAborted`/`ConnectionAborted`, which every hub method threads into its handler, so the awaited work throws OCE up the pipeline. Dropped via a `SetBeforeSend` hook **scoped to client aborts only**: it suppresses OCE *only* when `HttpContext.RequestAborted.IsCancellationRequested` — an OCE that fires without the request having aborted (a genuine server-side cancel or bug) still reaches Sentry. Deliberately not a blanket type filter, so the noise goes without creating a blind spot. The hook is on the shared SDK hub, so it covers both the ASP.NET Core integration and the Serilog sink.
 
 ### 1.2 Product analytics — PostHog
 

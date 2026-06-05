@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using PlayMe.Api.DependencyInjection;
@@ -8,6 +9,13 @@ using PlayMe.Application.Abstractions;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Lets the Sentry BeforeSend hook below read the in-flight request's
+// RequestAborted token (registration makes the framework populate the
+// ambient HttpContext; the hook reads it via a plain accessor instance —
+// HttpContextAccessor's backing store is a shared AsyncLocal).
+builder.Services.AddHttpContextAccessor();
+var httpContextAccessor = new HttpContextAccessor();
 
 // Sentry (CLAUDE.md §4.1, §5.8). DSN comes from configuration:
 // `Sentry:Dsn` in appsettings, env var `SENTRY__DSN`, or user-secrets
@@ -29,6 +37,24 @@ builder.WebHost.UseSentry(options =>
     // still logs the throw at Error level, which the Serilog sink below
     // would otherwise forward to Sentry as noise.
     options.AddExceptionFilterForType<HubException>();
+
+    // Drop OperationCanceledException ONLY when the client aborted the
+    // request — a player closing the tab, locking their phone, or dropping
+    // WiFi mid-move cancels Context.ConnectionAborted / RequestAborted, and
+    // every hub method threads that token into its handler, so the awaited
+    // work throws OCE up through the pipeline. That is expected churn, not a
+    // server fault. We do NOT blanket-filter the type: an OCE that fires
+    // *without* the request having aborted (a genuine server-side
+    // cancellation or bug) is not a client disconnect, so it still reaches
+    // Sentry. This runs on the shared hub, so it covers both the
+    // ASP.NET Core integration and the Serilog sink (InitializeSdk=false).
+    // A null HttpContext (capture off the request context) falls through to
+    // "send" on purpose — we only suppress what we can prove is benign.
+    options.SetBeforeSend((@event, _) =>
+        @event.Exception is OperationCanceledException
+        && httpContextAccessor.HttpContext?.RequestAborted.IsCancellationRequested == true
+            ? null
+            : @event);
 });
 
 // Serilog (CLAUDE.md §4.3): structured logging + 7-day rolling file sink.
