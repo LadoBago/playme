@@ -228,8 +228,8 @@ export const en = {
     'Hide a fleet of ten ships, then trade shots. A hit earns another shot. The first to sink the opponent’s entire fleet wins.',
   'games.seabattle.rules':
     'Each player secretly places ten ships of different sizes on their own 10×10 grid: one four-decker, two three-deckers, three two-deckers, and four single-deckers. Ships are straight lines and may not touch each other (not even diagonally). Players then take turns calling shots at the opponent’s grid; each shot is answered miss, hit, or sunk. A hit or a sunk ship earns you another shot — you keep firing until you miss. Shooting the same cell twice is not allowed. The first player to sink the entire enemy fleet wins. A draw is impossible.',
-  'games.seabattle.sideFirst': 'First (shoots first)',
-  'games.seabattle.sideSecond': 'Second',
+  'games.seabattle.sideFirst': 'I’ll go first',
+  'games.seabattle.sideSecond': 'Opponent goes first',
   'games.seabattle.shortSideFirst': 'First',
   'games.seabattle.shortSideSecond': 'Second',
   'games.seabattle.setup.title': 'Place your fleet',
