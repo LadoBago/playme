@@ -225,9 +225,9 @@ export const en = {
   'games.seabattle.metaDescription':
     'Play Sea Battle (Battleship) online with a friend — hide your fleet, call your shots, sink all ten ships. No signup, just share a link.',
   'games.seabattle.shortDescription':
-    'Hide a fleet of ten ships, then trade shots. A hit earns another shot — sink the whole enemy fleet to win.',
+    'Hide a fleet of ten ships, then trade shots. A hit earns another shot. The first to sink the opponent’s entire fleet wins.',
   'games.seabattle.rules':
-    'Each player secretly places a fleet of ten ships on their own 10×10 grid: one four-decker, two three-deckers, three two-deckers, and four single-deckers. Ships are straight lines and may not touch each other — not even diagonally. Players then take turns calling shots at the opponent’s grid; each shot is answered miss, hit, or sunk. A hit or a sunk ship earns you another shot — you keep firing until you miss. Shooting the same cell twice is not allowed. The first player to sink the entire enemy fleet — all twenty ship cells — wins. A draw is impossible.',
+    'Each player secretly places ten ships of different sizes on their own 10×10 grid: one four-decker, two three-deckers, three two-deckers, and four single-deckers. Ships are straight lines and may not touch each other (not even diagonally). Players then take turns calling shots at the opponent’s grid; each shot is answered miss, hit, or sunk. A hit or a sunk ship earns you another shot — you keep firing until you miss. Shooting the same cell twice is not allowed. The first player to sink the entire enemy fleet wins. A draw is impossible.',
   'games.seabattle.sideFirst': 'First (shoots first)',
   'games.seabattle.sideSecond': 'Second',
   'games.seabattle.shortSideFirst': 'First',
