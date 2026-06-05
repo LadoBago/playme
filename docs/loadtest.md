@@ -133,9 +133,21 @@ pnpm --filter @playme/loadtest start -- \
 
 Each step launches pairs up to its target, settles, then measures a clean `--hold-sec` window. `Ctrl-C` drains gracefully. The harness exits non-zero if any pair died mid-run.
 
+### 8.0 How a pair works
+
+A **pair** is one self-driving match between two simulated players that stays alive for the whole run. Unlike a burst-mode scenario (one game, then teardown), a pair plays continuously:
+
+1. **Set up once** — host `POST /api/rooms`, challenger `POST /{code}/join`, both open a SignalR WebSocket and `JoinRoom`. The pair now holds two live connections for the rest of the test.
+2. **Drive both sides from one event stream** — the pair listens to the *host* hub's broadcasts (`MatchStarted` / `MoveAccepted` / `MatchEnded` / `RematchOffered`), each carrying the authoritative room snapshot. Consuming a single stream (rather than both hubs') avoids stale cross-connection overwrites. A monotonic `version` counter wakes the driver whenever a new snapshot lands.
+3. **Play at human pace** — whichever side the snapshot says is to move waits a random `think-min..think-max` ms, then submits a random free cell on the side's own connection. After submitting, it waits for the next snapshot (keyed on the *pre-submit* version, so an already-delivered `MoveAccepted` doesn't deadlock it).
+4. **Rematch and repeat** — on `MatchEnded`, the host `OfferRematch`s and the challenger `AcceptRematch`s (seeded from the accept's own return value to dodge a snapshot race), and the loop continues into the next match. This is what keeps the WebSockets and per-room Redis traffic alive between games.
+5. **Stall guard** — at human pace a healthy match never goes silent for more than ~10 s, so six consecutive silent waits (~60 s) means the pair wedged (lost broadcast, server-closed room); it's recorded as a death and torn down rather than hanging the run.
+
+**Concurrency** is just many pairs running this loop at once. N pairs ≈ 2N live connections + a steady move stream — the load shape production actually has. The orchestrator launches pairs up to each step's target at `--launch-per-min`, drains a clean measurement window per step (ramp-phase samples are discarded so the numbers reflect steady state), and tracks `alive` / `deaths` / matches-completed live. A "death" is counted exactly once — a pair that fails during setup (e.g. a `429`) or wedges mid-run — and ramp/setup errors are surfaced in a per-step block before the window drains them, so a setup failure can't hide behind an empty error table.
+
 ### 8.1 The rate-limit prerequisite (do this first)
 
-Every pair from one test machine shares one source IP, so the production defaults (`POST /api/rooms` 10/min, `/join` 5/min) throttle the **harness**, not the platform — at 5 joins/min, a 200-pair ramp would take 40 minutes and most pairs would die on a `429 errors.rate.exceeded` during setup (these now surface in a per-step "ramp/setup errors" block). PR widening these to be configurable shipped as `IpRateLimitingOptions`; before a run, set on the App Service:
+Every pair from one test machine shares one source IP, so the per-IP defaults (`POST /api/rooms` 30/min, `/join` 30/min — see [`security.md`](security.md) §5) throttle the **harness**, not the platform: a 200-pair ramp launched in a burst far exceeds 30 joins/min and most pairs would die on a `429 errors.rate.exceeded` during setup (these surface in a per-step "ramp/setup errors" block). The counts are bindable via `IpRateLimitingOptions`; before a run, widen them on the App Service:
 
 ```bash
 az webapp config appsettings set -g <rg> -n playme-api-prod --settings \
@@ -144,7 +156,16 @@ az webapp config appsettings set -g <rg> -n playme-api-prod --settings \
   RateLimiting__Ip__RoomsGetPermitLimit=600
 ```
 
-**Revert these to the defaults (10 / 5 / 60) immediately after the run** — they are abuse controls, not test settings. The per-session move limit (60/min) is deliberately *not* configurable; sustained mode's human think-time stays well under it.
+**After the run, delete these overrides** (don't re-set them) so the code defaults reapply — a stale override silently wins over future default changes:
+
+```bash
+az webapp config appsettings delete -g <rg> -n playme-api-prod \
+  --setting-names RateLimiting__Ip__RoomsCreatePermitLimit \
+                  RateLimiting__Ip__RoomsJoinPermitLimit \
+                  RateLimiting__Ip__RoomsGetPermitLimit
+```
+
+They are abuse controls, not test settings. The per-session move limit (60/min) is deliberately *not* configurable; sustained mode's human think-time stays well under it.
 
 ### 8.2 What to watch (three places at once)
 
@@ -162,6 +183,25 @@ Stop escalating steps once `submitMove` p95 crosses ~1 s **or** deaths appear **
 
 ### 8.4 Results captured
 
-| Date | Target | Steps (pairs) | hold | Outcome | Notes |
-|---|---|---|---:|---|---|
-| _pending first production run_ | | | | | |
+**2026-06-05 — first production capacity run.** Target: Azure origin (`playme-api-prod.azurewebsites.net`), B1 App Service + C0 Redis, West Europe. Ramp `10,25,50,100,200` pairs, 300 s hold each, think 1–4 s, launch 60/min. Driven from a single dev machine (Tbilisi → West Europe), so absolute latencies carry a fixed network tax — read the *trend across steps*, not the raw numbers.
+
+`submitMove` latency by step:
+
+| step | pairs | conns | matches | p50 | p95 | p99 | max | deaths |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 10 | 20 | 126 | 144ms | 803ms | 1.22s | 2.18s | 0 |
+| 2 | 25 | 50 | 315 | 157ms | 653ms | 1.02s | 2.03s | 0 |
+| 3 | 50 | 100 | 630 | 172ms | 892ms | 1.64s | 3.56s | 0 |
+| 4 | 100 | 200 | 1176 | **285ms** | **1.31s** | 2.43s | 3.78s | 0 |
+| 5 | 200 | 400 | 1668 | 478ms | 2.43s | 4.25s | 6.13s | **41** |
+
+Totals: 200 pairs launched, **4,543 matches** completed, **41 deaths** — all at the step-5 ramp, from `room.busy` (per-room lock-acquire timeouts under CPU saturation), zero in steps 1–4.
+
+**Findings:**
+
+- **≤ 50 pairs:** flat latency, App Service CPU has headroom, zero errors. Comfortable operating range.
+- **100 pairs (step 4):** the knee. p50 nearly doubles (172 → 285 ms) and p95 crosses 1 s — this coincided with the App Service Plan's `CPU Percentage` hitting ~100% (single B1 vCPU). Still 0 deaths: it holds, just slower.
+- **200 pairs (step 5):** past the wall. p95 2.4 s, and the server sheds `JoinRoom` with retryable `errors.room.busy` (= `LockTimeoutException`; the CPU-starved server can't take the room lock within its ~100 ms budget). Graceful degradation — no crash, no data loss; a real browser client would retry.
+- **Bottleneck is App Service CPU, not Redis.** C0 Server Load stayed comfortable throughout; the single B1 vCPU is the wall.
+
+**Verdict:** B1 + C0 comfortably serves **~50 simultaneous matches**, with **~100 the soft ceiling**. Scale-up trigger: when real concurrent matches approach ~50, bump the App Service plan (more vCPU) before quality degrades — see [`deployment.md`](deployment.md). Ample runway for an anonymous pre-launch casual game.
