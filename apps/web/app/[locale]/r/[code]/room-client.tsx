@@ -13,7 +13,7 @@ import {
   type Role,
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
-import { findGameView } from '@/features/games/registry';
+import { findGameModule } from '@/features/games/registry';
 import { track } from '@/lib/analytics';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useTranslator } from '@/lib/use-locale';
@@ -600,7 +600,9 @@ function MatchView({
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
 
-  const GameView = findGameView(room.gameId);
+  const gameModule = findGameModule(room.gameId);
+  const GameView = gameModule?.View;
+  const TurnStatusExtra = gameModule?.TurnStatusExtra;
 
   if (room.status === 'waitingForOpponent') {
     // Challenger inside this branch means the server has registered them
@@ -680,9 +682,17 @@ function MatchView({
       {match.outcome ? (
         <OutcomeBanner outcome={match.outcome} mySide={mySide} />
       ) : inSetup ? null : (
-        <span className="match-status">
-          {isMyTurn ? t('match.yourTurn') : t('match.opponentTurn')}
-        </span>
+        <div className="match-status-row">
+          <span className="match-status">
+            {isMyTurn ? t('match.yourTurn') : t('match.opponentTurn')}
+          </span>
+          {/* Module-provided inline annotation (e.g. Sea Battle's
+              hit/miss feedback) — same row as the turn pill. Opaque to
+              the platform; most games don't register one. */}
+          {TurnStatusExtra ? (
+            <TurnStatusExtra matchState={match.state} callerSide={mySide} canPlay={isMyTurn} />
+          ) : null}
+        </div>
       )}
 
       <PostMatchStatus room={room} role={role} declined={declined} />

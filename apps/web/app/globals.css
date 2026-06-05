@@ -819,6 +819,18 @@ textarea {
   color: var(--danger);
 }
 
+/* Turn pill plus an optional module-provided inline annotation (e.g.
+ * Sea Battle's hit/miss feedback) on a single row. The wrapper takes
+ * over the pill's content-sizing role in the grid column; inside the
+ * flex row the pill's own `justify-self` is inert. */
+.match-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  justify-self: start;
+}
+
 .match-clock {
   display: flex;
   gap: 0.75rem;

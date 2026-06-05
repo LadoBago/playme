@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { t as translate, type Locale } from '@playme/shared';
 import { useTranslator } from '@/lib/use-locale';
-import type { GameView, GameViewProps } from '../types';
+import type { GameView, GameViewProps, TurnStatusExtraProps } from '../types';
 import { generateFleet } from './fleet';
 import {
   GRID_SIZE,
@@ -122,6 +122,37 @@ function deducedEmptyCells(sunkShips: readonly Ship[]): Set<number> {
   return cells;
 }
 
+/**
+ * Inline shot feedback for the room shell's turn-status row
+ * (`GameModule.TurnStatusExtra`): the result of MY latest shot, next to
+ * the platform's turn pill. Makes the hit-shoots-again rule legible —
+ * "Hit — shoot again!" explains why the turn didn't flip. The result is
+ * shown only while it explains the current turn (hit/sunk while the turn
+ * stayed mine, miss while it's the opponent's); once the turn comes back
+ * after a miss, the stale "Miss." would contradict the pill beside it.
+ */
+export function SeaBattleTurnStatus({ matchState, callerSide, canPlay }: TurnStatusExtraProps) {
+  const { t } = useTranslator();
+  const model = useMemo(() => parseViewModel(matchState, callerSide), [matchState, callerSide]);
+  const lastShot =
+    model && model.phase === 'battle' && model.myShots.length > 0
+      ? model.myShots[model.myShots.length - 1]
+      : null;
+  if (!lastShot) return null;
+
+  const resultMatchesTurn = lastShot.result === 'miss' ? !canPlay : canPlay;
+  if (!resultMatchesTurn) return null;
+
+  return (
+    <span
+      className={`sb__status ${lastShot.result === 'miss' ? 'sb__status--muted' : 'sb__status--hit'}`}
+      role="status"
+    >
+      {t(`games.seabattle.feedback.${lastShot.result}`)}
+    </span>
+  );
+}
+
 export const SeaBattleView: GameView = ({
   matchState,
   callerSide,
@@ -219,25 +250,8 @@ export const SeaBattleView: GameView = ({
     );
   }
 
-  // Shot feedback: the result of MY latest shot, shown while the match
-  // runs. Makes the hit-shoots-again rule legible — "Hit — shoot again!"
-  // explains why the turn didn't flip.
-  const lastShot = model.myShots.length > 0 ? model.myShots[model.myShots.length - 1] : null;
-  const feedback =
-    !matchEnded && lastShot
-      ? t(`games.seabattle.feedback.${lastShot.result}`)
-      : null;
-
   return (
     <div className="sb sb--battle stack">
-      {feedback ? (
-        <p
-          className={`sb__status ${lastShot?.result === 'miss' ? 'sb__status--muted' : 'sb__status--hit'}`}
-          role="status"
-        >
-          {feedback}
-        </p>
-      ) : null}
       <div className="sb__tabs" role="tablist" aria-hidden>
         <button
           type="button"
