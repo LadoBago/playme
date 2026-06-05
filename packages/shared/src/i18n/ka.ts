@@ -276,7 +276,6 @@ export const ka: Record<EnKey, string> = {
   'errors.move.outOfBounds': 'ეს ადგილი დაფის გარეთ არის.',
   'errors.move.mustBracket': 'უნდა მოაქცე მინიმუმ ერთი მოწინააღმდეგის დისკი შენებს შორის.',
   'errors.move.openingMustBeCentral': 'საწყისი სვლები ცენტრალურ ოთხ უჯრაში სრულდება.',
-  'errors.move.passNotAllowed': 'სვლის გამოტოვება არ შეიძლება — კანონიერი სვლა გაქვს.',
   'errors.move.alreadyShot': 'ამ უჯრაზე უკვე ისროლე.',
   'errors.move.notYourTurn': 'შენი ჯერი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',

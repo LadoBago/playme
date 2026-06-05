@@ -7,13 +7,13 @@ using PlayMe.Domain.Platform;
 namespace PlayMe.Application.Games.Reversi;
 
 /// <summary>
-/// Wire → domain mapper for Reversi moves. Two payload shapes are accepted:
-/// a placement (<c>{ "row": int, "col": int }</c>) → <see cref="ReversiPlacement"/>,
-/// and a pass (<c>{ "pass": true }</c>) → <see cref="ReversiPass"/>. The
-/// platform never inspects the payload shape (CLAUDE.md §7 "Platform
-/// thinness"); both the payload shape and the reject keys are agreed
-/// between this parser and the Reversi web renderer — see
-/// <see cref="ReversiErrors"/>.
+/// Wire → domain mapper for Reversi moves. One payload shape is accepted:
+/// a placement (<c>{ "row": int, "col": int }</c>) → <see cref="ReversiPlacement"/>.
+/// Forced skips are resolved server-side via <c>MoveResult.KeepTurn</c> and
+/// never appear on the wire. The platform never inspects the payload shape
+/// (CLAUDE.md §7 "Platform thinness"); both the payload shape and the
+/// reject keys are agreed between this parser and the Reversi web
+/// renderer — see <see cref="ReversiErrors"/>.
 /// </summary>
 public sealed class ReversiMoveParser : IGameMoveParser
 {
@@ -28,13 +28,6 @@ public sealed class ReversiMoveParser : IGameMoveParser
                 ReversiErrors.ValidationMove, "Reversi move payload must be a JSON object.");
         }
 
-        if (dto.Payload.TryGetProperty("pass", out var passEl) &&
-            (passEl.ValueKind == JsonValueKind.True || passEl.ValueKind == JsonValueKind.False) &&
-            passEl.GetBoolean())
-        {
-            return AppResult<GameMove>.Ok(new ReversiPass());
-        }
-
         if (!dto.Payload.TryGetProperty("row", out var rowEl) ||
             rowEl.ValueKind != JsonValueKind.Number ||
             !rowEl.TryGetInt32(out var row) ||
@@ -44,7 +37,7 @@ public sealed class ReversiMoveParser : IGameMoveParser
         {
             return AppResult<GameMove>.Fail(
                 ReversiErrors.ValidationMove,
-                "Reversi move requires numeric 'row' and 'col', or { \"pass\": true }.");
+                "Reversi move requires numeric 'row' and 'col'.");
         }
 
         return AppResult<GameMove>.Ok(new ReversiPlacement(row, col));

@@ -8,7 +8,7 @@ namespace PlayMe.Domain.Games.Reversi;
 /// </summary>
 public static class ReversiErrors
 {
-    /// <summary>Move payload malformed (e.g. missing coordinates and not a pass).</summary>
+    /// <summary>Move payload malformed (e.g. missing coordinates).</summary>
     public const string ValidationMove = "errors.validation.move";
 
     /// <summary>Placement (row, col) outside the 0..7 × 0..7 board.</summary>
@@ -27,10 +27,4 @@ public static class ReversiErrors
     /// Standard-play placement that brackets no opponent disc — illegal.
     /// </summary>
     public const string MustBracket = "errors.move.mustBracket";
-
-    /// <summary>
-    /// Pass submitted while the player has at least one legal placement.
-    /// Defends against a buggy or malicious client.
-    /// </summary>
-    public const string PassNotAllowed = "errors.move.passNotAllowed";
 }

@@ -301,7 +301,6 @@ export const en = {
   'errors.move.mustBracket':
     "You can only place where you'd flip at least one of the opponent's discs.",
   'errors.move.openingMustBeCentral': 'Opening moves go in the central four squares.',
-  'errors.move.passNotAllowed': "You can't pass — you still have a legal move.",
   'errors.move.alreadyShot': "You've already fired at that cell.",
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',

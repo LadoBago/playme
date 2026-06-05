@@ -17,13 +17,14 @@ public sealed record MoveResult
 
     /// <summary>
     /// When true, the mover retains the turn (Sprint 10 seam B — sea
-    /// battle's hit-shoots-again). The platform no longer guarantees strict
-    /// alternation; the module decides retention per accepted move, the
-    /// platform enforces whose turn it is. Chess-clock semantics are
-    /// unchanged: the mover's elapsed time is committed on every accepted
-    /// move and their clock keeps running across a retained turn. For
-    /// rare, decision-free skips (Reversi's pass) prefer the renderer-
-    /// emitted synthetic move instead — see docs/roadmap/sprint-08-reversi.md.
+    /// battle's hit-shoots-again, Reversi stranding the opponent). The
+    /// platform no longer guarantees strict alternation; the module decides
+    /// retention per accepted move, the platform enforces whose turn it is.
+    /// Chess-clock semantics are unchanged: the mover's elapsed time is
+    /// committed on every accepted move and their clock keeps running
+    /// across a retained turn. This is the single mechanism for module-
+    /// decided turn retention — the Sprint 8 renderer-emitted synthetic-
+    /// move pattern is retired (see docs/roadmap/sprint-08-reversi.md).
     /// Meaningless on a match-ending move.
     /// </summary>
     public bool KeepTurn { get; }
