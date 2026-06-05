@@ -12,13 +12,14 @@ namespace PlayMe.Domain.Games.Reversi;
 /// (see <see href="../../../../../docs/games/reversi.md">games/reversi.md</see>).
 ///
 /// <para>
-/// Auto-pass: when the next side-to-move has no legal placement, the
-/// module sets <see cref="ReversiState.MustPassSide"/> on the new state.
-/// The Reversi web renderer reads the flag and submits a synthetic
-/// <see cref="ReversiPass"/> move; the server re-validates that the side
-/// truly has no legal moves and rejects the pass otherwise. The platform
-/// never sees pass vocabulary — it routes the move opaquely via
-/// <see cref="IGameModule.ApplyMove"/> (CLAUDE.md §7 "Platform thinness").
+/// Forced skip: when a placement leaves the opponent without a legal move
+/// (and the mover still has one), the module retains the mover's turn via
+/// <see cref="MoveResult.KeepTurn"/> (seam B) and records the stranded
+/// side in <see cref="ReversiState.SkippedSide"/> so the renderer can
+/// toast both seats. The skip is resolved synchronously on the server —
+/// there is no pass move, no client round-trip, and no pass vocabulary
+/// for the platform to see (CLAUDE.md §7 "Platform thinness"). A
+/// placement that strands <em>both</em> sides ends the match immediately.
 /// </para>
 /// </summary>
 public sealed class ReversiGameModule : IGameModule
@@ -83,7 +84,6 @@ public sealed class ReversiGameModule : IGameModule
         return reversiMove switch
         {
             ReversiPlacement placement => ApplyPlacement(board, side, placement),
-            ReversiPass => ApplyPass(board, side),
             _ => throw new ArgumentException(
                 $"Unknown Reversi move type {reversiMove.GetType().Name}.", nameof(move)),
         };
@@ -132,96 +132,55 @@ public sealed class ReversiGameModule : IGameModule
             cells: newCells,
             moveCount: board.MoveCount + 1,
             lastPlacement: new ReversiCoordinate(row, col),
-            lastWasPass: false,
             flippedLastTurn: flipped,
-            consecutivePasses: 0,
-            sideThatJustMoved: side);
-    }
-
-    private MoveResult ApplyPass(ReversiState board, string side)
-    {
-        // Two-layer pass validation: (1) the previously published state's
-        // MustPassSide flag, which the renderer keys off to auto-emit the
-        // pass, must name this side; (2) re-check legality against the
-        // board itself in case the flag is stale or the client is buggy/
-        // malicious. Both must hold.
-        if (board.MustPassSide != side)
-        {
-            return MoveResult.Reject(ReversiErrors.PassNotAllowed);
-        }
-        if (HasAnyLegalMove(board.Cells, side, board.InOpening))
-        {
-            return MoveResult.Reject(ReversiErrors.PassNotAllowed);
-        }
-
-        var newCells = CopyCells(board.Cells);
-
-        return FinalizeMove(
-            cells: newCells,
-            moveCount: board.MoveCount + 1,
-            lastPlacement: null,
-            lastWasPass: true,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: board.ConsecutivePasses + 1,
             sideThatJustMoved: side);
     }
 
     /// <summary>
-    /// Build the post-move state and decide whether the match ends here or
-    /// the next side must auto-pass. The platform will unconditionally flip
-    /// <c>Match.SideToMove</c> to <see cref="OtherSide"/>(<paramref name="sideThatJustMoved"/>);
-    /// <see cref="ReversiState.MustPassSide"/> is set against that next side
-    /// when needed.
+    /// Build the post-placement state and decide what follows: the match
+    /// ends (board full, or neither side can move), the opponent's turn is
+    /// skipped (they have no legal move — the mover keeps the turn via
+    /// <see cref="MoveResult.KeepTurn"/>), or play alternates normally.
+    /// Every board change goes through here, so a board where nobody can
+    /// move is always detected at the placement that produced it — there is
+    /// no reachable "both stuck" state that survives to a next turn.
     /// </summary>
     private MoveResult FinalizeMove(
         string?[] cells,
         int moveCount,
         ReversiCoordinate? lastPlacement,
-        bool lastWasPass,
         IReadOnlyList<ReversiCoordinate> flippedLastTurn,
-        int consecutivePasses,
         string sideThatJustMoved)
     {
         var nextSide = OtherSide(sideThatJustMoved);
         var inOpening = moveCount < ReversiState.OpeningMoveCount;
 
-        // When this finalize wraps an accepted pass, record which side just
-        // passed so the renderer can pick a per-side toast (passer vs.
-        // opponent). On a placement, lastPassSide stays null.
-        var lastPassSide = lastWasPass ? sideThatJustMoved : null;
-
-        if (consecutivePasses >= 2 || CellsFull(cells))
+        if (CellsFull(cells))
         {
-            var terminal = new ReversiState(
-                cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
+            var terminal = new ReversiState(cells, moveCount, lastPlacement, flippedLastTurn);
             return MoveResult.Accept(terminal, OutcomeFromCounts(terminal.DarkCount, terminal.LightCount));
         }
 
         var nextSideCanMove = HasAnyLegalMove(cells, nextSide, inOpening);
         if (!nextSideCanMove)
         {
-            // Forced pass for the next side. Short-circuit to terminal if
-            // sideThatJustMoved is also stuck — avoids a two-round-trip
-            // double auto-pass for a board where nobody can move.
+            // The opponent is stranded. If the mover is also stuck, nobody
+            // can ever move again — end the match here.
             var sameSideCanMove = HasAnyLegalMove(cells, sideThatJustMoved, inOpening);
             if (!sameSideCanMove)
             {
-                var terminal = new ReversiState(
-                    cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                    consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
+                var terminal = new ReversiState(cells, moveCount, lastPlacement, flippedLastTurn);
                 return MoveResult.Accept(terminal, OutcomeFromCounts(terminal.DarkCount, terminal.LightCount));
             }
 
-            var stateForcedPass = new ReversiState(
-                cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-                consecutivePasses, mustPassSide: nextSide, lastPassSide: lastPassSide);
-            return MoveResult.Accept(stateForcedPass);
+            // Skip the opponent's turn: the mover keeps the move (seam B)
+            // and SkippedSide drives the per-seat renderer toast.
+            var stateSkipped = new ReversiState(
+                cells, moveCount, lastPlacement, flippedLastTurn, skippedSide: nextSide);
+            return MoveResult.Accept(stateSkipped, keepTurn: true);
         }
 
-        var stateNormal = new ReversiState(
-            cells, moveCount, lastPlacement, lastWasPass, flippedLastTurn,
-            consecutivePasses, mustPassSide: null, lastPassSide: lastPassSide);
+        var stateNormal = new ReversiState(cells, moveCount, lastPlacement, flippedLastTurn);
         return MoveResult.Accept(stateNormal);
     }
 
@@ -237,11 +196,8 @@ public sealed class ReversiGameModule : IGameModule
             board.MoveCount,
             board.Cells,
             board.LastPlacement,
-            board.LastWasPass,
             board.FlippedLastTurn,
-            board.ConsecutivePasses,
-            board.MustPassSide,
-            board.LastPassSide,
+            board.SkippedSide,
             board.DarkCount,
             board.LightCount);
         return JsonSerializer.Serialize(payload, SerializerOptions);
@@ -275,11 +231,8 @@ public sealed class ReversiGameModule : IGameModule
             payload.Cells,
             payload.MoveCount,
             payload.LastPlacement,
-            payload.LastWasPass,
             payload.FlippedLastTurn ?? Array.Empty<ReversiCoordinate>(),
-            payload.ConsecutivePasses,
-            payload.MustPassSide,
-            payload.LastPassSide);
+            payload.SkippedSide);
     }
 
     private static bool InBounds(int row, int col) =>
@@ -351,7 +304,7 @@ public sealed class ReversiGameModule : IGameModule
     /// any empty central-2×2 square is legal. In standard play, the cell
     /// must additionally bracket at least one opponent disc.
     /// </summary>
-    private static bool HasAnyLegalMove(IReadOnlyList<string?> cells, string side, bool inOpening)
+    private static bool HasAnyLegalMove(string?[] cells, string side, bool inOpening)
     {
         if (inOpening)
         {
@@ -383,7 +336,7 @@ public sealed class ReversiGameModule : IGameModule
     /// full <see cref="ComputeBracketedCells"/> for legality checks.
     /// </summary>
     private static bool BracketsAny(
-        IReadOnlyList<string?> cells, int row, int col, string side)
+        string?[] cells, int row, int col, string side)
     {
         var other = side == ReversiSides.Dark ? ReversiSides.Light : ReversiSides.Dark;
         foreach (var (dr, dc) in Directions)
@@ -412,11 +365,8 @@ public sealed class ReversiGameModule : IGameModule
         int MoveCount,
         IReadOnlyList<string?> Cells,
         ReversiCoordinate? LastPlacement,
-        bool LastWasPass,
         IReadOnlyList<ReversiCoordinate>? FlippedLastTurn,
-        int ConsecutivePasses,
-        string? MustPassSide,
-        string? LastPassSide = null,
+        string? SkippedSide = null,
         int DarkCount = 0,
         int LightCount = 0);
 }

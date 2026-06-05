@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { t, type Locale } from "@playme/shared";
 import { useTranslator } from "@/lib/use-locale";
 import type { GameView, GameViewProps } from "../types";
@@ -19,17 +19,16 @@ export function reversiSideLabel(side: string, locale: Locale): string | null {
 
 /**
  * Reversi web renderer. Owns the state shape (parsed from `MatchDto.state`),
- * the disc iconography, the click model (per-cell), the legal-move
- * highlighting, and the auto-pass emission — all per-module contract with
- * the API-side `ReversiGameModule` and `ReversiMoveParser`. The platform
- * shell never inspects any of it (CLAUDE.md §7 "Platform thinness").
+ * the disc iconography, the click model (per-cell), and the legal-move
+ * highlighting — all per-module contract with the API-side
+ * `ReversiGameModule` and `ReversiMoveParser`. The platform shell never
+ * inspects any of it (CLAUDE.md §7 "Platform thinness").
  *
- * Auto-pass: when the server's published state carries
- * `mustPassSide === callerSide`, the renderer auto-submits a synthetic
- * `{ pass: true }` move after a short visual delay (so the player sees the
- * toast). The server re-validates the pass and rejects if the legality
- * check changes; rejection surfaces via the platform's error banner and
- * we do not re-fire (the effect is keyed to the unchanging `matchState`).
+ * Forced skips are resolved entirely server-side: when a placement strands
+ * the opponent, the module keeps the mover on turn (`MoveResult.KeepTurn`,
+ * seam B) and publishes `skippedSide` on the state. The renderer only
+ * shows the explanatory toast — it never emits a move on the player's
+ * behalf.
  */
 
 const BOARD_SIZE_FOR_OPENING = 4;
@@ -126,35 +125,6 @@ export const ReversiView: GameView = ({
   const { t, tf } = useTranslator();
   const board = useMemo(() => parseReversiState(matchState), [matchState]);
 
-  // Auto-pass emission. Keyed to `matchState` so a server-rejected pass
-  // does not re-fire (the matchState the renderer holds does not change
-  // until the server accepts something). Brief delay so the toast is
-  // visible before the round-trip lands.
-  const passedFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (
-      !canPlay ||
-      matchEnded ||
-      callerSide === null ||
-      board.mustPassSide !== callerSide
-    ) {
-      return;
-    }
-    if (passedFor.current === matchState) return;
-    passedFor.current = matchState;
-    const id = window.setTimeout(() => {
-      onSubmitMove({ pass: true });
-    }, 700);
-    return () => window.clearTimeout(id);
-  }, [
-    board.mustPassSide,
-    callerSide,
-    canPlay,
-    matchEnded,
-    matchState,
-    onSubmitMove,
-  ]);
-
   const callerLegal = useMemo(() => {
     if (callerSide === null || !canPlay || matchEnded) return new Set<number>();
     return legalPlacements(board, callerSide);
@@ -182,12 +152,16 @@ export const ReversiView: GameView = ({
     onSubmitMove({ row, col });
   }
 
-  const passToastKey =
-    board.lastWasPass && board.lastPassSide
-      ? board.lastPassSide === callerSide
-        ? "games.reversi.toast.autoPassSelf"
-        : "games.reversi.toast.autoPassOpponent"
-      : null;
+  // `skippedSide` names the player whose turn the server skipped — from
+  // their seat the opponent (the mover) plays again, so the skipped viewer
+  // gets the "self" copy and the mover gets the "opponent" copy. Same
+  // direction as the retired `lastPassSide === callerSide` ternary; don't
+  // "fix" it backwards.
+  const passToastKey = board.skippedSide
+    ? board.skippedSide === callerSide
+      ? "games.reversi.toast.autoPassSelf"
+      : "games.reversi.toast.autoPassOpponent"
+    : null;
 
   return (
     <div className="rv">

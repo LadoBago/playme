@@ -9,7 +9,7 @@ namespace PlayMe.Application.Tests;
 /// Per-game rules unit tests for <see cref="ReversiGameModule"/>. The
 /// platform's move pipeline is covered by <c>SubmitMoveHandler</c> tests;
 /// these tests pin the Reversi rules directly so opening / bracketing /
-/// auto-pass logic can't accidentally regress the platform tests.
+/// forced-skip logic can't accidentally regress the platform tests.
 ///
 /// Conventions:
 /// - Cells are row-major on an 8×8 board; row 0 is the top, row 7 the bottom.
@@ -41,11 +41,8 @@ public sealed class ReversiGameModuleTests
         state.Cells.Should().AllSatisfy(c => c.Should().BeNull());
         state.MoveCount.Should().Be(0);
         state.LastPlacement.Should().BeNull();
-        state.LastWasPass.Should().BeFalse();
         state.FlippedLastTurn.Should().BeEmpty();
-        state.ConsecutivePasses.Should().Be(0);
-        state.MustPassSide.Should().BeNull();
-        state.LastPassSide.Should().BeNull();
+        state.SkippedSide.Should().BeNull();
         state.DarkCount.Should().Be(0);
         state.LightCount.Should().Be(0);
         state.InOpening.Should().BeTrue();
@@ -100,7 +97,7 @@ public sealed class ReversiGameModuleTests
         board.InOpening.Should().BeFalse();
         board.DarkCount.Should().Be(2);
         board.LightCount.Should().Be(2);
-        board.MustPassSide.Should().BeNull();
+        board.SkippedSide.Should().BeNull();
     }
 
     [Fact]
@@ -137,9 +134,7 @@ public sealed class ReversiGameModuleTests
         next.DarkCount.Should().Be(4);
         next.LightCount.Should().Be(1);
         next.LastPlacement.Should().Be(new ReversiCoordinate(3, 2));
-        next.LastWasPass.Should().BeFalse();
-        next.LastPassSide.Should().BeNull();
-        next.ConsecutivePasses.Should().Be(0);
+        next.SkippedSide.Should().BeNull();
     }
 
     [Fact]
@@ -161,10 +156,7 @@ public sealed class ReversiGameModuleTests
             cells,
             moveCount: 6,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: null);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 3));
 
@@ -205,84 +197,59 @@ public sealed class ReversiGameModuleTests
     }
 
     [Fact]
-    public void Pass_is_rejected_when_must_pass_side_does_not_match()
+    public void Strand_opponent_keeps_turn_and_sets_skippedSide()
     {
-        // State says Light must pass; Dark submits a pass. Reject.
-        var state = StuckState(ReversiSides.Light);
+        // Pre-state (Dark to move): D at (0,0); L at (1,1) (to flip); L at
+        // (3,3) (survives, isolated). Dark plays (2,2):
+        //   diagonal (-1,-1): (1,1)=L, (0,0)=D → bracket, flip (1,1) → D.
+        //   diagonal (1,1): (3,3)=L, (4,4)=empty → no bracket.
+        // Post-state: D at (0,0),(1,1),(2,2); L at (3,3).
+        //   Light is stranded: the only Dark run ending at L(3,3) is the
+        //   main diagonal, and the cell beyond (0,0) is off-board; no other
+        //   Dark disc is line-adjacent to an empty cell with an L anchor.
+        //   Dark can still move: (4,4) brackets (3,3) against (2,2).
+        // → the module skips Light's turn: KeepTurn, SkippedSide = Light.
+        var state = StrandSetup();
 
-        var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPass());
-
-        result.Accepted.Should().BeFalse();
-        result.RejectKey.Should().Be(ReversiErrors.PassNotAllowed);
-    }
-
-    [Fact]
-    public void Pass_is_rejected_when_side_actually_has_a_legal_move()
-    {
-        // Defensive: state.MustPassSide says Dark must pass, but the board
-        // actually offers Dark a legal placement. Reject the pass.
-        // Build a board where Dark genuinely can move (the diagonal-opening
-        // post-state offers Dark four legal flips), then tamper the
-        // MustPassSide flag.
-        var board = (ReversiState)OthelloDiagonalOpening();
-        var tampered = new ReversiState(
-            board.Cells,
-            board.MoveCount,
-            board.LastPlacement,
-            board.LastWasPass,
-            board.FlippedLastTurn,
-            board.ConsecutivePasses,
-            mustPassSide: ReversiSides.Dark);
-
-        var result = _module.ApplyMove(tampered, ReversiSides.Dark, new ReversiPass());
-
-        result.Accepted.Should().BeFalse();
-        result.RejectKey.Should().Be(ReversiErrors.PassNotAllowed);
-    }
-
-    [Fact]
-    public void Pass_is_accepted_when_side_truly_stuck_and_flag_matches()
-    {
-        // Board: only Light at (0,0), only Dark at (5,5). Light to move,
-        // Light has no legal placement (only one own disc, no bracket
-        // pattern reaches it). MustPassSide = Light. ConsecutivePasses = 0.
-        // Light passes. Accepted; ConsecutivePasses → 1; LastWasPass = true.
-        var state = StuckState(ReversiSides.Light);
-
-        var result = _module.ApplyMove(state, ReversiSides.Light, new ReversiPass());
+        var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(2, 2));
 
         result.Accepted.Should().BeTrue();
+        result.KeepTurn.Should().BeTrue();
+        result.Ending.Should().BeNull();
         var next = (ReversiState)result.NewState!;
-        next.LastWasPass.Should().BeTrue();
-        next.LastPassSide.Should().Be(ReversiSides.Light);
-        next.LastPlacement.Should().BeNull();
-        next.FlippedLastTurn.Should().BeEmpty();
-        next.ConsecutivePasses.Should().Be(1);
+        next.SkippedSide.Should().Be(ReversiSides.Light);
+        next.CellAt(1, 1).Should().Be(ReversiSides.Dark); // flipped
+        next.LastPlacement.Should().Be(new ReversiCoordinate(2, 2));
+        next.FlippedLastTurn.Should().BeEquivalentTo(new[] { new ReversiCoordinate(1, 1) });
     }
 
     [Fact]
-    public void Two_consecutive_passes_terminate_with_disc_count_outcome()
+    public void Chained_strands_keep_turn_until_terminal()
     {
-        // Pre-state: Light has already passed once (ConsecutivePasses=1) and
-        // MustPassSide=Dark. Dark passes → ConsecutivePasses=2 → terminal.
-        var cells = new string?[ReversiState.CellCount];
-        cells[ReversiState.IndexOf(0, 0)] = ReversiSides.Light;
-        cells[ReversiState.IndexOf(5, 5)] = ReversiSides.Dark;
-        var state = new ReversiState(
-            cells,
-            moveCount: 30,
-            lastPlacement: null,
-            lastWasPass: true,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 1,
-            mustPassSide: ReversiSides.Dark);
+        // Same setup plus a third isolated Light at (5,5). Dark strands
+        // Light twice in a row (each placement flips the next diagonal
+        // Light, leaving the one after it isolated but Dark-bracketable),
+        // then the third placement flips the last Light — nobody can move,
+        // so the match ends there. This also pins the both-stuck terminal
+        // that replaced the old two-consecutive-passes trigger.
+        var state = (IGameState)StrandSetup(extraLightAt: new ReversiCoordinate(5, 5));
 
-        var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPass());
+        var first = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(2, 2));
+        first.KeepTurn.Should().BeTrue();
+        ((ReversiState)first.NewState!).SkippedSide.Should().Be(ReversiSides.Light);
 
-        result.Accepted.Should().BeTrue();
-        result.Ending.Should().BeOfType<Draw>(); // 1 dark, 1 light → tie
-        var next = (ReversiState)result.NewState!;
-        next.ConsecutivePasses.Should().Be(2);
+        var second = _module.ApplyMove(first.NewState!, ReversiSides.Dark, new ReversiPlacement(4, 4));
+        second.KeepTurn.Should().BeTrue();
+        second.Ending.Should().BeNull();
+        ((ReversiState)second.NewState!).SkippedSide.Should().Be(ReversiSides.Light);
+
+        var third = _module.ApplyMove(second.NewState!, ReversiSides.Dark, new ReversiPlacement(6, 6));
+        third.Accepted.Should().BeTrue();
+        third.Ending.Should().BeOfType<Win>().Which.WinningSide.Should().Be(ReversiSides.Dark);
+        var terminal = (ReversiState)third.NewState!;
+        terminal.DarkCount.Should().Be(7);
+        terminal.LightCount.Should().Be(0);
+        terminal.SkippedSide.Should().BeNull();
     }
 
     [Fact]
@@ -304,10 +271,7 @@ public sealed class ReversiGameModuleTests
             cells,
             moveCount: 4,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: null);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(5, 5));
 
@@ -316,7 +280,7 @@ public sealed class ReversiGameModuleTests
         var next = (ReversiState)result.NewState!;
         next.DarkCount.Should().Be(3);
         next.LightCount.Should().Be(0);
-        next.MustPassSide.Should().BeNull();
+        next.SkippedSide.Should().BeNull();
     }
 
     [Fact]
@@ -330,10 +294,7 @@ public sealed class ReversiGameModuleTests
             cells,
             moveCount: 4,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: null);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
 
         var result = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(5, 5));
 
@@ -399,10 +360,7 @@ public sealed class ReversiGameModuleTests
             cells,
             moveCount: 4,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: null);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(2, 3));
 
@@ -452,10 +410,7 @@ public sealed class ReversiGameModuleTests
             cells,
             moveCount: 63,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: null);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
 
         var result = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(0, 0));
 
@@ -469,25 +424,21 @@ public sealed class ReversiGameModuleTests
     [Fact]
     public void Serialize_and_Deserialize_round_trip_preserves_state()
     {
-        var state = (IGameState)_module.NewMatch(null);
-        state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 4)).NewState!;
-        state = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(3, 3)).NewState!;
-        state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(4, 3)).NewState!;
-        state = _module.ApplyMove(state, ReversiSides.Light, new ReversiPlacement(4, 4)).NewState!;
-        state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(3, 2)).NewState!;
+        // Use the stranding placement so the round trip covers a non-null
+        // SkippedSide, not just the happy alternating path.
+        var state = (IGameState)StrandSetup();
+        state = _module.ApplyMove(state, ReversiSides.Dark, new ReversiPlacement(2, 2)).NewState!;
 
         var json = _module.Serialize(state);
         var restored = (ReversiState)_module.Deserialize(json);
         var original = (ReversiState)state;
 
+        original.SkippedSide.Should().Be(ReversiSides.Light); // setup sanity
         restored.Cells.Should().Equal(original.Cells);
         restored.MoveCount.Should().Be(original.MoveCount);
         restored.LastPlacement.Should().Be(original.LastPlacement);
-        restored.LastWasPass.Should().Be(original.LastWasPass);
         restored.FlippedLastTurn.Should().BeEquivalentTo(original.FlippedLastTurn);
-        restored.ConsecutivePasses.Should().Be(original.ConsecutivePasses);
-        restored.MustPassSide.Should().Be(original.MustPassSide);
-        restored.LastPassSide.Should().Be(original.LastPassSide);
+        restored.SkippedSide.Should().Be(original.SkippedSide);
         restored.DarkCount.Should().Be(original.DarkCount);
         restored.LightCount.Should().Be(original.LightCount);
     }
@@ -518,24 +469,26 @@ public sealed class ReversiGameModuleTests
     }
 
     /// <summary>
-    /// Hand-built post-opening state with a single Dark at (5,5) and a
-    /// single Light at (0,0). Both sides are stuck (only one own disc each,
-    /// no bracket pattern can reach the other side). Used by pass-handling
-    /// tests; the parameter selects which side the <c>MustPassSide</c> flag
-    /// is set against.
+    /// Hand-built post-opening state (Dark to move): D at (0,0), L at (1,1),
+    /// L at (3,3), optionally one more Light. Dark's placement at (2,2)
+    /// flips (1,1) and strands Light — every Dark line ending at a surviving
+    /// Light runs off-board behind (0,0) — while Dark keeps a legal move one
+    /// step further down the diagonal. Used by the forced-skip tests.
     /// </summary>
-    private static ReversiState StuckState(string mustPassSide)
+    private static ReversiState StrandSetup(ReversiCoordinate? extraLightAt = null)
     {
         var cells = new string?[ReversiState.CellCount];
-        cells[ReversiState.IndexOf(0, 0)] = ReversiSides.Light;
-        cells[ReversiState.IndexOf(5, 5)] = ReversiSides.Dark;
+        cells[ReversiState.IndexOf(0, 0)] = ReversiSides.Dark;
+        cells[ReversiState.IndexOf(1, 1)] = ReversiSides.Light;
+        cells[ReversiState.IndexOf(3, 3)] = ReversiSides.Light;
+        if (extraLightAt is { } extra)
+        {
+            cells[ReversiState.IndexOf(extra.Row, extra.Col)] = ReversiSides.Light;
+        }
         return new ReversiState(
             cells,
-            moveCount: 20,
+            moveCount: 10,
             lastPlacement: null,
-            lastWasPass: false,
-            flippedLastTurn: Array.Empty<ReversiCoordinate>(),
-            consecutivePasses: 0,
-            mustPassSide: mustPassSide);
+            flippedLastTurn: Array.Empty<ReversiCoordinate>());
     }
 }
