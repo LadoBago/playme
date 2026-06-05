@@ -4,10 +4,12 @@ Real-time, anonymous, two-player casual games platform. Host picks a game, share
 
 Live at [playme.ge](https://playme.ge).
 
-## What's in the catalog (MVP)
+## What's in the catalog
 
 - Tic-Tac-Toe 3×3 / 6×6 / 9×9
 - Connect 4
+- Reversi
+- Sea Battle (ჩაძირობანა)
 
 Each game is a self-contained module. No accounts, no queue, no leaderboards — invite-link matchmaking only. Languages: Georgian (default) and English.
 
