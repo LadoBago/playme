@@ -67,6 +67,13 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
             {
                 break;
             }
+            catch (RedisTimeoutException ex)
+            {
+                // Retryable by design: entries stay in the sorted set and the
+                // next tick re-reads them, so a slow Redis round-trip is noise,
+                // not an error (Sentry issue 122300482).
+                LogSweepTimedOut(_logger, ex);
+            }
             catch (Exception ex)
             {
                 LogSweepFailed(_logger, ex);
@@ -167,4 +174,10 @@ public sealed partial class RedisTimeoutSweeperService : BackgroundService
 
     [LoggerMessage(EventId = 2002, Level = LogLevel.Error, Message = "Timeout sweeper iteration failed")]
     private static partial void LogSweepFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 2003,
+        Level = LogLevel.Warning,
+        Message = "Timeout sweeper Redis call timed out; entries remain scheduled and retry next sweep")]
+    private static partial void LogSweepTimedOut(ILogger logger, Exception ex);
 }

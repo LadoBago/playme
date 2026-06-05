@@ -33,10 +33,15 @@ public static class InfrastructureServiceCollectionExtensions
         // abortConnect=false: retry quietly if Redis isn't reachable at startup.
         // Production prod-readiness: a real liveness/readiness check (Sprint 7)
         // covers the "Redis went away" case explicitly.
+        // asyncTimeout=15s per Azure Cache for Redis guidance: the default 5s
+        // trips on Basic-tier maintenance stalls and single-vCPU thread-pool
+        // ramp-up (Sentry issue 122300482), surfacing retryable sweeper polls
+        // as RedisTimeoutException noise.
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             var options = ConfigurationOptions.Parse(redisConnectionString);
             options.AbortOnConnectFail = false;
+            options.AsyncTimeout = 15_000;
             return ConnectionMultiplexer.Connect(options);
         });
 
