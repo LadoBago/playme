@@ -1,13 +1,24 @@
-// Basic concurrent-rooms load test for the PlayMe API + SignalR backplane.
-// See docs/loadtest.md for the runbook + how to interpret the output.
+// Load test for the PlayMe API + SignalR backplane. Two modes — see
+// docs/loadtest.md for the runbook + how to interpret the output.
 //
-// Spawns N independent room scenarios in parallel. Each scenario plays a
-// random TicTacToe 3x3 game end-to-end: host creates a room, challenger
-// joins via HTTP, both connect SignalR and dispatch random moves until
-// the server emits MatchEnded. Per-IP rate limits (10 create/min, 5
-// join/min) cap how fast we can start new scenarios from a single
-// machine — the script paces room starts at --ramp-per-min and lets
-// the active rooms run concurrently from there.
+// --mode burst (default, the original Sprint 7 scenario): spawns N
+// independent room scenarios. Each plays one random TicTacToe 3x3 game
+// end-to-end as fast as the move limiter allows, then tears down. Verifies
+// the whole pipeline mechanically; concurrency stays near zero.
+//
+// --mode sustained (Sprint 11 capacity test): ramps long-lived match
+// pairs through --steps (e.g. 10,25,50,100,200 concurrent pairs). Each
+// pair creates one room, then plays rematch after rematch with human
+// think-time between moves, so N pairs ≈ 2N live WebSocket connections
+// plus a steady move stream — the shape production load actually has.
+// Per-step latency windows answer "how does p95 move RTT degrade as
+// concurrency grows".
+//
+// Per-IP rate limits (10 create/min, 5 join/min) cap how fast a single
+// machine can start scenarios — burst paces at --ramp-per-min; sustained
+// paces pair launches at --launch-per-min and needs the limits widened
+// server-side to ramp big steps (RateLimiting__Ip__* env vars; see
+// docs/loadtest.md §6).
 
 import * as signalR from '@microsoft/signalr';
 import { parseArgs } from 'node:util';
@@ -37,6 +48,11 @@ interface MoveAcceptedPayload {
   room: RoomDto;
 }
 
+/** Shared shape of every room-carrying broadcast the sustained driver consumes. */
+interface RoomUpdatePayload {
+  room: RoomDto;
+}
+
 // ---------- Metrics ---------------------------------------------------------
 
 interface Summary {
@@ -59,6 +75,12 @@ class Metric {
     const at = (q: number): number => sorted[Math.min(n - 1, Math.floor(n * q))] ?? 0;
     return { n, p50: at(0.5), p95: at(0.95), p99: at(0.99), max: sorted[n - 1] ?? 0 };
   }
+  /** Summarize and clear — sustained mode reports per hold-window. */
+  drain(): Summary {
+    const s = this.summary();
+    this.samples = [];
+    return s;
+  }
 }
 
 const metrics = {
@@ -67,6 +89,8 @@ const metrics = {
   signalrStart: new Metric(),
   signalrJoinRoom: new Metric(),
   submitMove: new Metric(),
+  offerRematch: new Metric(),
+  acceptRematch: new Metric(),
   totalRoomMs: new Metric(),
 };
 
@@ -74,6 +98,13 @@ const errorCounts = new Map<string, number>();
 function recordError(phase: string, err: unknown): void {
   const key = `${phase}: ${err instanceof Error ? err.message : String(err)}`;
   errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
+}
+
+/** Snapshot and clear the error table — sustained mode reports per window. */
+function drainErrors(): Map<string, number> {
+  const snapshot = new Map(errorCounts);
+  errorCounts.clear();
+  return snapshot;
 }
 
 // ---------- Cookie jar (per scenario actor) --------------------------------
@@ -349,12 +380,340 @@ async function silentStop(hub: signalR.HubConnection | null): Promise<void> {
   }
 }
 
+// ---------- Sustained mode --------------------------------------------------
+
+/** Live counters shared between sustained pairs and the orchestrator. */
+const sustained = {
+  alive: 0,
+  deaths: 0,
+  matchesCompleted: 0,
+};
+
+function randomBetween(minMs: number, maxMs: number): number {
+  return minMs + Math.random() * (maxMs - minMs);
+}
+
+/**
+ * One long-lived match pair: create + join + connect once, then loop
+ * match → rematch handshake → match until `stopped()` flips. Mirrors two
+ * real players who keep clicking "rematch", including human think-time
+ * between moves — that's what keeps the pair's WebSockets and per-room
+ * Redis traffic alive for the whole run.
+ */
+async function runSustainedPair(
+  pairId: number,
+  args: Args,
+  stopped: () => boolean,
+): Promise<void> {
+  const hostJar = new CookieJar();
+  const challengerJar = new CookieJar();
+  let hostHub: signalR.HubConnection | null = null;
+  let challengerHub: signalR.HubConnection | null = null;
+  // A pair "dies" if it stops driving before the test is torn down — a
+  // setup failure or a mid-run wedge. Counted exactly once here, since a
+  // throw from the inner loop passes through both finally and catch.
+  let died = false;
+  const die = (): void => {
+    if (!died && !stopped()) {
+      died = true;
+      sustained.deaths += 1;
+    }
+  };
+
+  try {
+    const code = await createRoom(args.target, hostJar, `sus-host-${pairId}`);
+    await joinRoomHttp(args.target, challengerJar, code, `sus-chal-${pairId}`);
+
+    hostHub = buildHub(args.target, hostJar);
+    challengerHub = buildHub(args.target, challengerJar);
+    // Non-null aliases: the driver loop's closures below can't rely on
+    // narrowing of the outer `let` bindings (those exist for the finally-
+    // block teardown).
+    const hHub = hostHub;
+    const cHub = challengerHub;
+    await Promise.all([
+      timed(metrics.signalrStart, () => hHub.start()),
+      timed(metrics.signalrStart, () => cHub.start()),
+    ]);
+
+    // Single source of truth for the pair: the host hub's event stream.
+    // Both connections receive the same room-group broadcasts; consuming
+    // one stream avoids stale cross-hub snapshot overwrites. The
+    // challenger hub still registers no-op handlers to silence the
+    // client's "no handler" warnings.
+    let activeRoom: RoomDto | null = null;
+    let version = 0;
+    let notify: (() => void) | null = null;
+    const onRoom = (payload: RoomUpdatePayload): void => {
+      activeRoom = payload.room;
+      version += 1;
+      const n = notify;
+      notify = null;
+      n?.();
+    };
+    const noop = (): void => undefined;
+    for (const event of ['MatchStarted', 'MoveAccepted', 'MatchEnded', 'RematchOffered']) {
+      hHub.on(event, onRoom);
+      cHub.on(event, noop);
+    }
+    for (const event of ['OpponentJoined', 'OpponentDisconnected', 'OpponentReconnected']) {
+      hHub.on(event, noop);
+      cHub.on(event, noop);
+    }
+
+    /** Wait until a broadcast lands after `since`, or the timeout passes. */
+    const waitChange = (since: number, timeoutMs: number): Promise<void> =>
+      new Promise((resolve) => {
+        if (version !== since) {
+          resolve();
+          return;
+        }
+        const timer = setTimeout(() => {
+          if (notify === wake) notify = null;
+          resolve();
+        }, timeoutMs);
+        const wake = (): void => {
+          clearTimeout(timer);
+          resolve();
+        };
+        notify = wake;
+      });
+
+    const [hostSession, challengerSession] = await Promise.all([
+      timed(metrics.signalrJoinRoom, () => hHub.invoke<RoomSessionDto>('JoinRoom', code)),
+      timed(metrics.signalrJoinRoom, () => cHub.invoke<RoomSessionDto>('JoinRoom', code)),
+    ]);
+    activeRoom ??=
+      challengerSession.room.status === 'inProgress' ? challengerSession.room : hostSession.room;
+
+    sustained.alive += 1;
+    const occupied = new Set<number>();
+    let lastStatus: RoomDto['status'] | null = null;
+
+    try {
+      // Stall guard: at human pace nothing in a healthy match is more
+      // than ~10s away, so a long silent stretch means the pair wedged
+      // (lost broadcast, server-closed room) — recycle rather than hang.
+      let quietRounds = 0;
+      while (!stopped() && quietRounds < 6) {
+        const room = activeRoom;
+        const seen = version;
+        if (room === null) {
+          await waitChange(seen, 10_000);
+          quietRounds += 1;
+          continue;
+        }
+
+        const statusChanged = room.status !== lastStatus;
+        lastStatus = room.status;
+
+        if (room.status === 'inProgress') {
+          if (statusChanged) occupied.clear(); // fresh match (incl. rematch)
+          const active = room.currentMatch?.clock?.activePlayer;
+          if (!active) {
+            await waitChange(seen, 10_000);
+            quietRounds += 1;
+            continue;
+          }
+          await sleep(randomBetween(args.thinkMinMs, args.thinkMaxMs));
+          if (stopped()) break;
+          if (version !== seen) continue; // board moved while thinking — re-read
+          const cell = pickFreeCell(occupied);
+          if (cell === null) {
+            await waitChange(seen, 10_000);
+            quietRounds += 1;
+            continue;
+          }
+          occupied.add(cell);
+          const hub = active === 'host' ? hHub : cHub;
+          try {
+            await timed(metrics.submitMove, () => hub.invoke('SubmitMove', { payload: { cell } }));
+            quietRounds = 0;
+          } catch (err) {
+            occupied.delete(cell);
+            recordError('submitMove', err);
+            await sleep(250);
+          }
+          // Settle on the post-move snapshot before the next iteration —
+          // keyed on `seen` (pre-submit), so if MoveAccepted already landed
+          // while the invoke was resolving this returns at once rather than
+          // blocking for an event that's already past.
+          await waitChange(seen, 15_000);
+        } else if (room.status === 'ended') {
+          if (statusChanged) sustained.matchesCompleted += 1;
+          if (stopped()) break;
+          // Rematch handshake. Sequential invokes: OfferRematch returns
+          // once the offer is recorded, so AcceptRematch can't race it.
+          await sleep(randomBetween(500, 1_500));
+          try {
+            await timed(metrics.offerRematch, () => hHub.invoke('OfferRematch'));
+            const restarted = await timed(metrics.acceptRematch, () =>
+              cHub.invoke<RoomDto>('AcceptRematch'),
+            );
+            // Seed from the accept's own return so the next iteration sees
+            // the restarted (inProgress) room immediately — otherwise the
+            // transient awaitingRematch left by the RematchOffered broadcast
+            // can race us into a second, invalid AcceptRematch.
+            activeRoom = restarted;
+            version += 1;
+            quietRounds = 0;
+          } catch (err) {
+            recordError('rematch', err);
+            await waitChange(seen, 10_000);
+            quietRounds += 1;
+          }
+        } else if (room.status === 'awaitingRematch') {
+          // Offer landed but our accept didn't take — retry the accept.
+          try {
+            await timed(metrics.acceptRematch, () => cHub.invoke('AcceptRematch'));
+            quietRounds = 0;
+          } catch (err) {
+            recordError('rematch', err);
+            await waitChange(seen, 10_000);
+            quietRounds += 1;
+          }
+        } else {
+          // closed / expired / anything else — the room is gone for good.
+          break;
+        }
+      }
+      if (quietRounds >= 6) {
+        recordError('pair', new Error('pair wedged: no usable room update for ~60s'));
+        die();
+      }
+    } finally {
+      sustained.alive -= 1;
+    }
+  } catch (err) {
+    recordError('pair', err);
+    die();
+  } finally {
+    // Plain teardown, no ExitRoom: a vanished pair exercises the
+    // disconnect-grace + sweeper path, which is realistic churn too.
+    await silentStop(hostHub);
+    await silentStop(challengerHub);
+  }
+}
+
+function printStepReport(step: number, target: number, windowSec: number, matches: number): void {
+  console.log(`\n── step ${step}: ${target} concurrent pairs (${target * 2} connections) ──`);
+  console.log(
+    `  pairs alive: ${sustained.alive}/${target}` +
+      `   deaths so far: ${sustained.deaths}` +
+      `   matches this window: ${matches}` +
+      `   (${((matches * 60) / windowSec).toFixed(1)}/min)`,
+  );
+  const fmt = (label: string, s: Summary): void => {
+    if (s.n === 0) {
+      console.log(`  ${label.padEnd(22)}  n=0`);
+      return;
+    }
+    console.log(
+      `  ${label.padEnd(22)}  n=${String(s.n).padStart(5)}  ` +
+        `p50=${formatMs(s.p50).padStart(8)}  ` +
+        `p95=${formatMs(s.p95).padStart(8)}  ` +
+        `p99=${formatMs(s.p99).padStart(8)}  ` +
+        `max=${formatMs(s.max).padStart(8)}`,
+    );
+  };
+  fmt('submitMove', metrics.submitMove.drain());
+  fmt('offerRematch', metrics.offerRematch.drain());
+  fmt('acceptRematch', metrics.acceptRematch.drain());
+  fmt('createRoom (HTTP)', metrics.createRoom.drain());
+  fmt('joinRoom (HTTP)', metrics.joinRoomHttp.drain());
+  fmt('signalR start', metrics.signalrStart.drain());
+  fmt('signalR JoinRoom', metrics.signalrJoinRoom.drain());
+  const errors = drainErrors();
+  if (errors.size > 0) {
+    console.log('  errors this window:');
+    const top = [...errors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    for (const [msg, count] of top) {
+      console.log(`    ×${String(count).padStart(4)}  ${msg}`);
+    }
+  }
+}
+
+async function runSustained(args: Args): Promise<number> {
+  console.log(
+    `Sustained load test: steps [${args.steps.join(', ')}] pairs, ` +
+      `hold ${args.holdSec}s, think ${args.thinkMinMs}-${args.thinkMaxMs}ms, ` +
+      `launch ${args.launchPerMin}/min, target ${args.target}`,
+  );
+
+  let stopFlag = false;
+  const stopped = (): boolean => stopFlag;
+  process.on('SIGINT', () => {
+    console.log('\nSIGINT — draining pairs…');
+    stopFlag = true;
+  });
+
+  const launchIntervalMs = 60_000 / args.launchPerMin;
+  const pairPromises: Promise<void>[] = [];
+  let launched = 0;
+  let matchesAtWindowStart = 0;
+
+  for (const [index, target] of args.steps.entries()) {
+    while (launched < target && !stopFlag) {
+      // Fire-and-track: the pair runs until the whole test stops. Failures
+      // are recorded inside runSustainedPair, never thrown.
+      pairPromises.push(runSustainedPair(launched, args, stopped));
+      launched += 1;
+      if (launched < target) await sleep(launchIntervalMs);
+    }
+    if (stopFlag) break;
+
+    // Settle, then measure a clean window: drain everything accumulated
+    // during the ramp so the step report reflects steady state only. Ramp-
+    // phase errors (e.g. 429s from the per-IP join limit, refused connects)
+    // would otherwise vanish in this drain — surface them first, since a
+    // pair that died during setup never reaches the window's error table.
+    await sleep(Math.min(10_000, args.holdSec * 250));
+    for (const m of Object.values(metrics)) m.drain();
+    const rampErrors = drainErrors();
+    if (rampErrors.size > 0) {
+      console.log(`\n── step ${index + 1} ramp/setup errors (pre-measurement) ──`);
+      for (const [msg, count] of [...rampErrors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)) {
+        console.log(`    ×${String(count).padStart(4)}  ${msg}`);
+      }
+    }
+    matchesAtWindowStart = sustained.matchesCompleted;
+
+    await sleep(args.holdSec * 1_000);
+    printStepReport(
+      index + 1,
+      target,
+      args.holdSec,
+      sustained.matchesCompleted - matchesAtWindowStart,
+    );
+  }
+
+  console.log('\nStopping pairs…');
+  stopFlag = true;
+  await Promise.race([Promise.allSettled(pairPromises), sleep(15_000)]);
+  console.log(
+    `Done. ${launched} pairs launched, ${sustained.deaths} died mid-run, ` +
+      `${sustained.matchesCompleted} matches completed total.`,
+  );
+  return sustained.deaths > 0 ? 1 : 0;
+}
+
 // ---------- Main orchestrator ---------------------------------------------
 
 interface Args {
   target: string;
+  mode: 'burst' | 'sustained';
   rooms: number;
   rampPerMin: number;
+  steps: number[];
+  holdSec: number;
+  thinkMinMs: number;
+  thinkMaxMs: number;
+  launchPerMin: number;
+}
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const value = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function parseCliArgs(): Args {
@@ -367,17 +726,34 @@ function parseCliArgs(): Args {
     args: rawArgs,
     options: {
       target: { type: 'string', default: 'http://localhost:5000' },
+      mode: { type: 'string', default: 'burst' },
       rooms: { type: 'string', default: '50' },
       'ramp-per-min': { type: 'string', default: '4' },
+      // Sustained-mode knobs (ignored in burst mode):
+      steps: { type: 'string', default: '10,25,50' },
+      'hold-sec': { type: 'string', default: '300' },
+      'think-min-ms': { type: 'string', default: '1000' },
+      'think-max-ms': { type: 'string', default: '4000' },
+      'launch-per-min': { type: 'string', default: '4' },
     },
     allowPositionals: true,
   });
-  const rooms = Number.parseInt(values.rooms ?? '50', 10);
-  const rampPerMin = Number.parseInt(values['ramp-per-min'] ?? '4', 10);
+  const steps = (values.steps ?? '10,25,50')
+    .split(',')
+    .map((s) => Number.parseInt(s.trim(), 10))
+    .filter((s) => Number.isFinite(s) && s > 0);
+  const thinkMinMs = parsePositiveInt(values['think-min-ms'], 1_000);
+  const thinkMaxMs = Math.max(thinkMinMs, parsePositiveInt(values['think-max-ms'], 4_000));
   return {
     target: values.target ?? 'http://localhost:5000',
-    rooms: Number.isFinite(rooms) && rooms > 0 ? rooms : 50,
-    rampPerMin: Number.isFinite(rampPerMin) && rampPerMin > 0 ? rampPerMin : 4,
+    mode: values.mode === 'sustained' ? 'sustained' : 'burst',
+    rooms: parsePositiveInt(values.rooms, 50),
+    rampPerMin: parsePositiveInt(values['ramp-per-min'], 4),
+    steps: steps.length > 0 ? steps : [10, 25, 50],
+    holdSec: parsePositiveInt(values['hold-sec'], 300),
+    thinkMinMs,
+    thinkMaxMs,
+    launchPerMin: parsePositiveInt(values['launch-per-min'], 4),
   };
 }
 
@@ -436,6 +812,11 @@ function printReport(args: Args, wallClockMs: number, outcomes: RoomOutcome[]): 
 
 async function main(): Promise<void> {
   const args = parseCliArgs();
+
+  if (args.mode === 'sustained') {
+    process.exit(await runSustained(args));
+  }
+
   console.log(
     `Starting load test: ${args.rooms} rooms, ramp ${args.rampPerMin}/min, target ${args.target}`,
   );
