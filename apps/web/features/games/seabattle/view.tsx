@@ -207,8 +207,15 @@ export const SeaBattleView: GameView = ({
     const opponentCommitted = setup?.opponentCommitted ?? false;
     return (
       <div className="sb stack" aria-label={t('games.seabattle.setup.title')}>
-        <h2 className="sb__heading">{t('games.seabattle.setup.title')}</h2>
-        <p className="sb__hint">{t('games.seabattle.setup.hint')}</p>
+        {/* The heading itself toggles the hint — collapsed by default so
+            the grid and the shuffle/confirm controls stay above the fold
+            on phones. */}
+        <details className="sb__setup-hint">
+          <summary>
+            <h2 className="sb__heading">{t('games.seabattle.setup.title')}</h2>
+          </summary>
+          <p className="sb__hint">{t('games.seabattle.setup.hint')}</p>
+        </details>
         <FleetGrid
           fleet={mineCommitted ? (model.myFleet ?? draftFleet) : draftFleet}
           shotsAtMe={[]}
