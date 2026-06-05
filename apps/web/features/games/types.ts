@@ -41,6 +41,23 @@ export interface GameViewProps {
 export type GameView = (props: GameViewProps) => ReactNode;
 
 /**
+ * Props for `GameModule.TurnStatusExtra` — an optional inline annotation
+ * the room shell renders on the same row as its "your turn / opponent's
+ * turn" pill while the match runs (never during setup or after the
+ * outcome). Same opacity rules as `GameViewProps`: the platform passes
+ * the state blob through and never inspects what the module renders.
+ */
+export interface TurnStatusExtraProps {
+  /** Opaque per-game serialized state from `MatchDto.state`. */
+  readonly matchState: string;
+  /** The caller's side in this module's vocab, or null while role
+   *  detection is in flight. */
+  readonly callerSide: string | null;
+  /** True iff it's the caller's turn (mirrors `GameViewProps.canPlay`). */
+  readonly canPlay: boolean;
+}
+
+/**
  * Per-game module registered with the platform. The view is the renderer
  * the room shell mounts; `getSideLabel` resolves an opaque side string
  * (this module's vocab — "x"/"o", "red"/"yellow", …) to a localised
@@ -51,4 +68,8 @@ export type GameView = (props: GameViewProps) => ReactNode;
 export interface GameModule {
   readonly View: GameView;
   readonly getSideLabel: (side: string, locale: Locale) => string | null;
+  /** Optional inline annotation rendered beside the platform's turn pill
+   *  (e.g. Sea Battle's hit/miss/sunk shot feedback). Omitted by games
+   *  with nothing to report — the turn row is then the pill alone. */
+  readonly TurnStatusExtra?: (props: TurnStatusExtraProps) => ReactNode;
 }
