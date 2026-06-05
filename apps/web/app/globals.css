@@ -1668,6 +1668,22 @@ button.sb__cell:disabled {
   color: var(--sb-hit);
 }
 
+/* Setup-hint expander — the "Place your fleet" heading doubles as the
+ * toggle (no extra summary line). Collapsed by default so the fleet grid
+ * and the shuffle/confirm controls stay above the fold on phones. */
+.sb__setup-hint > summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sb__setup-hint > summary .sb__heading {
+  display: inline; /* keep the heading on the disclosure marker's line */
+}
+
+.sb__setup-hint[open] > summary {
+  margin-bottom: 0.4rem;
+}
+
 .sb__setup-controls {
   display: flex;
   gap: 0.6rem;
