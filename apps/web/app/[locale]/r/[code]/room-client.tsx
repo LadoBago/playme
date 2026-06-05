@@ -726,7 +726,7 @@ function MatchView({
         <div className="match-controls">
           <button
             type="button"
-            className="button-ghost"
+            className="button-danger-soft"
             onClick={() => setConfirmResignOpen(true)}
             disabled={resignPending}
           >
@@ -824,7 +824,7 @@ function PostMatchPanel({
       <div className="match-controls">
         <button
           type="button"
-          className="button-ghost"
+          className="button-danger-soft"
           onClick={onRejectClick}
         >
           {t('match.rematch.reject.button')}

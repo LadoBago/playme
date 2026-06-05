@@ -1441,9 +1441,9 @@ textarea {
   justify-content: space-between;
 }
 
-/* Destructive action variant — resign, reject rematch. Same shape as
- * .button-primary, swap the accent for the danger token so the colour
- * carries the meaning. */
+/* Destructive action variant — the final confirm in danger-tone dialogs
+ * (resign, reject rematch). Same shape as .button-primary, swap the
+ * accent for the danger token so the colour carries the meaning. */
 .button-danger {
   background: var(--danger);
   color: var(--accent-fg);
@@ -1455,6 +1455,25 @@ textarea {
 
 .button-danger:hover:not(:disabled) {
   filter: brightness(1.08);
+}
+
+/* Soft destructive variant — destructive actions that sit in the page
+ * (resign during the match, decline rematch). Danger-tinted fill +
+ * danger-leaning text so the action carries its meaning in colour
+ * without solid red shouting from the board; .button-danger stays
+ * reserved for a dialog's final confirm. The text mixes toward `--fg`
+ * so it darkens on the light theme and lightens on the dark one,
+ * keeping contrast on the translucent tint in both. */
+.button-danger-soft {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: color-mix(in srgb, var(--danger) 70%, var(--fg));
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+}
+
+.button-danger-soft:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
 }
 
 /* Native <dialog> modal — shared <ConfirmDialog>. The backdrop dim and
