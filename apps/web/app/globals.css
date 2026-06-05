@@ -1516,7 +1516,11 @@ textarea {
    * `--bg`). Dark override below mirrors the theme-token pattern. */
   --sb-water: #dcebf5;
   --sb-ship: var(--fg);
-  --sb-hit: var(--danger);
+  /* Hit/sunk hue is per-viewer: win-green on enemy waters (damage I
+   * dealt — this default), danger red on my own fleet (damage taken —
+   * the .sb__grid--mine override below). Both theme tokens, so dark
+   * mode adapts on its own. */
+  --sb-hit: var(--win-stroke);
   width: calc(10 * var(--sb-cell) + 9 * var(--sb-gap) + 18px);
   max-width: 100%;
   margin-inline: auto;
@@ -1569,6 +1573,10 @@ textarea {
   border: 1px solid var(--border);
   width: max-content;
   max-width: 100%;
+}
+
+.sb__grid--mine {
+  --sb-hit: var(--danger);
 }
 
 .sb__cell {
