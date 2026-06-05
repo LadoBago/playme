@@ -62,13 +62,15 @@ Rate limits operate at three distinct scopes, each with a different lifetime. Pi
 
 **Concrete policies (initial starting points — tune from real traffic):**
 
-The three per-IP middleware permit counts are configurable via the `RateLimiting:Ip` section (`IpRateLimitingOptions`; e.g. env var `RateLimiting__Ip__RoomsJoinPermitLimit`), with the values below as code defaults — a deliberate load-test window (docs/loadtest.md §6) widens them temporarily without a redeploy. Per-session and per-connection limits are intentionally not configurable.
+The three per-IP middleware permit counts are configurable via the `RateLimiting:Ip` section (`IpRateLimitingOptions`; e.g. env var `RateLimiting__Ip__RoomsJoinPermitLimit`), with the values below as code defaults — a deliberate load-test window (docs/loadtest.md §8.1) widens them temporarily without a redeploy. Per-session and per-connection limits are intentionally not configurable.
+
+**Sizing — these limits gate match *setup rate*, not concurrent matches.** A live match runs entirely over the per-session/per-connection SignalR path (below), which is **not** keyed by IP; only the three pre-session HTTP endpoints are. So N already-running matches behind one corporate NAT / proxy cost zero per-IP budget — the limit only bites when matches are *created/joined*. The defaults below let ~20 matches **start** from a single shared IP within one minute (20 creates + 20 joins + invite-preview gets, plus headroom). The abuse trade is deliberate: a 30/min create ceiling lets one IP spawn ~43k rooms/day, but rooms are anonymous, ephemeral (a `WaitingForOpponent` room self-expires in 30 min via the sweeper) and hold no PII, so the only cost is transient Redis memory. If room-creation spam ever became a real problem, the fix is a finer key (proof-of-work, longer window) — not punitively low limits that throttle legitimate shared-IP users. Note the Vercel-edge `/r/<roomCode>` per-IP limit (last row) is a separate dial on the same shared-IP traffic; raise it in lockstep if NAT'd invite-preview loads start tripping it.
 
 | Action | Layer | Scope | Limit |
 |---|---|---|---|
-| `POST /api/rooms` | ASP.NET rate-limit middleware | per IP | 10 / min |
-| `GET /api/rooms/{code}` | ASP.NET rate-limit middleware | per IP | 60 / min |
-| `POST /api/rooms/{code}/join` (per IP) | ASP.NET rate-limit middleware | per IP | 5 / min |
+| `POST /api/rooms` | ASP.NET rate-limit middleware | per IP | 30 / min |
+| `GET /api/rooms/{code}` | ASP.NET rate-limit middleware | per IP | 120 / min |
+| `POST /api/rooms/{code}/join` (per IP) | ASP.NET rate-limit middleware | per IP | 30 / min |
 | `POST /api/rooms/{code}/join` (per code) | Application-layer check | per room code | 10 / hr |
 | `RoomHub.SubmitMove` (sustained) | Application-layer check | per session | 60 / min |
 | `RoomHub.SubmitMove` (burst) | SignalR pipeline | per connection | 10 / sec |
