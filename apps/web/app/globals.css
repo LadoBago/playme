@@ -1510,15 +1510,33 @@ textarea {
 .sb {
   --sb-cell: clamp(22px, calc((100vw - 3rem - 18px) / 10), 40px);
   --sb-gap: 2px;
-  --sb-water: var(--bg);
+  /* Water carries a sea-blue tint in both themes — the one deliberate
+   * departure from the warm palette, so the board reads as "sea" instead
+   * of blending into the cream page background (it previously reused
+   * `--bg`). Dark override below mirrors the theme-token pattern. */
+  --sb-water: #dcebf5;
   --sb-ship: var(--fg);
-  --sb-hit: var(--danger);
+  /* Hit/sunk hue is per-viewer: win-green on enemy waters (damage I
+   * dealt — this default), danger red on my own fleet (damage taken —
+   * the .sb__grid--mine override below). Both theme tokens, so dark
+   * mode adapts on its own. */
+  --sb-hit: var(--win-stroke);
   width: calc(10 * var(--sb-cell) + 9 * var(--sb-gap) + 18px);
   max-width: 100%;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+:root[data-theme='dark'] .sb {
+  --sb-water: #12202c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .sb {
+    --sb-water: #12202c;
+  }
 }
 
 .sb__heading {
@@ -1555,6 +1573,10 @@ textarea {
   border: 1px solid var(--border);
   width: max-content;
   max-width: 100%;
+}
+
+.sb__grid--mine {
+  --sb-hit: var(--danger);
 }
 
 .sb__cell {
@@ -1596,7 +1618,11 @@ button.sb__cell:disabled {
 }
 
 .sb__cell--deduced {
-  background: color-mix(in srgb, var(--sb-water) 55%, var(--border));
+  /* "Dead water" around a sunk ship (no-touch rule — pointless to shoot).
+   * Mixed with the opaque `--fg-muted` rather than the translucent
+   * `--border`: against the blue water the border mix was within a few
+   * RGB points of a plain cell and the hint disappeared. */
+  background: color-mix(in srgb, var(--sb-water) 70%, var(--fg-muted));
 }
 
 .sb__cell--last {
