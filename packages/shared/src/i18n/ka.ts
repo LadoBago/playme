@@ -133,8 +133,8 @@ export const ka: Record<EnKey, string> = {
   'join.invite.rules': 'წესები',
 
   // --- Match UI ---
-  'match.yourTurn': 'შენი რიგია',
-  'match.opponentTurn': 'მოწინააღმდეგის რიგია',
+  'match.yourTurn': 'შენი ჯერია',
+  'match.opponentTurn': 'მოწინააღმდეგის ჯერია',
   'match.you': 'შენ',
   'match.opponent': 'მოწინააღმდეგე',
   'match.opponentDisconnected': 'მოწინააღმდეგე გათიშულია.',
@@ -200,8 +200,8 @@ export const ka: Record<EnKey, string> = {
   'games.reversi.cell.legal': 'კანონიერი სვლა, მწკრივი {row}, სვეტი {col}',
   'games.reversi.score.dark': '{count} შავი',
   'games.reversi.score.light': '{count} თეთრი',
-  'games.reversi.toast.autoPassSelf': 'სვლა არ გაქვს, კვლავ მისი სვლაა.',
-  'games.reversi.toast.autoPassOpponent': 'მოწინააღმდეგეს არ აქვს სვლა, კვლავ შენ სვლაა.',
+  'games.reversi.toast.autoPassSelf': 'სვლა არ გაქვს, კვლავ მისი ჯერია.',
+  'games.reversi.toast.autoPassOpponent': 'მოწინააღმდეგეს არ აქვს სვლა, კვლავ შენი ჯერია.',
   'games.seabattle.name': 'ჩაძირობანა',
   'games.seabattle.metaTitle': 'ჩაძირობანა (გემის ჩაძირობანა) ონლაინ — Sea Battle | PlayMe',
   'games.seabattle.metaDescription':
@@ -278,7 +278,7 @@ export const ka: Record<EnKey, string> = {
   'errors.move.openingMustBeCentral': 'საწყისი სვლები ცენტრალურ ოთხ უჯრაში სრულდება.',
   'errors.move.passNotAllowed': 'სვლის გამოტოვება არ შეიძლება — კანონიერი სვლა გაქვს.',
   'errors.move.alreadyShot': 'ამ უჯრაზე უკვე ისროლე.',
-  'errors.move.notYourTurn': 'შენი რიგი არ არის.',
+  'errors.move.notYourTurn': 'შენი ჯერი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',
   'errors.rate.exceeded': 'მეტისმეტად სწრაფად ცდილობ. დაიცადე და სცადე თავიდან.',
