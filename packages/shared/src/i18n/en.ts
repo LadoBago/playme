@@ -223,7 +223,7 @@ export const en = {
   'games.seabattle.name': 'Sea Battle',
   'games.seabattle.metaTitle': 'Sea Battle (Battleship) online — play with a friend | PlayMe',
   'games.seabattle.metaDescription':
-    'Play Sea Battle (Battleship) online with a friend — hide your fleet, call your shots, sink all ten ships. No signup, just share a link.',
+    'Play Sea Battle (Battleship) online with a friend — secretly place your fleet, call your shots, sink every enemy ship. No signup, just share a link.',
   'games.seabattle.shortDescription':
     'Hide a fleet of ten ships, then trade shots. A hit earns another shot. The first to sink the opponent’s entire fleet wins.',
   'games.seabattle.rules':
