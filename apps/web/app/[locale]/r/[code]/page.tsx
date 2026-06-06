@@ -15,8 +15,12 @@ interface PageProps {
 }
 
 // CLAUDE.md §2.5: room URLs are private/ephemeral — noindex always.
+// `alternates` overrides the root layout's inherited canonical + hreflang
+// with nothing: a noindex page declaring a homepage canonical (or language
+// alternates) is contradictory signalling to crawlers.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
+  alternates: {},
 };
 
 async function fetchRoomSsr(code: string): Promise<RoomDto | null> {
