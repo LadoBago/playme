@@ -11,8 +11,15 @@ interface MatchHeaderProps {
 
 export function MatchHeader({ room, role }: MatchHeaderProps) {
   const { t, locale } = useTranslator();
-  const myPlayer = role === 'host' ? room.host : role === 'challenger' ? room.challenger : null;
-  const opponentPlayer = role === 'host' ? room.challenger : role === 'challenger' ? room.host : null;
+  // While role is null (initial hydrate — the SignalR JoinRoom round-trip
+  // hasn't resolved the caller yet) fall back to host-on-left with the real
+  // display names, mirroring the score fallback below. The names come from
+  // the SSR snapshot, so the header — the page's LCP element — paints on
+  // first render instead of waiting out the handshake. The "You"/"Opponent"
+  // captions render a non-breaking space meanwhile so the line keeps its
+  // height (no layout shift when they fill in).
+  const myPlayer = role === 'challenger' ? room.challenger : room.host;
+  const opponentPlayer = role === 'challenger' ? room.host : room.challenger;
 
   // Resolve side identifiers through the per-game module so the platform
   // header never has to know "x"/"o" vs "red"/"yellow" (CLAUDE.md §7
@@ -32,14 +39,14 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
   return (
     <div className="match-meta">
       <PlayerCard
-        label={t('match.you')}
+        label={role === null ? '\u00A0' : t('match.you')}
         name={myPlayer?.displayName ?? '?'}
         sideLabel={mySideLabel}
         wins={myWins}
       />
       <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={room.score.draws} />
       <PlayerCard
-        label={t('match.opponent')}
+        label={role === null ? '\u00A0' : t('match.opponent')}
         name={opponentPlayer?.displayName ?? '…'}
         sideLabel={opponentSideLabel}
         wins={opponentWins}
