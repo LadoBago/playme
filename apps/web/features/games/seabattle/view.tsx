@@ -353,49 +353,60 @@ function TargetGrid({
   for (const ship of revealedShips) {
     for (const cell of shipCells(ship)) shipCellSet.add(cellKey(cell.x, cell.y));
   }
-  const dimmed = deducedEmptyCells(revealedShips.filter((s) => !revealAll || shipCellsAllShot(s, shotByCell)));
+  const dimmed = deducedEmptyCells(
+    revealedShips.filter((s) => !revealAll || shipCellsAllShot(s, shotByCell)),
+  );
+
+  const cellButtons = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
+    const x = i % GRID_SIZE;
+    const y = Math.floor(i / GRID_SIZE);
+    const shot = shotByCell.get(i);
+    const isShip = shipCellSet.has(i);
+    const fireable = canFire && !shot;
+    const classes = ['sb__cell'];
+    if (isShip) classes.push('sb__cell--ship');
+    if (shot?.result === 'sunk' || (isShip && shot)) classes.push('sb__cell--sunk');
+    if (!shot && dimmed.has(i)) classes.push('sb__cell--deduced');
+    if (fireable) classes.push('sb__cell--fireable');
+
+    const aria = shot
+      ? cellAria(t, shot.result, x, y)
+      : isShip
+        ? cellAria(t, 'sunk', x, y)
+        : cellAria(t, fireable ? 'fire' : 'water', x, y);
+
+    return (
+      <button
+        key={i}
+        type="button"
+        role="gridcell"
+        className={classes.join(' ')}
+        disabled={!fireable}
+        aria-label={aria}
+        onClick={fireable ? () => onFire(x, y) : undefined}
+      >
+        {shot?.result === 'miss' ? <span className="sb__miss" aria-hidden /> : null}
+        {shot?.result === 'hit' || shot?.result === 'sunk' ? (
+          <span className="sb__hit" aria-hidden>
+            ✕
+          </span>
+        ) : null}
+      </button>
+    );
+  });
 
   return (
     <section className="sb__board">
       <h3 className="sb__board-label">{label}</h3>
       <div className="sb__grid" role="grid" aria-label={label}>
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
-          const x = i % GRID_SIZE;
-          const y = Math.floor(i / GRID_SIZE);
-          const shot = shotByCell.get(i);
-          const isShip = shipCellSet.has(i);
-          const fireable = canFire && !shot;
-          const classes = ['sb__cell'];
-          if (isShip) classes.push('sb__cell--ship');
-          if (shot?.result === 'sunk' || (isShip && shot)) classes.push('sb__cell--sunk');
-          if (!shot && dimmed.has(i)) classes.push('sb__cell--deduced');
-          if (fireable) classes.push('sb__cell--fireable');
-
-          const aria = shot
-            ? cellAria(t, shot.result, x, y)
-            : isShip
-              ? cellAria(t, 'sunk', x, y)
-              : cellAria(t, fireable ? 'fire' : 'water', x, y);
-
-          return (
-            <button
-              key={i}
-              type="button"
-              role="gridcell"
-              className={classes.join(' ')}
-              disabled={!fireable}
-              aria-label={aria}
-              onClick={fireable ? () => onFire(x, y) : undefined}
-            >
-              {shot?.result === 'miss' ? <span className="sb__miss" aria-hidden /> : null}
-              {shot?.result === 'hit' || shot?.result === 'sunk' ? (
-                <span className="sb__hit" aria-hidden>
-                  ✕
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
+        {/* role="grid" requires row children (WCAG 1.3.1); display: contents
+            keeps the cells as direct grid items so the track layout is
+            unchanged. */}
+        {Array.from({ length: GRID_SIZE }, (_, r) => (
+          <div key={r} role="row" className="sb__row">
+            {cellButtons.slice(r * GRID_SIZE, (r + 1) * GRID_SIZE)}
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -430,35 +441,43 @@ function FleetGrid({
   const last = shotsAtMe.length > 0 ? shotsAtMe[shotsAtMe.length - 1] : null;
   const lastKey = last ? cellKey(last.x, last.y) : -1;
 
+  const cellNodes = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
+    const x = i % GRID_SIZE;
+    const y = Math.floor(i / GRID_SIZE);
+    const isShip = shipCellSet.has(i);
+    const shot = shotByCell.get(i);
+    const classes = ['sb__cell'];
+    if (isShip) classes.push('sb__cell--ship');
+    if (isShip && shot) classes.push('sb__cell--sunk');
+    if (i === lastKey) classes.push('sb__cell--last');
+
+    const aria = shot
+      ? cellAria(t, isShip ? 'hit' : 'miss', x, y)
+      : cellAria(t, isShip ? 'ship' : 'water', x, y);
+
+    return (
+      <div key={i} role="gridcell" className={classes.join(' ')} aria-label={aria}>
+        {shot && !isShip ? <span className="sb__miss" aria-hidden /> : null}
+        {shot && isShip ? (
+          <span className="sb__hit" aria-hidden>
+            ✕
+          </span>
+        ) : null}
+      </div>
+    );
+  });
+
   return (
     <section className="sb__board">
       <h3 className="sb__board-label">{label}</h3>
       <div className="sb__grid sb__grid--mine" role="grid" aria-label={label}>
-        {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
-          const x = i % GRID_SIZE;
-          const y = Math.floor(i / GRID_SIZE);
-          const isShip = shipCellSet.has(i);
-          const shot = shotByCell.get(i);
-          const classes = ['sb__cell'];
-          if (isShip) classes.push('sb__cell--ship');
-          if (isShip && shot) classes.push('sb__cell--sunk');
-          if (i === lastKey) classes.push('sb__cell--last');
-
-          const aria = shot
-            ? cellAria(t, isShip ? 'hit' : 'miss', x, y)
-            : cellAria(t, isShip ? 'ship' : 'water', x, y);
-
-          return (
-            <div key={i} role="gridcell" className={classes.join(' ')} aria-label={aria}>
-              {shot && !isShip ? <span className="sb__miss" aria-hidden /> : null}
-              {shot && isShip ? (
-                <span className="sb__hit" aria-hidden>
-                  ✕
-                </span>
-              ) : null}
-            </div>
-          );
-        })}
+        {/* See TargetGrid — row wrappers for WCAG 1.3.1, display: contents
+            so the grid tracks are unchanged. */}
+        {Array.from({ length: GRID_SIZE }, (_, r) => (
+          <div key={r} role="row" className="sb__row">
+            {cellNodes.slice(r * GRID_SIZE, (r + 1) * GRID_SIZE)}
+          </div>
+        ))}
       </div>
     </section>
   );

@@ -163,6 +163,41 @@ export const ReversiView: GameView = ({
       : "games.reversi.toast.autoPassOpponent"
     : null;
 
+  const cellButtons = board.cells.map((side, i) => {
+    const row = Math.floor(i / board.size) + 1;
+    const col = (i % board.size) + 1;
+    const isLegal = interactable && callerLegal.has(i);
+    const isLast = i === lastPlacementIndex;
+    const isFlipped = flippedSet.has(i);
+    const className =
+      "rv__cell" +
+      (side ? ` rv__cell--${side}` : "") +
+      (isLegal ? " rv__cell--legal" : "") +
+      (isLast ? " rv__cell--last" : "") +
+      (isFlipped ? " rv__cell--flipped" : "");
+    const cellLabel =
+      side === "dark"
+        ? t("games.reversi.cell.discDark")
+        : side === "light"
+          ? t("games.reversi.cell.discLight")
+          : isLegal
+            ? tf("games.reversi.cell.legal", { row, col })
+            : tf("games.reversi.cell.empty", { row, col });
+    return (
+      <button
+        key={i}
+        type="button"
+        role="gridcell"
+        className={className}
+        disabled={!interactable || side !== null || !isLegal}
+        aria-label={cellLabel}
+        onClick={() => handleCellClick(i)}
+      >
+        {side ? <span className="rv__disc" /> : null}
+      </button>
+    );
+  });
+
   return (
     <div className="rv">
       {passToastKey && (
@@ -179,40 +214,14 @@ export const ReversiView: GameView = ({
         role="grid"
         aria-label={t("games.reversi.board.label")}
       >
-        {board.cells.map((side, i) => {
-          const row = Math.floor(i / board.size) + 1;
-          const col = (i % board.size) + 1;
-          const isLegal = interactable && callerLegal.has(i);
-          const isLast = i === lastPlacementIndex;
-          const isFlipped = flippedSet.has(i);
-          const className =
-            "rv__cell" +
-            (side ? ` rv__cell--${side}` : "") +
-            (isLegal ? " rv__cell--legal" : "") +
-            (isLast ? " rv__cell--last" : "") +
-            (isFlipped ? " rv__cell--flipped" : "");
-          const cellLabel =
-            side === "dark"
-              ? t("games.reversi.cell.discDark")
-              : side === "light"
-                ? t("games.reversi.cell.discLight")
-                : isLegal
-                  ? tf("games.reversi.cell.legal", { row, col })
-                  : tf("games.reversi.cell.empty", { row, col });
-          return (
-            <button
-              key={i}
-              type="button"
-              role="gridcell"
-              className={className}
-              disabled={!interactable || side !== null || !isLegal}
-              aria-label={cellLabel}
-              onClick={() => handleCellClick(i)}
-            >
-              {side ? <span className="rv__disc" /> : null}
-            </button>
-          );
-        })}
+        {/* role="grid" requires row children (WCAG 1.3.1); display: contents
+            keeps the cells as direct grid items so the track layout is
+            unchanged. */}
+        {Array.from({ length: board.size }, (_, r) => (
+          <div key={r} role="row" className="rv__row">
+            {cellButtons.slice(r * board.size, (r + 1) * board.size)}
+          </div>
+        ))}
       </div>
       <div className="rv__counters" role="status" aria-live="polite">
         <span className="rv__counter rv__counter--dark">

@@ -901,6 +901,13 @@ textarea {
   font-size: calc(2.2rem * 3 / var(--board-cells, 3));
 }
 
+/* ARIA row wrapper (role="grid" requires row children). display: contents
+   removes the wrapper from layout so the cells stay direct grid items —
+   the track layout and Safari aspect-ratio behaviour are unchanged. */
+.board__row {
+  display: contents;
+}
+
 /* Dark-mode surface lifted further above `--bg-elevated` than the
  * default `--border` opacity (14%) can carry on its own — at the
  * original `#2e2017` the warm cell brown sat too close to the warm
@@ -1069,6 +1076,11 @@ textarea {
   border: 1px solid var(--c4-board-border);
 }
 
+/* ARIA row wrapper — see .board__row. */
+.c4__row {
+  display: contents;
+}
+
 .c4__cell {
   position: relative;
   width: var(--c4-cell);
@@ -1186,6 +1198,11 @@ textarea {
   border-radius: 12px;
   background: var(--rv-board);
   border: 1px solid var(--rv-board-border);
+}
+
+/* ARIA row wrapper — see .board__row. */
+.rv__row {
+  display: contents;
 }
 
 .rv__cell {
@@ -1602,6 +1619,11 @@ textarea {
 
 .sb__grid--mine {
   --sb-hit: var(--danger);
+}
+
+/* ARIA row wrapper — see .board__row. */
+.sb__row {
+  display: contents;
 }
 
 .sb__cell {

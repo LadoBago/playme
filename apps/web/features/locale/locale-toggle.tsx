@@ -44,12 +44,15 @@ export function LocaleToggle() {
   const { t, locale } = useTranslator();
   const next = nextLocale(locale);
 
+  // WCAG 2.5.3 (Label in Name): the visible text ("KA"/"EN") must be part
+  // of the accessible name so voice-control users can activate the button
+  // by saying what they see.
   return (
     <button
       type="button"
       className="locale-toggle"
       onClick={() => router.push(localizedHref(bareFromPath(pathname), next))}
-      aria-label={t(ariaKeyToNext(next))}
+      aria-label={`${labelFor(locale)} — ${t(ariaKeyToNext(next))}`}
     >
       {labelFor(locale)}
     </button>

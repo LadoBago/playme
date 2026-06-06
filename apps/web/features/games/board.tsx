@@ -45,6 +45,35 @@ export function Board({
   renderCell,
 }: BoardProps) {
   const { t, tf } = useTranslator();
+  const cellButtons = cells.map((side, i) => {
+    const filled = side !== null;
+    const isLast = lastMoveCell === i;
+    const isWinning = winningCells.has(i);
+    const className =
+      'board__cell' +
+      (filled ? ' board__cell--filled' : '') +
+      (isLast ? ' board__cell--last' : '') +
+      (isWinning ? ' board__cell--winning' : '') +
+      (isWinning && winningIsLoss ? ' board__cell--winning-lost' : '');
+
+    return (
+      <button
+        key={i}
+        type="button"
+        role="gridcell"
+        className={className}
+        disabled={!canPlay || filled}
+        aria-label={tf('match.board.cell.label', {
+          row: Math.floor(i / cols) + 1,
+          col: (i % cols) + 1,
+        })}
+        onClick={() => onCellClick(i)}
+      >
+        {renderCell(side)}
+      </button>
+    );
+  });
+
   return (
     <div
       className="board"
@@ -58,33 +87,14 @@ export function Board({
       role="grid"
       aria-label={t('match.board.label')}
     >
-      {cells.map((side, i) => {
-        const filled = side !== null;
-        const isLast = lastMoveCell === i;
-        const isWinning = winningCells.has(i);
-        const className =
-          'board__cell' +
-          (filled ? ' board__cell--filled' : '') +
-          (isLast ? ' board__cell--last' : '') +
-          (isWinning ? ' board__cell--winning' : '') +
-          (isWinning && winningIsLoss ? ' board__cell--winning-lost' : '');
-
-        return (
-          <button
-            key={i}
-            type="button"
-            className={className}
-            disabled={!canPlay || filled}
-            aria-label={tf('match.board.cell.label', {
-              row: Math.floor(i / cols) + 1,
-              col: (i % cols) + 1,
-            })}
-            onClick={() => onCellClick(i)}
-          >
-            {renderCell(side)}
-          </button>
-        );
-      })}
+      {/* role="grid" requires row children (WCAG 1.3.1); display: contents
+          keeps the cells as direct grid items so the track layout (and the
+          Safari aspect-ratio behaviour) is unchanged. */}
+      {Array.from({ length: rows }, (_, r) => (
+        <div key={r} role="row" className="board__row">
+          {cellButtons.slice(r * cols, (r + 1) * cols)}
+        </div>
+      ))}
     </div>
   );
 }
