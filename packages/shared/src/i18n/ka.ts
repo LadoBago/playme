@@ -6,21 +6,21 @@ import type { EnKey } from './en';
 
 export const ka: Record<EnKey, string> = {
   // --- Site chrome ---
-  'site.title': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება',
+  'site.title': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაციის გარეშე',
   'site.titleShort': 'PlayMe — ითამაშე ონლაინ მეგობართან',
   'site.titleSuffix': '— PlayMe',
-  'site.tagline': 'ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.tagline': 'ითამაშე ონლაინ მეგობართან, რეგისტრაციის გარეშე.',
   'site.homeMetaDescription':
     'ითამაშე სამაგიდო, ინტელექტუალური თამაშები ონლაინ მეგობართან — რეგისტრაციის გარეშე. აირჩიე თამაში და გააზიარე ბმული. თამაში უფასოა.',
   'site.brandTagline': 'შენი ჯერია.',
-  'site.ogImageAlt': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაცია არ გჭირდება.',
+  'site.ogImageAlt': 'PlayMe — ითამაშე ონლაინ მეგობართან, რეგისტრაციის გარეშე.',
   'site.howItWorks.title': 'როგორ მუშაობს PlayMe',
   'site.howItWorks.step1.title': 'აირჩიე თამაში',
   'site.howItWorks.step1.body':
-    'აირჩიე თამაში და დააფიქსირე შენი მხარე. ანგარიში არ გჭირდება.',
+    'აირჩიე თამაში და დააფიქსირე შენი მხარე. რეგისტრაცია არ გჭირდება.',
   'site.howItWorks.step2.title': 'გააზიარე ბმული',
   'site.howItWorks.step2.body':
-    'მიიღებ უნიკალურ ბმულს. გაუგზავნე ვისთანაც გინდა ითამაშო.',
+    'მიიღებ უნიკალურ ბმულს. გაუგზავნე ვისაც გინდა ეთამაშო.',
   'site.howItWorks.step3.title': 'ითამაშე ცოცხლად',
   'site.howItWorks.step3.body':
     'პირველი მეგობარი, რომელიც ბმულს გახსნის, შემოგიერთდება. ითამაშე რიგრიგობით.',
@@ -54,7 +54,7 @@ export const ka: Record<EnKey, string> = {
     'Frontend-ის მხარეს Next.js ვებაპლიკაციაა, Backend-ში ASP.NET Core API, რეალურ დროში თამაში SignalR-ით და მატჩის მდგომარეობა Redis-ში.',
 
   // --- Game names + rules ---
-  'games.tictactoe.name': 'ჯვარ-ნული',
+  'games.tictactoe.name': 'იქსიკი და ნოლიკი',
   'games.tictactoe.metaTitle': 'ჯვარ-ნული ონლაინ — Tic Tac Toe | PlayMe',
   'games.tictactoe.metaDescription':
     'ითამაშე ჯვარ-ნული (X და 0, იქსიკი და ნოლიკი) ონლაინ მეგობართან — 3×3, 6×6 ან 9×9 დაფაზე. რეგისტრაცია არ გჭირდება.',
