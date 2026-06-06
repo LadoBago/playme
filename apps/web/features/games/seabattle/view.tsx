@@ -207,15 +207,13 @@ export const SeaBattleView: GameView = ({
     const opponentCommitted = setup?.opponentCommitted ?? false;
     return (
       <div className="sb stack" aria-label={t('games.seabattle.setup.title')}>
-        {/* The heading itself toggles the hint — collapsed by default so
-            the grid and the shuffle/confirm controls stay above the fold
-            on phones. */}
-        <details className="sb__setup-hint">
-          <summary>
-            <h2 className="sb__heading">{t('games.seabattle.setup.title')}</h2>
-          </summary>
-          <p className="sb__hint">{t('games.seabattle.setup.hint')}</p>
-        </details>
+        {/* Opponent progress sits above the board — the same slot the
+            platform's turn pill occupies once the battle starts. */}
+        <p className="sb__status sb__status--muted" role="status">
+          {opponentCommitted
+            ? t('games.seabattle.setup.opponentReady')
+            : t('games.seabattle.setup.opponentPlacing')}
+        </p>
         <FleetGrid
           fleet={mineCommitted ? (model.myFleet ?? draftFleet) : draftFleet}
           shotsAtMe={[]}
@@ -248,11 +246,15 @@ export const SeaBattleView: GameView = ({
             </button>
           </div>
         )}
-        <p className="sb__status sb__status--muted" role="status">
-          {opponentCommitted
-            ? t('games.seabattle.setup.opponentReady')
-            : t('games.seabattle.setup.opponentPlacing')}
-        </p>
+        {/* The heading toggles the hint — collapsed by default and below
+            the board so the grid and the shuffle/confirm controls stay
+            above the fold on phones. */}
+        <details className="sb__setup-hint">
+          <summary>
+            <h2 className="sb__heading">{t('games.seabattle.setup.title')}</h2>
+          </summary>
+          <p className="sb__hint">{t('games.seabattle.setup.hint')}</p>
+        </details>
       </div>
     );
   }
