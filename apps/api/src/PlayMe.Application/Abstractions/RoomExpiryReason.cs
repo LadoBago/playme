@@ -17,8 +17,9 @@ public enum RoomExpiryReason
     Unjoined,
 
     /// <summary>
-    /// A setup game's deadline elapsed with neither side committed
-    /// (one-sided misses are a forfeit / <c>MatchEnded</c> instead).
+    /// A setup game's deadline elapsed before both sides committed.
+    /// Setup expiry never awards a win — there is no forfeit path,
+    /// regardless of who committed (docs/state.md §2.1 `SettingUp`).
     /// </summary>
     SetupTimeout,
 }

@@ -130,31 +130,14 @@ public sealed class ReleasePresenceHandler
                     }
                 }
 
-                // Setup-phase disconnect (Sprint 10 seam C): tracked like an
-                // in-match disconnect, not like the transparent
-                // WaitingForOpponent kind. The §1 #7 turn condition doesn't
-                // apply — setup has no turns, so the grace starts
-                // immediately — but only against a player who still owes a
-                // commit. A player who already committed owes nothing until
-                // the match starts; if setup completes while they're
-                // offline, the in-match clock + grace rules take over from
-                // InProgress entry. The setup clock never drains, so the
-                // policy's remaining-time guard is fed the full budget; for
-                // budgets at the no-grace tier (≤ 1 min) the setup deadline
-                // is the only backstop.
-                if (room.Status == RoomStatus.SettingUp
-                    && room.CurrentMatch is not null
-                    && !room.CurrentMatch.HasCommittedSetup(cmd.CallerRole))
-                {
-                    var module = _games.GetModule(room.GameId);
-                    var now = _clock.UtcNow;
-                    var deadline = GraceSchedulingPolicy.ComputeDeadline(
-                        module.DefaultClockBudget, module.DefaultClockBudget, now);
-                    if (deadline is not null)
-                    {
-                        await _graces.ScheduleAsync(code, cmd.CallerRole, deadline.Value, ct);
-                    }
-                }
+                // Setup-phase disconnects schedule NO grace: the opponent
+                // still sees the disconnect hint (notifyOpponent above
+                // includes SettingUp), but the setup deadline is the only
+                // adjudicating authority during setup, and its expiry never
+                // awards a win — the room just expires for both. A grace
+                // here would race the deadline and end the match with a
+                // Disconnect loss mid-handshake (removed by design; see
+                // docs/state.md §2.1 `SettingUp`).
 
                 return Effect(
                     room,

@@ -27,7 +27,6 @@ public sealed partial class AdjudicateDisconnectGraceHandler
     private readonly IClock _clock;
     private readonly IClockService _clockService;
     private readonly ITimeoutScheduler _timeouts;
-    private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRoomCodeRedactor _redactor;
     private readonly IAnalyticsClient _analytics;
     private readonly ILogger<AdjudicateDisconnectGraceHandler> _log;
@@ -38,7 +37,6 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         IClock clock,
         IClockService clockService,
         ITimeoutScheduler timeouts,
-        ISetupDeadlineScheduler setupDeadlines,
         IRoomCodeRedactor redactor,
         IAnalyticsClient analytics,
         ILogger<AdjudicateDisconnectGraceHandler> log)
@@ -48,7 +46,6 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         _clock = clock;
         _clockService = clockService;
         _timeouts = timeouts;
-        _setupDeadlines = setupDeadlines;
         _redactor = redactor;
         _analytics = analytics;
         _log = log;
@@ -74,16 +71,15 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         // Re-verify under the room lock (already held by the caller — the
         // sweeper acquires it before dispatching). Any of these checks
         // failing means the scheduled entry has been invalidated by a
-        // later event (reconnect, turn flip, chess-clock timeout, setup
-        // commit):
-        //  - room must still be InProgress — or SettingUp (Sprint 10 seam
-        //    C: setup-phase disconnects adjudicate the same way)
+        // later event (reconnect, turn flip, chess-clock timeout):
+        //  - room must still be InProgress (graces exist only for live
+        //    matches — setup-phase disconnects schedule none; the setup
+        //    deadline is the only authority there and never awards a win)
         //  - the role must still be marked disconnected
-        //  - InProgress only: the role must still be the active player and
-        //    the chess clock must not have already run out (yield to the
-        //    timeout sweeper so the outcome is Timeout, not Disconnect)
-        //  - SettingUp only: the role must still owe a setup commit
-        if (room.Status is not (RoomStatus.InProgress or RoomStatus.SettingUp))
+        //  - the role must still be the active player and the chess clock
+        //    must not have already run out (yield to the timeout sweeper
+        //    so the outcome is Timeout, not Disconnect)
+        if (room.Status != RoomStatus.InProgress)
         {
             return Drop(room, cmd.Role, "status");
         }
@@ -100,40 +96,20 @@ public sealed partial class AdjudicateDisconnectGraceHandler
         if (match is null || match.IsEnded) return Drop(room, cmd.Role, "match");
 
         var now = _clock.UtcNow;
-        var inSetup = room.Status == RoomStatus.SettingUp;
-        if (inSetup)
+        if (match.Clock.ActivePlayer != cmd.Role) return Drop(room, cmd.Role, "turn");
+        if (_clockService.HasActivePlayerTimedOut(match.Clock, now))
         {
-            // A committed player owes nothing during setup; their entry —
-            // if one ever existed — is stale.
-            if (match.HasCommittedSetup(cmd.Role)) return Drop(room, cmd.Role, "committed");
-        }
-        else
-        {
-            if (match.Clock.ActivePlayer != cmd.Role) return Drop(room, cmd.Role, "turn");
-            if (_clockService.HasActivePlayerTimedOut(match.Clock, now))
-            {
-                return Drop(room, cmd.Role, "timedout");
-            }
+            return Drop(room, cmd.Role, "timedout");
         }
 
         var losingSide = room.SideFor(cmd.Role)
             ?? throw new InvalidOperationException(
                 "Disconnected role has no side resolved — TryStartMatch should have rejected this room.");
 
-        if (inSetup)
-        {
-            // The clock never started — record the outcome without
-            // touching it (see Match.EndDuringSetup).
-            match.EndDuringSetup(new Disconnect(losingSide));
-        }
-        else
-        {
-            match.ApplyDisconnect(losingSide, now);
-        }
+        match.ApplyDisconnect(losingSide, now);
         room.EndCurrentMatch();
         await _rooms.SaveAsync(room, ct);
         await _timeouts.CancelAsync(code, ct);
-        await _setupDeadlines.CancelAsync(code, ct);
         await _analytics.TrackAsync(
             AnalyticsEvents.MatchEnded,
             room.Code.Value,

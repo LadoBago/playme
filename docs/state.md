@@ -16,7 +16,7 @@ All keys are prefixed `playme:` to namespace the application. Use `:` as the seg
 | `playme:timeouts` | Sorted set of scheduled clock-timeout checks. Score = unix-ms deadline, value = `roomCode`. Swept by a `BackgroundService` (see §2 Clock model). | entries are removed by the sweeper after firing; stale entries expire when the room is `Closed`/`Expired` and the sweeper drops them |
 | `playme:grace` | Sorted set of scheduled disconnect-grace deadlines. Score = unix-ms deadline, value = `{roomCode}:{role}`. Swept by a `BackgroundService` (Sprint 5). | removed by the sweeper or on reconnect |
 | `playme:expires` | Sorted set of scheduled `WaitingForOpponent` expiry deadlines — fires `room_expired` analytics + the `RoomExpired` SignalR event for rooms nobody joined. Score = unix-ms deadline, value = <code>{roomCode}&#124;{gameId}</code> (gameId rides on the member because the room key has typically already elapsed when the sweeper fires). Enrolled by `CreateRoomHandler`; ZREM'd by `RegisterPresenceHandler` when the room leaves `WaitingForOpponent`. | removed by the sweeper after adjudication or on join |
-| `playme:setup_deadlines` | Sorted set of scheduled setup-phase deadlines (Sprint 10 seam C). Score = unix-ms deadline, value = `roomCode`. One entry per `SettingUp` room — enrolled at SettingUp entry (deadline = entry + the module's `SetupBudget`), ZREM'd when setup completes or the match ends during setup. On fire: one uncommitted side → forfeits with `Outcome.Timeout`; neither committed → room `Expired`. | removed by the sweeper after adjudication or on setup completion |
+| `playme:setup_deadlines` | Sorted set of scheduled setup-phase deadlines (Sprint 10 seam C). Score = unix-ms deadline, value = `roomCode`. One entry per `SettingUp` room — enrolled at SettingUp entry (deadline = entry + the module's `SetupBudget`), ZREM'd when setup completes. On fire: the room expires (`Expired`, terminal) regardless of who committed — setup expiry never awards a win. | removed by the sweeper after adjudication or on setup completion |
 | `playme:signalr:*` | SignalR backplane channels managed by `Microsoft.AspNetCore.SignalR.StackExchangeRedis`. **Don't read or write these manually.** | managed by the library |
 
 Implementation rules:
@@ -39,21 +39,21 @@ Every room follows a small finite-state machine, enforced server-side. Handlers 
             │  WaitingForOpponent  │───────────────────▶│   Expired   │  (terminal)
             └──────────┬───────────┘                    └─────▲───────┘
    both registered     │                                      │
-   + both connected    │                                      │ setup deadline,
-            ┌──────────▼───────────┐  setup games only        │ neither committed
-            │      SettingUp       │──────────────────────────┘
-            │ (ISetupGame modules; └────────────┐
-            │  setup-less games    │            │ setup deadline w/ one committed →
-            │  skip this state)    │            │ uncommitted side forfeits (Timeout);
-            └──────────┬───────────┘            │ disconnect-grace elapse → Disconnect
-   both setups         │                        │
-   committed           │                        │
-            ┌──────────▼───────────┐            │
-            │      InProgress      │            │
-            └──────────┬───────────┘            │
-                       │ win / draw / resign / timeout
-            ┌──────────▼───────────┐            │
-            │        Ended         │◀───────────┘
+   + both connected    │                                      │ setup deadline
+            ┌──────────▼───────────┐  setup games only        │ (regardless of who
+            │      SettingUp       │──────────────────────────┘  committed — setup
+            │ (ISetupGame modules; │                             expiry never awards
+            │  setup-less games    │                             a win; disconnects
+            │  skip this state)    │                             during setup are
+            └──────────┬───────────┘                             transparent)
+   both setups         │
+   committed           │
+            ┌──────────▼───────────┐
+            │      InProgress      │
+            └──────────┬───────────┘
+                       │ win / draw / resign / timeout / disconnect-grace elapse
+            ┌──────────▼───────────┐
+            │        Ended         │
             └──────────┬───────────┘
         rematch offered │       │ either player exits
             ┌──────────▼─────┐   │
@@ -72,7 +72,7 @@ Every room follows a small finite-state machine, enforced server-side. Handlers 
 ### 2.1 States
 
 - **`WaitingForOpponent`** — the initial state after room creation. **Governed purely by the room TTL** (default 30 min from creation, refreshed on challenger registration). Player disconnects in this state are **transparent**: host or challenger may close their tab and return at any time before the TTL elapses — the session cookie ties them to their role. Challenger registration (completing the join-onboarding form per [`frontend.md`](frontend.md) §1) consumes the invite link; the seat is sticky and no one else can take it. **Transition to `InProgress` requires both: (1) both players have completed registration, AND (2) both currently have an active SignalR connection in the room.** Until both conditions hold, the room stays in `WaitingForOpponent`. If the TTL elapses before that, the room goes terminal to `Expired`.
-- **`SettingUp`** *(setup games only — Sprint 10 seam C)* — both players are present; each privately prepares and commits their one-and-final setup payload (`SubmitSetup`). **Unclocked**: the chess clock does not run; the phase is bounded by the module's `SetupBudget` via `playme:setup_deadlines`. Presence is tracked like `InProgress` — a disconnect by a player who hasn't committed schedules a disconnect-grace entry (started immediately; setup has no turns) and grace elapse forfeits them with `Outcome.Disconnect`; a player who already committed owes nothing until the match starts. The match aggregate exists from SettingUp entry (it accumulates the setup state); for hidden-state games every wire payload is role-projected per §2.3. Transition to `InProgress` when the module reports setup complete; the clock is re-stamped so the first mover starts from the full budget.
+- **`SettingUp`** *(setup games only — Sprint 10 seam C)* — both players are present; each privately prepares and commits their one-and-final setup payload (`SubmitSetup`). **Unclocked**: the chess clock does not run; the phase is bounded by the module's `SetupBudget` via `playme:setup_deadlines`, and that deadline is the **only adjudicating authority** during setup. When it fires the room expires (`Expired`, terminal, `RoomExpired` reason `setupTimeout`) **regardless of who committed** — the match never started, so setup expiry never awards a win, touches no scoreboard, and has no forfeit path. Disconnects during setup are visible (the opponent gets `OpponentDisconnected`) but schedule **no disconnect grace** — a grace would race the setup deadline and end the match with a `Disconnect` loss mid-handshake. The match aggregate exists from SettingUp entry (it accumulates the setup state); for hidden-state games every wire payload is role-projected per §2.3. Transition to `InProgress` when the module reports setup complete; the clock is re-stamped so the first mover starts from the full budget.
 - **`InProgress`** — both players joined (and, for setup games, both setups committed); a match is being played. Clocks tick. The first-mover's clock starts immediately on entry (platform rule [`platform.md`](platform.md) §1 #12).
 - **`Ended`** — the current match has concluded. Post-match UI is shown. Either player can offer a rematch or exit.
 - **`AwaitingRematch`** — one player offered a rematch; waiting for the opponent's accept/reject.
@@ -113,7 +113,7 @@ Broadcast to both clients via SignalR unless noted. **Hidden-state games** (modu
 | ~~`OpponentAbandoned`~~ | *(removed)* The reconnect grace ([`platform.md`](platform.md) §1 #7) is a **hard cutoff**: when it elapses the server auto-ends the match with `Outcome.Disconnect(disconnectedSide)` and emits `MatchEnded` directly — there is no intermediate notice to the still-connected player. |
 | `OpponentReconnected` | dropped player rejoins (before *or after* grace, while match is still `InProgress`) | sent to the still-connected player |
 | `OpponentExited` | a player leaves the room while in `Ended` or `AwaitingRematch` — either via an explicit `ExitRoom()` call (immediate) or via a SignalR disconnect that doesn't reconnect within the post-match reconnect grace (10 s, see §2.4 invariants) | sent to the still-present player; their UI shows "opponent left" + a manual "Back to lobby" button. Room transitions to `Closed`. |
-| `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | `reason`: `unjoined` (the `WaitingForOpponent` 30-min window elapsed with no challenger) or `setupTimeout` (a setup game's deadline elapsed with neither side committed — a one-sided miss is a forfeit / `MatchEnded` instead) |
+| `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | `reason`: `unjoined` (the `WaitingForOpponent` 30-min window elapsed with no challenger) or `setupTimeout` (a setup game's deadline elapsed before both sides committed — setup expiry never awards a win, regardless of who committed) |
 
 ### 2.4 Invariants
 

@@ -32,7 +32,7 @@ v1 ships **random placement with reroll**; manual drag-and-drop placement is def
 - **Reroll is client-local** — regenerate and re-render instantly, zero server round-trips.
 - **Commit** sends the fleet to the server exactly once (`SubmitSetup`); the module validates it exhaustively (ship count and shapes, bounds, the no-touch rule) and stores it server-side. It is never broadcast. A second commit is rejected (`seabattle.alreadyCommitted`) — reroll is client-local, so replace semantics aren't needed.
 - The opponent sees only a role-level readiness signal (`OpponentSetupCommitted`), never the fleet.
-- Both committed → `InProgress`, `MatchStarted`, clock starts. The **setup phase is unclocked**; the module-declared 2-min setup budget and in-match-style presence tracking backstop a player who stalls or leaves (see the sprint plan, seam C).
+- Both committed → `InProgress`, `MatchStarted`, clock starts. The **setup phase is unclocked**; the module-declared 2-min setup budget is the **only backstop** for a player who stalls or leaves — when it elapses the room **expires with no winner** (`RoomExpired`, reason `setupTimeout`), regardless of who committed. Setup expiry is never a loss, and disconnects during setup schedule no grace ([`state.md`](../state.md) §2.1 `SettingUp`).
 - Rematches re-enter `SettingUp` with **fresh fleets** every match. The side swap ([`platform.md`](../platform.md) §1 #15) alternates the first-shot advantage across the series.
 
 ## Hidden information (per-viewer projection)
