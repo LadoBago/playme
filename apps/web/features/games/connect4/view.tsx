@@ -109,6 +109,32 @@ export const Connect4View: GameView = ({
     </div>
   );
 
+  const cellNodes = board.cells.map((side, i) => {
+    const isLast = i === lastMoveIndex;
+    const isWinning = winningSet.has(i);
+    const className =
+      'c4__cell' +
+      (side ? ` c4__cell--${side}` : '') +
+      (isLast ? ' c4__cell--last' : '') +
+      (isWinning ? ' c4__cell--winning' : '') +
+      (isWinning && winningIsLoss ? ' c4__cell--winning-lost' : '');
+    // Side identifiers ("red"/"yellow") are this module's vocab and
+    // stay inside it (CLAUDE.md §7 "Platform thinness"); the inline
+    // branch resolves them to localised cell labels.
+    const cellLabel = side
+      ? side === 'red'
+        ? t('games.connect4.cell.discRed')
+        : t('games.connect4.cell.discYellow')
+      : tf('games.connect4.cell.empty', {
+          row: Math.floor(i / board.cols) + 1,
+        });
+    return (
+      <div key={i} role="gridcell" aria-label={cellLabel} className={className}>
+        {side ? <span className="c4__disc" /> : null}
+      </div>
+    );
+  });
+
   return (
     <div className="c4">
       {dropRow('top')}
@@ -121,34 +147,14 @@ export const Connect4View: GameView = ({
         role="grid"
         aria-label={t('games.connect4.board.label')}
       >
-        {board.cells.map((side, i) => {
-          const isLast = i === lastMoveIndex;
-          const isWinning = winningSet.has(i);
-          const className =
-            'c4__cell' +
-            (side ? ` c4__cell--${side}` : '') +
-            (isLast ? ' c4__cell--last' : '') +
-            (isWinning ? ' c4__cell--winning' : '') +
-            (isWinning && winningIsLoss ? ' c4__cell--winning-lost' : '');
-          // Side identifiers ("red"/"yellow") are this module's vocab and
-          // stay inside it (CLAUDE.md §7 "Platform thinness"); the inline
-          // branch resolves them to localised cell labels.
-          const cellLabel = side
-            ? side === 'red'
-              ? t('games.connect4.cell.discRed')
-              : t('games.connect4.cell.discYellow')
-            : tf('games.connect4.cell.empty', { row: Math.floor(i / board.cols) + 1 });
-          return (
-            <div
-              key={i}
-              role="gridcell"
-              aria-label={cellLabel}
-              className={className}
-            >
-              {side ? <span className="c4__disc" /> : null}
-            </div>
-          );
-        })}
+        {/* role="grid" requires row children (WCAG 1.3.1); display: contents
+            keeps the cells as direct grid items so the track layout is
+            unchanged. */}
+        {Array.from({ length: board.rows }, (_, r) => (
+          <div key={r} role="row" className="c4__row">
+            {cellNodes.slice(r * board.cols, (r + 1) * board.cols)}
+          </div>
+        ))}
       </div>
       {dropRow('bottom')}
     </div>

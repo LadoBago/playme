@@ -58,8 +58,9 @@ function SeriesScore({
   draws: number;
 }) {
   const { t, tf } = useTranslator();
+  // role="group" — aria-label is prohibited on a generic div (WCAG 4.1.2).
   return (
-    <div className="match-score" aria-label={t('match.score.label')}>
+    <div className="match-score" role="group" aria-label={t('match.score.label')}>
       <span className="match-score__counts">
         {myWins}
         <span className="match-score__dash" aria-hidden="true">
