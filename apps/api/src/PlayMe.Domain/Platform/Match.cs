@@ -133,23 +133,6 @@ public sealed class Match
     }
 
     /// <summary>
-    /// End the match during the setup phase (setup-deadline forfeit →
-    /// <see cref="Timeout"/>; disconnect-grace elapse → <see cref="Disconnect"/>).
-    /// Unlike <see cref="ApplyTimeout"/> / <see cref="ApplyDisconnect"/>,
-    /// the clock is left untouched — it never started, and zeroing the
-    /// nominal first mover's time would misattribute the forfeit on the
-    /// post-match screen.
-    /// </summary>
-    public void EndDuringSetup(Outcome outcome)
-    {
-        if (IsEnded)
-        {
-            throw new DomainException("Cannot end a finished match.");
-        }
-        Outcome = outcome;
-    }
-
-    /// <summary>
     /// Commit an accepted move's effect: swap the side to move, increment
     /// the counter, advance the clock (decrement the moving side's time by
     /// elapsed, flip the active player), and record the ending if the move

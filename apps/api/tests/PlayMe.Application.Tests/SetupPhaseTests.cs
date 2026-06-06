@@ -85,7 +85,7 @@ public sealed class SetupPhaseTests
             new(Rooms, Clock, Graces, PostMatchGraces, Registry);
 
         public AdjudicateSetupTimeoutHandler AdjudicateSetupTimeout() =>
-            new(Rooms, Registry, Clock, Graces, new RoomCodeRedactor(), Analytics,
+            new(Rooms, Registry, Clock, new RoomCodeRedactor(), Analytics,
                 Microsoft.Extensions.Logging.Abstractions
                     .NullLogger<AdjudicateSetupTimeoutHandler>.Instance);
 
@@ -238,7 +238,7 @@ public sealed class SetupPhaseTests
     // --- Setup deadline ----------------------------------------------------
 
     [Fact]
-    public async Task Deadline_with_one_uncommitted_side_forfeits_them_on_setup_time()
+    public async Task Deadline_with_one_uncommitted_side_expires_the_room_without_a_loss()
     {
         var f = new Fixture();
         f.SeedSettingUpRoom();
@@ -250,20 +250,16 @@ public sealed class SetupPhaseTests
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
-        result.Value!.MatchEnded.Should().BeTrue();
-        result.Value.Expired.Should().BeFalse();
+        result.Value!.Expired.Should().BeTrue();
 
+        // No forfeit: setup expiry never awards a win — the match never
+        // started, so there's no outcome and the scoreboard is untouched.
         var saved = await f.LoadRoom();
-        saved!.Status.Should().Be(RoomStatus.Ended);
-        saved.CurrentMatch!.Outcome.Should().BeOfType<Domain.Platform.Timeout>()
-            .Which.TimedOutSide.Should().Be("second");
-        // Forfeit rolls into the opponent's scoreboard win.
-        saved.SeriesScore.Host.Should().Be(1);
+        saved!.Status.Should().Be(RoomStatus.Expired);
+        saved.CurrentMatch!.Outcome.Should().BeNull();
+        saved.SeriesScore.Host.Should().Be(0);
         saved.SeriesScore.Challenger.Should().Be(0);
-        // The clock was never started — it stays untouched at full budgets.
-        saved.CurrentMatch.Clock.HostRemaining.Should().Be(f.Module.DefaultClockBudget);
-        saved.CurrentMatch.Clock.ChallengerRemaining.Should().Be(f.Module.DefaultClockBudget);
-        f.Analytics.Events.Should().ContainSingle(e => e.Event == "match_ended");
+        f.Analytics.Events.Should().ContainSingle(e => e.Event == "room_expired");
     }
 
     [Fact]
@@ -279,7 +275,6 @@ public sealed class SetupPhaseTests
 
         result.Succeeded.Should().BeTrue();
         result.Value!.Expired.Should().BeTrue();
-        result.Value.MatchEnded.Should().BeFalse();
 
         var saved = await f.LoadRoom();
         saved!.Status.Should().Be(RoomStatus.Expired);
@@ -300,15 +295,14 @@ public sealed class SetupPhaseTests
             CancellationToken.None);
 
         result.Succeeded.Should().BeTrue();
-        result.Value!.MatchEnded.Should().BeFalse();
-        result.Value.Expired.Should().BeFalse();
+        result.Value!.Expired.Should().BeFalse();
         (await f.LoadRoom())!.Status.Should().Be(RoomStatus.InProgress);
     }
 
     // --- Presence during setup ----------------------------------------------
 
     [Fact]
-    public async Task Uncommitted_player_disconnecting_gets_a_grace_entry_and_opponent_is_notified()
+    public async Task Disconnecting_during_setup_notifies_opponent_but_schedules_no_grace()
     {
         var f = new Fixture();
         f.SeedSettingUpRoom();
@@ -320,48 +314,11 @@ public sealed class SetupPhaseTests
 
         result.Succeeded.Should().BeTrue();
         result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
-        // 3-min budget → 60 s grace tier; setup grace starts immediately
-        // (no turn condition — setup has no turns).
-        f.Graces.Scheduled.Should().ContainSingle()
-            .Which.Deadline.Should().Be(f.Clock.UtcNow + TimeSpan.FromSeconds(60));
-    }
-
-    [Fact]
-    public async Task Committed_player_disconnecting_gets_no_grace_entry()
-    {
-        var f = new Fixture();
-        f.SeedSettingUpRoom();
-        await f.Commit(Role.Challenger);
-
-        var result = await f.ReleasePresence().HandleAsync(
-            new ReleasePresenceCommand(
-                RoomFactory.RoomCodeValue, RoomFactory.ChallengerPlayerId, Role.Challenger),
-            CancellationToken.None);
-
-        result.Succeeded.Should().BeTrue();
-        result.Value!.Effect.Should().Be(PresenceReleaseEffect.OpponentDisconnected);
+        // No grace during setup: the setup deadline is the only
+        // adjudicating authority there, and it never awards a win — a
+        // grace would race it and end the match with a Disconnect loss
+        // mid-handshake.
         f.Graces.Scheduled.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Reconnect_during_setup_cancels_the_pending_grace()
-    {
-        var f = new Fixture();
-        f.SeedSettingUpRoom();
-        await f.ReleasePresence().HandleAsync(
-            new ReleasePresenceCommand(
-                RoomFactory.RoomCodeValue, RoomFactory.ChallengerPlayerId, Role.Challenger),
-            CancellationToken.None);
-
-        var result = await f.RegisterPresence().HandleAsync(
-            new RegisterPresenceCommand(
-                RoomFactory.RoomCodeValue, RoomFactory.ChallengerPlayerId, Role.Challenger),
-            CancellationToken.None);
-
-        result.Succeeded.Should().BeTrue();
-        result.Value!.Reconnected.Should().BeTrue();
-        f.Graces.Cancelled.Should().Contain(c =>
-            c.RoomCode == RoomFactory.RoomCodeValue && c.Role == Role.Challenger);
     }
 
     // --- Rematch re-enters setup ---------------------------------------------
@@ -372,10 +329,14 @@ public sealed class SetupPhaseTests
         var f = new Fixture();
         f.SeedSettingUpRoom();
         await f.Commit(Role.Host);
-        f.Clock.Advance(f.Module.SetupBudget + TimeSpan.FromSeconds(1));
-        await f.AdjudicateSetupTimeout().HandleAsync(
-            new AdjudicateSetupTimeoutCommand(RoomFactory.RoomCodeValue),
-            CancellationToken.None); // challenger forfeited → Ended
+        await f.Commit(Role.Challenger); // setup complete → InProgress
+        // End the first match so the rematch flow is reachable (setup
+        // expiry is terminal and never ends a match — resign is the
+        // shortest route to Ended from here).
+        var firstMatchRoom = await f.LoadRoom();
+        firstMatchRoom!.CurrentMatch!.Resign("second");
+        firstMatchRoom.EndCurrentMatch();
+        await f.Rooms.SaveAsync(firstMatchRoom, CancellationToken.None);
 
         var offer = new OfferRematchHandler(
             f.Rooms, f.Registry, f.Clock, f.Timeouts, f.SetupDeadlines, new RecordingRateLimiter());
@@ -404,9 +365,11 @@ public sealed class SetupPhaseTests
         saved.Challenger!.Side.Should().Be("first");
         // A fresh setup deadline was scheduled (the fixture seeds the
         // initial SettingUp room directly, so this is the recorder's only
-        // entry); no chess-clock timeout yet.
+        // entry). The single clock-timeout entry is the FIRST match's,
+        // from its setup completing — re-entering SettingUp schedules a
+        // setup deadline, not a chess-clock timeout.
         f.SetupDeadlines.Scheduled.Should().ContainSingle()
             .Which.Deadline.Should().Be(f.Clock.UtcNow + f.Module.SetupBudget);
-        f.Timeouts.Scheduled.Should().BeEmpty();
+        f.Timeouts.Scheduled.Should().ContainSingle();
     }
 }

@@ -29,7 +29,6 @@ public sealed class AdjudicateDisconnectGraceHandlerTests
             clock,
             new ClockService(),
             timeouts,
-            new RecordingSetupDeadlineScheduler(),
             new RoomCodeRedactor(),
             analytics ?? new RecordingAnalyticsClient(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<AdjudicateDisconnectGraceHandler>.Instance);

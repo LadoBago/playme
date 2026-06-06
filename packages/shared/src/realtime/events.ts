@@ -91,9 +91,9 @@ export interface RematchDeclinedPayload {
  * Why the server reaped the room (docs/state.md §2.3):
  * - `unjoined` — the `WaitingForOpponent` room reached its 30-minute
  *   deadline without anyone joining (`playme:expires` sorted set).
- * - `setupTimeout` — a setup game's deadline elapsed with neither
- *   player committed (a one-sided miss is a forfeit / `MatchEnded`
- *   instead).
+ * - `setupTimeout` — a setup game's deadline elapsed before both
+ *   players committed. Setup expiry never awards a win — there is no
+ *   forfeit path, regardless of who committed.
  */
 export type RoomExpiryReason = 'unjoined' | 'setupTimeout';
 

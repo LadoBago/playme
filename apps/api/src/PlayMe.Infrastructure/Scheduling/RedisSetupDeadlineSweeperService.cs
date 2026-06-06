@@ -17,9 +17,10 @@ namespace PlayMe.Infrastructure.Scheduling;
 /// distributed lock through <see cref="AdjudicateSetupTimeoutHandler"/>,
 /// and <c>ZREM</c>s the entry whether or not the deadline fired — a fresh
 /// entry is scheduled when (and only when) a new setup phase begins.
-/// Broadcasts <c>MatchEnded</c> on a forfeit and <c>RoomExpired</c> when
-/// neither side committed. Crash safety is identical to the timeout
-/// sweeper: lock TTL auto-release + retry on the next sweep.
+/// Broadcasts <c>RoomExpired</c> (reason <c>setupTimeout</c>) when the
+/// deadline fires: setup expiry never awards a win, regardless of who
+/// committed — there is no forfeit path. Crash safety is identical to the
+/// timeout sweeper: lock TTL auto-release + retry on the next sweep.
 /// </summary>
 public sealed partial class RedisSetupDeadlineSweeperService : BackgroundService
 {
@@ -156,17 +157,10 @@ public sealed partial class RedisSetupDeadlineSweeperService : BackgroundService
         await db.SortedSetRemoveAsync(
             PlayMe.Infrastructure.Redis.RedisKeys.SetupDeadlines, roomCodeValue);
 
-        if (result is { Succeeded: true, Value: { } value })
+        if (result is { Succeeded: true, Value.Expired: true })
         {
-            if (value is { MatchEnded: true, Room: { } room })
-            {
-                await _notifier.BroadcastMatchEndedAsync(code, room, ct);
-            }
-            else if (value.Expired)
-            {
-                await _notifier.BroadcastRoomExpiredAsync(
-                    code, RoomExpiryReason.SetupTimeout, ct);
-            }
+            await _notifier.BroadcastRoomExpiredAsync(
+                code, RoomExpiryReason.SetupTimeout, ct);
         }
     }
 
