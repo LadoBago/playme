@@ -176,7 +176,7 @@ public sealed partial class RedisRoomExpirySweeperService : BackgroundService
         // sweeper split as RedisTimeoutSweeperService line 155.
         if (result is { Succeeded: true, Value.Expired: true })
         {
-            await _notifier.BroadcastRoomExpiredAsync(code, ct);
+            await _notifier.BroadcastRoomExpiredAsync(code, RoomExpiryReason.Unjoined, ct);
         }
     }
 

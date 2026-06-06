@@ -177,7 +177,10 @@ export const en = {
   'match.backToLobby.short': 'Back',
   'match.opponentLeft': 'Opponent left.',
   'room.expired.title': 'Room expired',
-  'room.expired.body': 'No one joined in 30 minutes, so this room is gone. Start a new one when you’re ready.',
+  'room.expired.body.unjoined':
+    'No one joined in 30 minutes, so this room is gone. Start a new one when you’re ready.',
+  'room.expired.body.setupTimeout':
+    'Neither player finished setting up in time, so this room is closed. Start a new one when you’re ready.',
   'room.expired.cta': 'Back to home',
   'match.rematch.offer.button': 'Offer rematch',
   // Short form for narrow boards; full label stays the accessible name.

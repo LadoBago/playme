@@ -25,14 +25,23 @@ public sealed class RoomNotifier : IRoomNotifier
             .Group(RoomHub.GroupName(code.Value))
             .SendAsync(RoomHubEvents.MatchEnded, new { room }, ct);
 
-    public Task BroadcastRoomExpiredAsync(RoomCode code, CancellationToken ct) =>
-        // No payload — the event itself is the signal that the room is
-        // gone. Adding fields here later (e.g. an `expiredAt` for client
-        // analytics) is forward-compatible since the web parses with
-        // Zod and ignores unknown keys.
-        _hub.Clients
+    public Task BroadcastRoomExpiredAsync(
+        RoomCode code,
+        RoomExpiryReason reason,
+        CancellationToken ct)
+    {
+        // Wire values are the Zod enum on the web side
+        // (packages/shared/src/realtime/schemas.ts) — keep in sync.
+        var wireReason = reason switch
+        {
+            RoomExpiryReason.Unjoined => "unjoined",
+            RoomExpiryReason.SetupTimeout => "setupTimeout",
+            _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null),
+        };
+        return _hub.Clients
             .Group(RoomHub.GroupName(code.Value))
-            .SendAsync(RoomHubEvents.RoomExpired, new { }, ct);
+            .SendAsync(RoomHubEvents.RoomExpired, new { reason = wireReason }, ct);
+    }
 
     public Task BroadcastOpponentExitedAsync(
         RoomCode code,

@@ -10,6 +10,7 @@ import {
   RoomHubClient,
   type I18nKey,
   type RoomDto,
+  type RoomExpiryReason,
   type Role,
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
@@ -66,10 +67,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // "Opponent declined" notice from the generic "Opponent left" banner.
   // Both end the room in `closed`, so the room status alone can't say which.
   const [declined, setDeclined] = useState(false);
-  // True after the server's RoomExpired SignalR event lands — the
-  // WaitingForOpponent room reached its 30-min deadline without anyone
-  // joining. Terminal UI; no recovery path other than "back to home".
-  const [expired, setExpired] = useState(false);
+  // Set when the server's RoomExpired SignalR event lands, to the reason
+  // it carried: 'unjoined' (the WaitingForOpponent room reached its
+  // 30-min deadline) or 'setupTimeout' (neither player committed setup
+  // in time). Terminal UI; no recovery path other than "back to home".
+  const [expired, setExpired] = useState<RoomExpiryReason | null>(null);
   const hubRef = useRef<RoomHubClient | null>(null);
   // Timestamp the tab became hidden; cleared on visible. Drives the
   // visibility-recovery effect — see the comment block on that effect
@@ -126,12 +128,12 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         setRoom(r);
         setDeclined(true);
       },
-      onRoomExpired: () => {
-        // Server reaped the WaitingForOpponent room — its Redis state
-        // is already gone. Flip to the terminal "expired" view and tear
-        // down the hub; there's nothing to reconnect to. Auto-reconnect
-        // would otherwise loop on join failures.
-        setExpired(true);
+      onRoomExpired: ({ reason }) => {
+        // Server reaped the room — its Redis state is already gone.
+        // Flip to the terminal "expired" view (copy picked by reason)
+        // and tear down the hub; there's nothing to reconnect to.
+        // Auto-reconnect would otherwise loop on join failures.
+        setExpired(reason);
         void silentStop(hubRef.current);
         hubRef.current = null;
       },
@@ -201,6 +203,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   }, [expectedRoomCode]);
 
   useEffect(() => {
+    // A room that loads already-expired (refresh / locale switch after
+    // the RoomExpired event landed) is terminal — the expired screen
+    // renders below without any live data, so don't open a socket to it.
+    if (initialRoom.status === 'expired') return undefined;
     const signal = { cancelled: false };
     void connect(signal);
     return () => {
@@ -417,17 +423,30 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     return <p className="banner banner--error">{t('errors.config.invalidGameId')}</p>;
   }
 
-  // Terminal: room expired (RoomExpired SignalR event). Wins over both
-  // authStatus and connectionStatus because there's nothing left to
-  // join or reconnect to.
-  if (expired) {
+  // Terminal: room expired. Either the RoomExpired SignalR event landed
+  // live (reason carried on the payload), or the page loaded a room
+  // that already expired (refresh / locale switch after the event) —
+  // then the reason is derived from shape: an expired room that never
+  // recruited a challenger is the unjoined 30-minute window; one with a
+  // challenger can only be a setup timeout, because in-progress rooms
+  // never transition to `expired`. Wins over both authStatus and
+  // connectionStatus because there's nothing left to join or
+  // reconnect to.
+  const expiredReason =
+    expired ??
+    (room.status === 'expired'
+      ? room.challenger == null
+        ? 'unjoined'
+        : 'setupTimeout'
+      : null);
+  if (expiredReason) {
     return (
       <main
         className="container stack"
         style={{ textAlign: 'center', gap: '1rem' }}
       >
         <h1 style={{ fontSize: '1.75rem' }}>{t('room.expired.title')}</h1>
-        <p style={{ color: 'var(--fg-muted)' }}>{t('room.expired.body')}</p>
+        <p style={{ color: 'var(--fg-muted)' }}>{t(`room.expired.body.${expiredReason}`)}</p>
         <Link
           href={localizedHref('/', locale)}
           className="button-primary"
