@@ -88,11 +88,21 @@ export interface RematchDeclinedPayload {
 }
 
 /**
- * Fired by the server when a `WaitingForOpponent` room reaches its
- * 30-minute deadline without anyone joining (see docs/state.md §2.2
- * and the `playme:expires` sorted set). Empty payload: the event
- * itself is the signal that the room is gone. The web client renders
- * a clean "this room has expired" state instead of waiting on a
- * subsequent failure.
+ * Why the server reaped the room (docs/state.md §2.3):
+ * - `unjoined` — the `WaitingForOpponent` room reached its 30-minute
+ *   deadline without anyone joining (`playme:expires` sorted set).
+ * - `setupTimeout` — a setup game's deadline elapsed with neither
+ *   player committed (a one-sided miss is a forfeit / `MatchEnded`
+ *   instead).
  */
-export type RoomExpiredPayload = Record<string, never>;
+export type RoomExpiryReason = 'unjoined' | 'setupTimeout';
+
+/**
+ * Fired by the server when it reaps a room outside the normal match
+ * lifecycle. The reason tells the client which deadline actually
+ * fired so it can render the matching "this room has expired" copy
+ * instead of waiting on a subsequent failure.
+ */
+export interface RoomExpiredPayload {
+  reason: RoomExpiryReason;
+}

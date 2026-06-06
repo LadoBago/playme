@@ -23,14 +23,17 @@ public interface IRoomNotifier
 
     /// <summary>
     /// Broadcast <c>RoomExpired</c> to every connection in the room
-    /// group. Fired by the expiry sweeper when a
+    /// group. Fired by the room-expiry sweeper when a
     /// <see cref="RoomStatus.WaitingForOpponent"/> room reaches its
-    /// 30-minute deadline without anyone joining. The host may still
-    /// be on the share-link page; this event lets the UI render a
-    /// clean "this room has expired" state instead of a generic
-    /// disconnect error.
+    /// 30-minute deadline without anyone joining
+    /// (<see cref="RoomExpiryReason.Unjoined"/>), and by the
+    /// setup-deadline sweeper when neither player commits setup in
+    /// time (<see cref="RoomExpiryReason.SetupTimeout"/>). The
+    /// <paramref name="reason"/> rides on the payload so the UI can
+    /// explain which deadline actually fired instead of showing the
+    /// unjoined copy for both (docs/state.md §2.3).
     /// </summary>
-    Task BroadcastRoomExpiredAsync(RoomCode code, CancellationToken ct);
+    Task BroadcastRoomExpiredAsync(RoomCode code, RoomExpiryReason reason, CancellationToken ct);
 
     /// <summary>
     /// Broadcast <c>OpponentExited</c> to the room group from outside a

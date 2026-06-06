@@ -113,7 +113,7 @@ Broadcast to both clients via SignalR unless noted. **Hidden-state games** (modu
 | ~~`OpponentAbandoned`~~ | *(removed)* The reconnect grace ([`platform.md`](platform.md) §1 #7) is a **hard cutoff**: when it elapses the server auto-ends the match with `Outcome.Disconnect(disconnectedSide)` and emits `MatchEnded` directly — there is no intermediate notice to the still-connected player. |
 | `OpponentReconnected` | dropped player rejoins (before *or after* grace, while match is still `InProgress`) | sent to the still-connected player |
 | `OpponentExited` | a player leaves the room while in `Ended` or `AwaitingRematch` — either via an explicit `ExitRoom()` call (immediate) or via a SignalR disconnect that doesn't reconnect within the post-match reconnect grace (10 s, see §2.4 invariants) | sent to the still-present player; their UI shows "opponent left" + a manual "Back to lobby" button. Room transitions to `Closed`. |
-| `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | reason |
+| `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | `reason`: `unjoined` (the `WaitingForOpponent` 30-min window elapsed with no challenger) or `setupTimeout` (a setup game's deadline elapsed with neither side committed — a one-sided miss is a forfeit / `MatchEnded` instead) |
 
 ### 2.4 Invariants
 

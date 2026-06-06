@@ -160,7 +160,10 @@ export const ka: Record<EnKey, string> = {
   'match.backToLobby.short': 'დაბრუნება',
   'match.opponentLeft': 'მოწინააღმდეგე გავიდა.',
   'room.expired.title': 'ოთახი ვადაგასულია',
-  'room.expired.body': '30 წუთის განმავლობაში არავინ შემოვიდა, ეს ოთახი წაიშალა. ახალის შესაქმნელად დაბრუნდი მთავარზე.',
+  'room.expired.body.unjoined':
+    '30 წუთის განმავლობაში არავინ შემოვიდა, ეს ოთახი წაიშალა. ახალის შესაქმნელად დაბრუნდი მთავარზე.',
+  'room.expired.body.setupTimeout':
+    'ფლოტის განლაგებისთვის განკუთვნილი დრო ამოიწურა. სათამაშოდ ოთახის თავიდან შესაქმნელად დაბრუნდი მთავარ გვერდზე.',
   'room.expired.cta': '← მთავარი',
   'match.rematch.offer.button': 'რევანშის შეთავაზება',
   'match.rematch.offer.short': 'რევანში',

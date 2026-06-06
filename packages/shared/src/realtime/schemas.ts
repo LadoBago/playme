@@ -55,10 +55,11 @@ export const RematchDeclinedPayloadSchema = z.object({
   room: RoomSchema,
 });
 
-// Empty payload — RoomExpired carries no data; the event name is the
-// signal. Future-proof against the server adding optional fields by
-// not pinning the schema to strict shape.
-export const RoomExpiredPayloadSchema = z.object({});
+// Wire values are produced by RoomNotifier.BroadcastRoomExpiredAsync
+// on the API side — keep the two enums in sync.
+export const RoomExpiredPayloadSchema = z.object({
+  reason: z.enum(['unjoined', 'setupTimeout']),
+});
 
 type _AssertOpponentJoined = z.infer<typeof OpponentJoinedPayloadSchema> extends OpponentJoinedPayload
   ? true

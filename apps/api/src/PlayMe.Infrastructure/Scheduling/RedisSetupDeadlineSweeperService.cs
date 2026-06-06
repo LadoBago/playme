@@ -164,7 +164,8 @@ public sealed partial class RedisSetupDeadlineSweeperService : BackgroundService
             }
             else if (value.Expired)
             {
-                await _notifier.BroadcastRoomExpiredAsync(code, ct);
+                await _notifier.BroadcastRoomExpiredAsync(
+                    code, RoomExpiryReason.SetupTimeout, ct);
             }
         }
     }
