@@ -459,7 +459,23 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   }
 
   if (authStatus === 'pending') {
-    return <p style={{ color: 'var(--fg-muted)' }}>…</p>;
+    // The SSR payload already carries the full room snapshot, so paint the
+    // match header — the page's LCP element — immediately instead of holding
+    // the whole page on an ellipsis until the SignalR handshake resolves the
+    // caller's role (~1.5 s of pure render delay on mobile). MatchHeader's
+    // null-role mode renders host-on-left from the snapshot.
+    // waitingForOpponent stays on the bare ellipsis: the viewer is as likely
+    // the invite recipient, and flashing match UI before the join form would
+    // mislead.
+    if (room.status === 'waitingForOpponent') {
+      return <p style={{ color: 'var(--fg-muted)' }}>…</p>;
+    }
+    return (
+      <div className="match-layout stack">
+        <MatchHeader room={room} role={null} />
+        <p style={{ color: 'var(--fg-muted)' }}>…</p>
+      </div>
+    );
   }
 
   if (authStatus === 'needsJoin') {
