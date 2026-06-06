@@ -1,22 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { t, type Locale } from '@playme/shared';
 import type { GameView, GameViewProps } from '../types';
 import { Board } from '../board';
 import { TicTacToeBoardStateSchema, type TicTacToeBoardState } from './schema';
-
-/**
- * Localised short side label ("X" / "O") for the platform's player card.
- * Side vocab stays inside this module (CLAUDE.md §7 "Platform thinness");
- * the platform calls through `GameModule.getSideLabel`. Shared with the
- * legacy per-size renderers via the same `games.tictactoe.shortSide*` keys.
- */
-export function tictactoeSideLabel(side: string, locale: Locale): string | null {
-  if (side === 'x') return t('games.tictactoe.shortSideX', locale);
-  if (side === 'o') return t('games.tictactoe.shortSideO', locale);
-  return null;
-}
 
 /**
  * Unified Tic-Tac-Toe web renderer (Sprint 9 PR2). Owns the state shape

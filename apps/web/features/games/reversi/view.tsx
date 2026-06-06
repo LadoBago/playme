@@ -1,21 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { t, type Locale } from "@playme/shared";
 import { useTranslator } from "@/lib/use-locale";
 import type { GameView, GameViewProps } from "../types";
 import { ReversiBoardStateSchema, type ReversiBoardState } from "./schema";
-
-/**
- * Localised short side label ("Dark" / "Light") for the platform's player
- * card. Side vocab stays inside this module (CLAUDE.md §7 "Platform
- * thinness"); the platform calls through `GameModule.getSideLabel`.
- */
-export function reversiSideLabel(side: string, locale: Locale): string | null {
-  if (side === "dark") return t("games.reversi.shortSideDark", locale);
-  if (side === "light") return t("games.reversi.shortSideLight", locale);
-  return null;
-}
 
 /**
  * Reversi web renderer. Owns the state shape (parsed from `MatchDto.state`),

@@ -1,5 +1,5 @@
 import type { Locale } from '@playme/shared';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 /**
  * Per-game web renderer contract. The platform room shell (`room-client.tsx`)
@@ -66,10 +66,14 @@ export interface TurnStatusExtraProps {
  * thinness"). Returns null if `side` isn't a side this game recognises.
  */
 export interface GameModule {
-  readonly View: GameView;
+  /** `ComponentType` (not the bare `GameView` signature) so the registry
+   *  can register the renderer behind `next/dynamic` — only the active
+   *  game's view chunk ships to the client. Module authors still write a
+   *  plain `GameView` function. */
+  readonly View: ComponentType<GameViewProps>;
   readonly getSideLabel: (side: string, locale: Locale) => string | null;
   /** Optional inline annotation rendered beside the platform's turn pill
    *  (e.g. Sea Battle's hit/miss/sunk shot feedback). Omitted by games
    *  with nothing to report — the turn row is then the pill alone. */
-  readonly TurnStatusExtra?: (props: TurnStatusExtraProps) => ReactNode;
+  readonly TurnStatusExtra?: ComponentType<TurnStatusExtraProps>;
 }
