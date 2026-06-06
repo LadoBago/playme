@@ -261,22 +261,6 @@ export const SeaBattleView: GameView = ({
 
   return (
     <div className="sb sb--battle stack">
-      <div className="sb__tabs" role="tablist" aria-hidden>
-        <button
-          type="button"
-          className={`radio-pill ${activeBoard === 'target' ? 'radio-pill--active' : ''}`}
-          onClick={() => scrollToBoard('target')}
-        >
-          {t('games.seabattle.board.target')}
-        </button>
-        <button
-          type="button"
-          className={`radio-pill ${activeBoard === 'fleet' ? 'radio-pill--active' : ''}`}
-          onClick={() => scrollToBoard('fleet')}
-        >
-          {t('games.seabattle.board.yours')}
-        </button>
-      </div>
       {/* DOM order keeps enemy waters first (first slide of the narrow
           carousel and first in tab order — it's the action board); the
           wide-container row-reverse puts the own fleet on the left, enemy
@@ -297,6 +281,25 @@ export const SeaBattleView: GameView = ({
           label={t('games.seabattle.board.yours')}
           t={{ t, tf }}
         />
+      </div>
+      {/* Pager pills sit below the carousel, next to the thumb on phones.
+          They use the short `tab.*` labels (one line in Georgian) — the
+          full `board.*` texts stay on the grid headings above. */}
+      <div className="sb__tabs" role="tablist" aria-hidden>
+        <button
+          type="button"
+          className={`radio-pill ${activeBoard === 'target' ? 'radio-pill--active' : ''}`}
+          onClick={() => scrollToBoard('target')}
+        >
+          {t('games.seabattle.tab.target')}
+        </button>
+        <button
+          type="button"
+          className={`radio-pill ${activeBoard === 'fleet' ? 'radio-pill--active' : ''}`}
+          onClick={() => scrollToBoard('fleet')}
+        >
+          {t('games.seabattle.tab.yours')}
+        </button>
       </div>
     </div>
   );
