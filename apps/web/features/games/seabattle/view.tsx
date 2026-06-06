@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { t as translate, type Locale } from '@playme/shared';
 import { useTranslator } from '@/lib/use-locale';
 import type { GameView, GameViewProps, TurnStatusExtraProps } from '../types';
 import { generateFleet } from './fleet';
@@ -15,17 +14,6 @@ import {
   type ShotResult,
   type ShotView,
 } from './schema';
-
-/**
- * Localised short side label ("First" / "Second") for the platform's
- * player card. Side vocab stays inside this module (CLAUDE.md §7
- * "Platform thinness").
- */
-export function seabattleSideLabel(side: string, locale: Locale): string | null {
-  if (side === 'first') return translate('games.seabattle.shortSideFirst', locale);
-  if (side === 'second') return translate('games.seabattle.shortSideSecond', locale);
-  return null;
-}
 
 /**
  * Everything the boards need, normalized from the two wire shapes
