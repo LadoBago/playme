@@ -171,6 +171,13 @@ export const en = {
   'match.resign.confirm.body': "You'll lose this match.",
   'match.resign.confirm.yes': 'Resign',
   'match.resign.confirm.cancel': 'Cancel',
+  // Leaving during the setup phase (back arrow on the placement screen).
+  // Client-side navigation only — the room stays alive until the setup
+  // deadline, so the player can return via the invite link.
+  'match.leaveSetup.confirm.title': 'Leave the room?',
+  'match.leaveSetup.confirm.body': 'You can return through the shared invite link.',
+  'match.leaveSetup.confirm.yes': 'Leave',
+  'match.leaveSetup.confirm.cancel': 'Cancel',
   'match.backToLobby': 'Back to lobby',
   // Short form shown on narrow boards (@container match) where the full
   // label wraps; the full text stays the button's accessible name.

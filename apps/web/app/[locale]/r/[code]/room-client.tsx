@@ -497,6 +497,27 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   );
 }
 
+/** Back-arrow glyph for the circular `icon-link` affordance (same arrow
+ *  as the configure page's back link). */
+function BackArrowIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
 interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
@@ -547,6 +568,7 @@ function MatchView({
   const [offerPending, setOfferPending] = useState(false);
   const [acceptPending, setAcceptPending] = useState(false);
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
+  const [confirmLeaveSetupOpen, setConfirmLeaveSetupOpen] = useState(false);
 
   const handleConfirmResign = useCallback(() => {
     setResignPending(true);
@@ -650,20 +672,7 @@ function MatchView({
           aria-label={t('match.backToLobby')}
           style={{ alignSelf: 'flex-start' }}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+          <BackArrowIcon />
         </Link>
         <MatchHeader room={room} role={role} />
         {isChallenger ? null : <ShareLink url={shareUrl} />}
@@ -682,6 +691,25 @@ function MatchView({
 
   return (
     <div className="match-layout stack">
+      {/* Setup-only back affordance (same circular arrow as the configure
+          page), behind a confirmation so a stray tap doesn't yank the
+          player out mid-placement. Leaving is client-only by design: no
+          exit path exists in SettingUp (docs/state.md §2.4 — the setup
+          deadline is the only adjudicating authority), so the player can
+          change their mind and rejoin via the invite link while the
+          setup timer runs. */}
+      {inSetup ? (
+        <button
+          type="button"
+          className="icon-link"
+          aria-label={t('match.backToLobby')}
+          style={{ alignSelf: 'flex-start' }}
+          onClick={() => setConfirmLeaveSetupOpen(true)}
+        >
+          <BackArrowIcon />
+        </button>
+      ) : null}
+
       <MatchHeader room={room} role={role} />
 
       {inSetup ? null : (
@@ -777,6 +805,17 @@ function MatchView({
         tone="danger"
         onConfirm={handleConfirmResign}
         onCancel={() => setConfirmResignOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmLeaveSetupOpen}
+        title={t('match.leaveSetup.confirm.title')}
+        body={t('match.leaveSetup.confirm.body')}
+        confirmLabel={t('match.leaveSetup.confirm.yes')}
+        cancelLabel={t('match.leaveSetup.confirm.cancel')}
+        tone="danger"
+        onConfirm={() => router.push(localizedHref('/', locale))}
+        onCancel={() => setConfirmLeaveSetupOpen(false)}
       />
 
       <ConfirmDialog

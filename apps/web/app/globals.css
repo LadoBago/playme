@@ -352,6 +352,7 @@ textarea {
   background: var(--bg-elevated);
   color: var(--fg-muted);
   text-decoration: none;
+  cursor: pointer; /* also used as a <button> (setup-phase back) */
   transition:
     color 0.15s ease,
     background-color 0.15s ease,
