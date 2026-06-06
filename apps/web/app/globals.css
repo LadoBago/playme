@@ -753,6 +753,11 @@ textarea {
     flex-direction: column;
     align-items: stretch;
     flex-wrap: nowrap;
+    /* The central scoreboard collapses to zero height here (counts are
+     * hidden below) yet still contributes a flex gap on each side, so the
+     * visible space between the two player rows is gap × 2. Halve the gap
+     * to keep that combined space moderate (~1rem). */
+    gap: 0.5rem;
   }
   .match-score__counts {
     display: none;
