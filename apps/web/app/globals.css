@@ -1704,6 +1704,19 @@ button.sb__cell:disabled {
   color: var(--fg-muted);
 }
 
+/* Setup-phase opponent status mirrors the platform turn pill
+ * (`.match-status`) — it sits in the same slot the pill occupies once
+ * the battle starts. Deliberately duplicated rather than reusing the
+ * platform class, so the module's styling stays self-contained.
+ * `align-self` keeps the pill content-sized in the `.stack` column. */
+.sb__status--pill {
+  align-self: flex-start;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: var(--highlight);
+}
+
 /* Landing-card preview tokens */
 .game-card__preview-sb {
   width: 70%;

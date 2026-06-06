@@ -208,8 +208,9 @@ export const SeaBattleView: GameView = ({
     return (
       <div className="sb stack" aria-label={t('games.seabattle.setup.title')}>
         {/* Opponent progress sits above the board — the same slot the
-            platform's turn pill occupies once the battle starts. */}
-        <p className="sb__status sb__status--muted" role="status">
+            platform's turn pill occupies once the battle starts, so it
+            carries the same pill look. */}
+        <p className="sb__status sb__status--pill" role="status">
           {opponentCommitted
             ? t('games.seabattle.setup.opponentReady')
             : t('games.seabattle.setup.opponentPlacing')}
