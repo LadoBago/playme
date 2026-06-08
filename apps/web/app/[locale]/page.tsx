@@ -68,7 +68,7 @@ export default async function HomePage({ params }: PageProps) {
         style={{ gap: '0.5rem', textAlign: 'center', alignItems: 'center' }}
       >
         <h1 style={{ margin: 0 }}>
-          <span className="visually-hidden">playme.ge</span>
+          <span className="visually-hidden">{t('site.homeH1')}</span>
           <Wordmark size="3.25rem" />
         </h1>
         <p
