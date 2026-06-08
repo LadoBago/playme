@@ -5,17 +5,23 @@
 
 export const en = {
   // --- Site chrome ---
-  'site.title': 'PlayMe — Play casual games online with a friend, no signup',
+  // Keyword-first: the descriptive phrase leads so it survives SERP
+  // truncation, and the (generic, contested) brand is demoted to the tail.
+  'site.title': 'Play casual games online with a friend, no signup — PlayMe',
   // Shorter brand form used by surfaces with limited space (e.g. the PWA
   // manifest `name`, shown on install prompts and the home screen).
   'site.titleShort': 'PlayMe — Play casual games online with a friend',
+  // Landing-page <h1>. The visible wordmark is aria-hidden, so this is the
+  // heading's whole accessible name; it also puts a real keyword phrase in
+  // the highest-authority page's H1 (the wordmark text stays crawlable).
+  'site.homeH1': 'PlayMe — play casual games online with a friend',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play casual games online with a friend, no signup.',
   // Homepage-specific meta/OG description. Distinct from `site.tagline`
   // (which stays the site-wide OG fallback and the per-room default) so
   // the landing page's search snippet reads on its own terms.
   'site.homeMetaDescription':
-    'Play board and strategy games online with a friend — no signup. Pick a game and share a link. Free to play.',
+    'Play 2-player board and strategy games online with a friend — no signup. Pick a game and share a link. Free to play.',
   // Short brand tagline used as the OG image kicker and the landing
   // hero subtitle, where the descriptive tagline (above) is too long.
   // Brand kit voice: short, punchy, board-game flavored.
