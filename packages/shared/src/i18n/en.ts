@@ -51,7 +51,7 @@ export const en = {
     'Copyright and ownership information for PlayMe, a free platform for playing casual games online with a friend.',
   'copyright.notice': '© {year} PlayMe.ge. All rights reserved.',
   'copyright.body':
-    'PlayMe.ge is a free, anonymous platform for playing casual two-player games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi) are in the public domain; only this site’s implementation and presentation are covered.',
+    'PlayMe.ge is a free, anonymous platform for playing casual two-player games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi, Sea Battle) are in the public domain; only this site’s implementation and presentation are covered.',
 
   // --- About page ---
   // First-person: this is a personal learning project, so the voice is the
