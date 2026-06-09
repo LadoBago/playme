@@ -45,6 +45,24 @@ async function silentStop(hub: RoomHubClient | null | undefined): Promise<void> 
 }
 
 /**
+ * Bound a promise so a hung network op (e.g. a `negotiate` fetch that
+ * neither resolves nor rejects while offline) can't wedge a caller that
+ * holds a lock across the await. Rejects with `label` on timeout; the
+ * underlying op keeps running but the awaiter is freed.
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(label)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
  * Top-level client component for the room page. Drives the SignalR
  * connection, decides whether to render the join form or the match UI,
  * and threads the room state from server events through to the board.
@@ -148,15 +166,20 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onReconnected: () => {
         // Transport is back — re-call JoinRoom so the server records the
         // presence (cancels its disconnect-grace entry) and we receive a
-        // fresh room+clock snapshot.
+        // fresh room+clock snapshot. Bound the join so a half-open
+        // reconnected socket can't leave us stuck on 'reconnecting'.
         void (async () => {
           try {
-            const session = await hub.joinRoom(expectedRoomCode);
+            const session = await withTimeout(
+              hub.joinRoom(expectedRoomCode),
+              8_000,
+              'join-timeout',
+            );
             setRoom(session.room);
             setRole(session.role);
             setConnectionStatus('live');
           } catch {
-            setConnectionStatus('lost');
+            setConnectionStatus('reconnecting');
           }
         })();
       },
@@ -170,7 +193,16 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     });
 
     try {
-      await hub.start();
+      // Bound start + join when this is a recovery rebuild: a `negotiate`
+      // fetch can hang (rather than reject) while offline, and the caller
+      // (recoverConnection) holds a guard across this await — an unbounded
+      // hang would wedge that guard and kill every future recovery attempt.
+      const OP_TIMEOUT_MS = 8_000;
+      if (opts.recovery) {
+        await withTimeout(hub.start(), OP_TIMEOUT_MS, 'start-timeout');
+      } else {
+        await hub.start();
+      }
       // If the effect was cleaned up while negotiating (StrictMode dev
       // double-mount, fast route change), tear down here instead of
       // letting cleanup call stop() mid-negotiation — that surfaces as
@@ -180,7 +212,9 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         return;
       }
       hubRef.current = hub;
-      const session = await hub.joinRoom(expectedRoomCode);
+      const session = opts.recovery
+        ? await withTimeout(hub.joinRoom(expectedRoomCode), OP_TIMEOUT_MS, 'join-timeout')
+        : await hub.joinRoom(expectedRoomCode);
       if (signal.cancelled) {
         await silentStop(hub);
         hubRef.current = null;

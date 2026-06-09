@@ -118,6 +118,14 @@ export class RoomHubClient {
         // Don't switch to accessTokenFactory — v1 is cookie-only per §5.4.
         withCredentials: true,
       })
+      // Quiet SignalR's own logger to Critical only. During an outage the
+      // indefinite auto-reconnect retries forever, and SignalR logs every
+      // failed negotiate/transport attempt at Error level — a console (and
+      // Next dev-overlay) flood for failures that are expected and already
+      // handled: the room UI reflects the live/reconnecting/lost state, and
+      // the room-client stall watchdog owns actual recovery. Critical keeps
+      // genuinely catastrophic logs while dropping the reconnect spam.
+      .configureLogging(signalR.LogLevel.Critical)
       .withAutomaticReconnect(new IndefiniteReconnectPolicy())
       .build();
   }
