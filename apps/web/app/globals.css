@@ -825,6 +825,26 @@ textarea {
   color: var(--danger);
 }
 
+/* Inline "Reconnect" affordance shown inside the connection-lost pill.
+ * A text button (not a filled control) — it inherits the pill's danger
+ * colour, sits a hair after the message, and underlines to read as the
+ * one actionable word in the line. */
+.match-status-retry {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.match-status-retry:hover {
+  text-decoration: none;
+}
+
 /* Turn pill plus an optional module-provided inline annotation (e.g.
  * Sea Battle's hit/miss feedback) on a single row. The wrapper takes
  * over the pill's content-sizing role in the grid column; inside the

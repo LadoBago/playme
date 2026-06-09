@@ -148,6 +148,7 @@ export const ka: Record<EnKey, string> = {
   'match.opponentReconnected': 'მოწინააღმდეგე დაბრუნდა.',
   'match.reconnecting': 'ვუკავშირდებით…',
   'match.connectionLost': 'კავშირი დაიკარგა.',
+  'match.reconnect': 'ხელახლა დაკავშირება',
   'match.clock.label': 'საათი',
   'match.result.youWin': 'შენ მოიგე!',
   'match.result.youLose': 'შენ წააგე.',

@@ -78,12 +78,35 @@ export interface RoomHubOptions {
 }
 
 /**
- * Auto-reconnect schedule covering the 30 s reconnect-grace window
- * (state.md §2.2). The default @microsoft/signalr schedule sums to
- * ~42 s, which works but back-loads its retry at the 10 s mark; we
- * front-load so a brief network blip recovers in well under a second.
+ * Front-loaded retry schedule that then settles to a steady 4 s cadence.
+ * The first six attempts recover a brief blip in well under a second; past
+ * that the policy keeps retrying every 4 s.
  */
-const RECONNECT_DELAYS_MS = [0, 250, 500, 1000, 2000, 4000, 8000, 16000];
+const RECONNECT_SCHEDULE_MS = [0, 250, 500, 1000, 2000, 4000];
+const RECONNECT_STEADY_MS = 4_000;
+
+/**
+ * Reconnect policy that **never gives up** while the page is open. The
+ * default finite @microsoft/signalr schedule stops after its last entry
+ * and fires `onclose`, stranding a still-reconnectable room until a manual
+ * browser refresh — the bug this replaces. Returning a delay for every
+ * retry count (never `null`) keeps SignalR trying, so a network outage of
+ * any length recovers on its own once connectivity returns; the flat 4 s
+ * ceiling bounds the worst-case wait.
+ *
+ * It deliberately does NOT stop at the server's disconnect-grace deadline:
+ * the client can't observe that deadline, grace may never start (it only
+ * ticks on the disconnected player's turn), and reconnecting *after* a
+ * loss is precisely how the player sees the outcome and the rematch offer.
+ * Reconnect therefore runs until the room is genuinely terminal — at which
+ * point the caller tears the hub down (RoomExpired) or the rejoin returns
+ * the closed snapshot and settles.
+ */
+class IndefiniteReconnectPolicy implements signalR.IRetryPolicy {
+  nextRetryDelayInMilliseconds(retryContext: signalR.RetryContext): number {
+    return RECONNECT_SCHEDULE_MS[retryContext.previousRetryCount] ?? RECONNECT_STEADY_MS;
+  }
+}
 
 export class RoomHubClient {
   private readonly _connection: signalR.HubConnection;
@@ -95,7 +118,15 @@ export class RoomHubClient {
         // Don't switch to accessTokenFactory — v1 is cookie-only per §5.4.
         withCredentials: true,
       })
-      .withAutomaticReconnect(RECONNECT_DELAYS_MS)
+      // Quiet SignalR's own logger to Critical only. During an outage the
+      // indefinite auto-reconnect retries forever, and SignalR logs every
+      // failed negotiate/transport attempt at Error level — a console (and
+      // Next dev-overlay) flood for failures that are expected and already
+      // handled: the room UI reflects the live/reconnecting/lost state, and
+      // the room-client stall watchdog owns actual recovery. Critical keeps
+      // genuinely catastrophic logs while dropping the reconnect spam.
+      .configureLogging(signalR.LogLevel.Critical)
+      .withAutomaticReconnect(new IndefiniteReconnectPolicy())
       .build();
   }
 
