@@ -162,6 +162,7 @@ export const en = {
   'match.opponentReconnected': 'Opponent reconnected.',
   'match.reconnecting': 'Reconnecting…',
   'match.connectionLost': 'Connection lost.',
+  'match.reconnect': 'Reconnect',
   'match.clock.label': 'Clock',
   'match.result.youWin': 'You win!',
   'match.result.youLose': 'You lose.',

@@ -182,6 +182,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       setRoom(session.room);
       setRole(session.role);
       setAuthStatus('authed');
+      // A fresh connection is live by definition. Set it explicitly so a
+      // rebuild via recoverConnection() (visibility / online / manual
+      // retry) clears a stale 'reconnecting'/'lost' banner — a brand-new
+      // start() never fires onReconnected, so nothing else would.
+      setConnectionStatus('live');
     } catch (e) {
       if (signal.cancelled) return;
       // The probe failed — either the visitor has no session yet (the
@@ -218,6 +223,51 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     // hub's automatic reconnect path. `connect` is stable for our purposes.
   }, []);
 
+  // Presence recovery: re-establish the room session as cheaply as
+  // possible, falling back to a full rebuild. First try an idempotent
+  // `hub.joinRoom` — on a healthy connection that just flips our
+  // presence back to true (and lets `TryStartMatch` run if the opponent
+  // joined while we were away) and returns the current snapshot. If the
+  // connection is half-dead the call hangs until SignalR's own timeout,
+  // so race against 4 s and, on timeout/failure, tear down and rebuild
+  // from scratch: a fresh OnConnectedAsync re-adds us to the room group,
+  // JoinRoom runs RegisterPresenceHandler, and TryStartMatch fires if
+  // both sides are now connected. Shared by the visibility, `online`,
+  // and manual-retry paths below.
+  const recoverConnection = useCallback(async () => {
+    const JOIN_TIMEOUT_MS = 4_000;
+    const hub = hubRef.current;
+    if (!hub) return;
+    let settled = false;
+    const refresh: Promise<'ok' | 'failed'> = (async () => {
+      try {
+        const session = await hub.joinRoom(expectedRoomCode);
+        if (settled) return 'ok';
+        settled = true;
+        setRoom(session.room);
+        setRole(session.role);
+        setConnectionStatus('live');
+        return 'ok';
+      } catch {
+        if (settled) return 'failed';
+        settled = true;
+        return 'failed';
+      }
+    })();
+    const timeout: Promise<'timeout'> = new Promise((resolve) =>
+      setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve('timeout');
+      }, JOIN_TIMEOUT_MS),
+    );
+    const result = await Promise.race([refresh, timeout]);
+    if (result === 'ok') return;
+    await silentStop(hubRef.current);
+    hubRef.current = null;
+    await connect({ cancelled: false });
+  }, [connect, expectedRoomCode]);
+
   // Backgrounded-tab presence recovery. When the host taps the share
   // sheet to send the invite, the browser backgrounds this tab and
   // throttles the SignalR keep-alive ping. Past ~30 s — the server's
@@ -230,14 +280,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // the room stays frozen for up to half a minute after the host
   // returns — long enough that users reach for refresh.
   //
-  // On `visibilitychange` → `visible`, proactively re-invoke
-  // `hub.joinRoom`. If the connection is healthy this is a cheap
-  // idempotent presence refresh that just flips HostConnected back to
-  // true and lets `TryStartMatch` run (or, if both were already
-  // connected, returns the current room snapshot). If the connection
-  // is half-dead the call hangs until SignalR's own timeout, so race
-  // against a 4 s timeout and force a full rebuild if it wins.
-  //
   // The 15 s hidden-duration gate matches half the server's
   // `ClientTimeoutInterval` — under 30 s of background no reap can have
   // happened, so the refresh is wasted bandwidth on every alt-tab and
@@ -246,7 +288,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // AddApi.cs `AddSignalR`), drop this constant in lockstep.
   useEffect(() => {
     const HIDDEN_REFRESH_THRESHOLD_MS = 15_000;
-    const JOIN_TIMEOUT_MS = 4_000;
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         hiddenAtRef.current = Date.now();
@@ -256,47 +297,29 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       hiddenAtRef.current = null;
       if (since === null) return;
       if (Date.now() - since < HIDDEN_REFRESH_THRESHOLD_MS) return;
-      const hub = hubRef.current;
-      if (!hub) return;
-      void (async () => {
-        let settled = false;
-        const refresh: Promise<'ok' | 'failed'> = (async () => {
-          try {
-            const session = await hub.joinRoom(expectedRoomCode);
-            if (settled) return 'ok';
-            settled = true;
-            setRoom(session.room);
-            setRole(session.role);
-            setConnectionStatus('live');
-            return 'ok';
-          } catch {
-            if (settled) return 'failed';
-            settled = true;
-            return 'failed';
-          }
-        })();
-        const timeout: Promise<'timeout'> = new Promise((resolve) =>
-          setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            resolve('timeout');
-          }, JOIN_TIMEOUT_MS),
-        );
-        const result = await Promise.race([refresh, timeout]);
-        if (result === 'ok') return;
-        // 'failed' (server rejected, probably stale cookie) or 'timeout'
-        // (half-dead WebSocket) — tear down and rebuild from scratch.
-        // OnConnectedAsync re-adds us to the room group, JoinRoom runs
-        // RegisterPresenceHandler, and TryStartMatch fires if both
-        // sides are now connected.
-        await silentStop(hubRef.current);
-        hubRef.current = null;
-        await connect({ cancelled: false });
-      })();
+      void recoverConnection();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [connect, expectedRoomCode]);
+  }, [recoverConnection]);
+
+  // Network-restored recovery. The reconnect policy keeps retrying every
+  // 4 s, but its timer is blind to the real connection state — if the
+  // link returns mid-interval the client would idle out the rest of the
+  // wait while the user stares at "Reconnecting…" with working internet.
+  // The browser fires `online` the instant connectivity is back, so nudge
+  // recovery immediately; recoverConnection() short-circuits to a cheap
+  // idempotent join when the socket is in fact healthy.
+  useEffect(() => {
+    const onOnline = () => void recoverConnection();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [recoverConnection]);
+
+  const handleManualReconnect = useCallback(() => {
+    setConnectionStatus('reconnecting');
+    void recoverConnection();
+  }, [recoverConnection]);
 
   const handleJoined = useCallback(async () => {
     setAuthStatus('pending');
@@ -509,6 +532,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onRejectRematch={handleRejectRematch}
       error={error}
       connectionStatus={connectionStatus}
+      onReconnect={handleManualReconnect}
     />
   );
 }
@@ -547,6 +571,7 @@ interface MatchViewProps {
   onRejectRematch: () => Promise<void>;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
+  onReconnect: () => void;
 }
 
 function MatchView({
@@ -562,6 +587,7 @@ function MatchView({
   onRejectRematch,
   error,
   connectionStatus,
+  onReconnect,
 }: MatchViewProps) {
   const router = useRouter();
   const { t, locale } = useTranslator();
@@ -737,6 +763,11 @@ function MatchView({
           {connectionStatus === 'reconnecting'
             ? t('match.reconnecting')
             : t('match.connectionLost')}
+          {connectionStatus === 'lost' ? (
+            <button type="button" className="match-status-retry" onClick={onReconnect}>
+              {t('match.reconnect')}
+            </button>
+          ) : null}
         </span>
       ) : null}
 
