@@ -117,6 +117,20 @@ export class RoomHubClient {
         // The signed session cookie is HttpOnly and rides in via credentials.
         // Don't switch to accessTokenFactory — v1 is cookie-only per §5.4.
         withCredentials: true,
+        // Connect straight over WebSockets and skip the negotiate POST.
+        // We require WebSockets anyway (no long-polling fallback by design),
+        // and the API is stateless behind a Redis backplane, so there's no
+        // sticky-session need that negotiate would satisfy. Skipping it
+        // removes a round-trip on every connect *and* a failure mode seen in
+        // the field: a `negotiate` request that hangs/times-out (notably
+        // through a reverse proxy) would stall reconnection; a direct WS
+        // upgrade has no such intermediate step. Auth still rides on the WS
+        // handshake — the session cookie is SameSite=Lax and the web + API
+        // share an eTLD+1, so the browser attaches it on the upgrade
+        // (see SessionCookieOptions). `skipNegotiation` *requires* a single
+        // explicit transport.
+        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets,
       })
       // Quiet SignalR's own logger to Critical only. During an outage the
       // indefinite auto-reconnect retries forever, and SignalR logs every
