@@ -77,6 +77,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // visibility-recovery effect — see the comment block on that effect
   // below for the timing rationale.
   const hiddenAtRef = useRef<number | null>(null);
+  // Guards against overlapping recovery attempts — the stall watchdog,
+  // the `online` event, and `visibilitychange` can all fire at once. A
+  // ref (not state) so the second caller bails synchronously.
+  const recoveringRef = useRef(false);
   // Drops rapid double-taps on the same cell while the previous SubmitMove
   // is still in flight. Without this gate, a lag-induced second click would
   // reach the server *after* the first move already flipped sideToMove, and
@@ -93,7 +97,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
 
   const game = useMemo(() => findGame(room.gameId), [room.gameId]);
 
-  const connect = useCallback(async (signal: { cancelled: boolean }) => {
+  const connect = useCallback(async (
+    signal: { cancelled: boolean },
+    opts: { recovery?: boolean } = {},
+  ) => {
     setError(null);
     const hub = new RoomHubClient({ url: hubUrl() });
 
@@ -189,6 +196,17 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       setConnectionStatus('live');
     } catch (e) {
       if (signal.cancelled) return;
+      await silentStop(hub);
+      hubRef.current = null;
+      if (opts.recovery) {
+        // A recovery rebuild (stall watchdog / online / visibility) of an
+        // already-authed session. A failure here is transient — almost
+        // always still-offline — not "this visitor needs to join". Stay in
+        // the match view and leave the status reconnecting so the watchdog
+        // tries again; never fall back to the join form mid-match.
+        setConnectionStatus('reconnecting');
+        return;
+      }
       // The probe failed — either the visitor has no session yet (the
       // common case: just opened the share link) or the JoinRoom call
       // surfaced an i18n error. Either way the join form is the right
@@ -202,8 +220,6 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
         }
       }
       setAuthStatus('needsJoin');
-      await silentStop(hub);
-      hubRef.current = null;
     }
   }, [expectedRoomCode]);
 
@@ -235,37 +251,50 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // both sides are now connected. Shared by the visibility, `online`,
   // and manual-retry paths below.
   const recoverConnection = useCallback(async () => {
-    const JOIN_TIMEOUT_MS = 4_000;
-    const hub = hubRef.current;
-    if (!hub) return;
-    let settled = false;
-    const refresh: Promise<'ok' | 'failed'> = (async () => {
-      try {
-        const session = await hub.joinRoom(expectedRoomCode);
-        if (settled) return 'ok';
-        settled = true;
-        setRoom(session.room);
-        setRole(session.role);
-        setConnectionStatus('live');
-        return 'ok';
-      } catch {
-        if (settled) return 'failed';
-        settled = true;
-        return 'failed';
-      }
-    })();
-    const timeout: Promise<'timeout'> = new Promise((resolve) =>
-      setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        resolve('timeout');
-      }, JOIN_TIMEOUT_MS),
-    );
-    const result = await Promise.race([refresh, timeout]);
-    if (result === 'ok') return;
-    await silentStop(hubRef.current);
-    hubRef.current = null;
-    await connect({ cancelled: false });
+    if (recoveringRef.current) return;
+    recoveringRef.current = true;
+    try {
+      const JOIN_TIMEOUT_MS = 4_000;
+      const hub = hubRef.current;
+      // No hub yet (initial mount still in flight) — nothing to recover.
+      // A null hub during a stall means connect() will run on its own.
+      let settled = false;
+      const refresh: Promise<'ok' | 'failed'> = hub
+        ? (async () => {
+            try {
+              const session = await hub.joinRoom(expectedRoomCode);
+              if (settled) return 'ok';
+              settled = true;
+              setRoom(session.room);
+              setRole(session.role);
+              setConnectionStatus('live');
+              return 'ok';
+            } catch {
+              if (settled) return 'failed';
+              settled = true;
+              return 'failed';
+            }
+          })()
+        : Promise.resolve('failed');
+      const timeout: Promise<'timeout'> = new Promise((resolve) =>
+        setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve('timeout');
+        }, JOIN_TIMEOUT_MS),
+      );
+      const result = await Promise.race([refresh, timeout]);
+      if (result === 'ok') return;
+      // The cheap idempotent join didn't land (half-dead or wedged socket).
+      // Build a brand-new connection — the programmatic equivalent of a
+      // page refresh, which is what reliably recovers when SignalR's
+      // in-place auto-reconnect can't re-establish through the proxy.
+      await silentStop(hubRef.current);
+      hubRef.current = null;
+      await connect({ cancelled: false }, { recovery: true });
+    } finally {
+      recoveringRef.current = false;
+    }
   }, [connect, expectedRoomCode]);
 
   // Backgrounded-tab presence recovery. When the host taps the share
@@ -315,6 +344,23 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
   }, [recoverConnection]);
+
+  // Stall watchdog — the backstop for drops that fire no event. A SignalR
+  // server-timeout can elapse while `navigator.onLine` stays true (a
+  // proxy / radio / server-pause hiccup, not the interface going down), so
+  // no `online` event arrives; a foreground tab fires no `visibilitychange`
+  // either; and SignalR's in-place auto-reconnect can wedge without ever
+  // recovering (notably re-negotiating through the dev WebSocket proxy).
+  // With nothing else firing, the room would spin on "Reconnecting…"
+  // forever. So while we're not live, periodically force a full rebuild
+  // (recoverConnection → fresh connection = what a manual refresh does,
+  // which is known to recover) until the connection comes back.
+  useEffect(() => {
+    if (connectionStatus === 'live') return undefined;
+    const STALL_REBUILD_MS = 10_000;
+    const id = setInterval(() => void recoverConnection(), STALL_REBUILD_MS);
+    return () => clearInterval(id);
+  }, [connectionStatus, recoverConnection]);
 
   const handleManualReconnect = useCallback(() => {
     setConnectionStatus('reconnecting');
@@ -763,11 +809,9 @@ function MatchView({
           {connectionStatus === 'reconnecting'
             ? t('match.reconnecting')
             : t('match.connectionLost')}
-          {connectionStatus === 'lost' ? (
-            <button type="button" className="match-status-retry" onClick={onReconnect}>
-              {t('match.reconnect')}
-            </button>
-          ) : null}
+          <button type="button" className="match-status-retry" onClick={onReconnect}>
+            {t('match.reconnect')}
+          </button>
         </span>
       ) : null}
 
