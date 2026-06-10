@@ -84,23 +84,38 @@ if [[ "${PHASE}" == "all" || "${PHASE}" == "resources" ]]; then
 log "resource group: ${RG}"
 az group create --name "${RG}" --location "${LOCATION}" -o none
 
-# ─── 2. redis (slow — kick off in the background) ──────────────────────────
-# `az redis create` doesn't expose --no-wait in current CLI versions and it
-# blocks for ~15 min waiting on the ARM operation. Spawn it as a shell job
-# so the App Service work below runs in parallel; we `wait` for it later.
-# Non-SSL port is disabled by default; the `--enable-non-ssl-port` *flag*
-# would enable it.
+# ─── 2. redis (Azure Managed Redis — slow, kick off in the background) ──────
+# Azure Managed Redis (Redis Enterprise stack), not the legacy Azure Cache for
+# Redis — different ARM type (Microsoft.Cache/redisEnterprise), different CLI
+# (`az redisenterprise`), endpoint on port 10000 over `*.redis.azure.net`.
+# `az redisenterprise create` provisions both the cluster and its default
+# database in one call (~10 min). Spawn it as a shell job so the App Service
+# work below runs in parallel; we `wait` for it later.
+#
+# Baseline SKU is Balanced_B0 — single node, no HA, no SLA, cheapest tier
+# (~$14/mo). B0 cannot run high availability, so --high-availability is
+# Disabled here. To get an SLA, scale to Balanced_B1 with HA enabled by hand
+# (see docs/deployment.md) — that drift is intentional, same as the App
+# Service S1 bump.
+# --client-protocol Encrypted = TLS-only (port 10000). --clustering-policy
+# EnterpriseCluster exposes a single logical endpoint so StackExchange.Redis
+# and the SignalR backplane need no cluster-awareness; our Redis access is
+# single-key only (no multi-key Lua / transactions), so nothing relies on slot
+# placement.
 REDIS_PID=""
 REDIS_LOG="$(mktemp -t provision-redis.XXXXXX)"
-log "redis: ${REDIS} (Basic C0)"
-if az redis show -g "${RG}" -n "${REDIS}" -o none 2>/dev/null; then
+log "redis: ${REDIS} (Azure Managed Redis, Balanced B0)"
+if az redisenterprise show -g "${RG}" -n "${REDIS}" -o none 2>/dev/null; then
   note "already exists — skipping create"
 else
-  note "kicking off async create (~15 min); log → ${REDIS_LOG}"
-  az redis create \
+  note "kicking off async create (~10 min); log → ${REDIS_LOG}"
+  az redisenterprise create \
     -g "${RG}" -n "${REDIS}" -l "${LOCATION}" \
-    --sku Basic --vm-size c0 \
+    --sku Balanced_B0 \
+    --high-availability Disabled \
     --minimum-tls-version 1.2 \
+    --client-protocol Encrypted \
+    --clustering-policy EnterpriseCluster \
     >"${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 fi
@@ -152,9 +167,9 @@ else
   log "redis: already provisioned"
 fi
 
-REDIS_HOST="$(az redis show -g "${RG}" -n "${REDIS}" --query hostName -o tsv)"
-REDIS_KEY="$(az redis list-keys -g "${RG}" -n "${REDIS}" --query primaryKey -o tsv)"
-REDIS_CONN="${REDIS_HOST}:6380,password=${REDIS_KEY},ssl=True,abortConnect=False"
+REDIS_HOST="$(az redisenterprise show -g "${RG}" -n "${REDIS}" --query hostName -o tsv)"
+REDIS_KEY="$(az redisenterprise database list-keys -g "${RG}" --cluster-name "${REDIS}" --query primaryKey -o tsv)"
+REDIS_CONN="${REDIS_HOST}:10000,password=${REDIS_KEY},ssl=True,abortConnect=False"
 
 # ─── 5. app settings ────────────────────────────────────────────────────────
 log "web app: app settings (CORS, Redis, ASP.NET env, telemetry)"
@@ -285,7 +300,7 @@ az monitor action-group create \
   --action email oncall "${ALERT_EMAIL}" -o none
 
 WEBAPP_ID="$(az webapp show -g "${RG}" -n "${WEBAPP}" --query id -o tsv)"
-REDIS_ID="$(az redis show -g "${RG}" -n "${REDIS}" --query id -o tsv)"
+REDIS_ID="$(az redisenterprise show -g "${RG}" -n "${REDIS}" --query id -o tsv)"
 AG_ID="$(az monitor action-group show -g "${RG}" -n "${ACTION_GROUP}" --query id -o tsv)"
 
 log "alert: HTTP 5xx > 10 per 5 min"
@@ -309,12 +324,17 @@ az monitor metrics alert create \
   --severity 3 \
   --action "${AG_ID}" -o none 2>/dev/null || true
 
-log "alert: redis server load > 90% (sustained 5 min)"
+log "alert: redis used-memory > 90% (sustained 5 min)"
+# Azure Managed Redis (Microsoft.Cache/redisEnterprise) exposes a different
+# metric set than legacy Azure Cache — there is no `serverLoad`. We alert on
+# `usedmemorypercentage` as the capacity-pressure signal instead. If this name
+# ever fails to bind, list the live metric names with:
+#   az monitor metrics list-definitions --resource "${REDIS_ID}" --query "[].name.value"
 az monitor metrics alert create \
   -g "${RG}" -n "playme-redis-high-load" \
   --scopes "${REDIS_ID}" \
-  --description "Redis server load is high — capacity bump may be needed" \
-  --condition "avg serverLoad > 90" \
+  --description "Redis memory usage is high — capacity bump may be needed" \
+  --condition "avg usedmemorypercentage > 90" \
   --window-size 5m --evaluation-frequency 1m \
   --severity 2 \
   --action "${AG_ID}" -o none 2>/dev/null || true
