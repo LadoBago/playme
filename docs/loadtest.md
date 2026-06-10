@@ -108,7 +108,7 @@ No errors recorded.
 
 For mechanical smoke against a deployed environment, point `--target` at it and keep the run small. Two caveats:
 
-1. **Hit the Azure origin directly, not `api.playme.ge`.** High request volume through the Cloudflare proxy violates CF's free-tier terms and CF may challenge/throttle the run, polluting results. The origin hostname is `playme-api-prod.azurewebsites.net` (see [`deployment.md`](deployment.md) §3) — non-browser clients don't care about CORS. Do one *small* pass through `api.playme.ge` afterwards to validate the CF→origin WebSocket path end-to-end.
+1. **Hit the Azure origin directly, not `api.playme.ge`.** High request volume through the Cloudflare proxy violates CF's free-tier terms and CF may challenge/throttle the run, polluting results. The origin hostname is `playme-api-prod2.azurewebsites.net` (see [`deployment.md`](deployment.md) §3) — non-browser clients don't care about CORS. Do one *small* pass through `api.playme.ge` afterwards to validate the CF→origin WebSocket path end-to-end.
 2. **Widen the per-IP limits first** (next section), or the harness throttles itself before the platform feels anything.
 
 ## 7. Result captured (Sprint 7 closeout)
@@ -123,7 +123,7 @@ For mechanical smoke against a deployed environment, point `--target` at it and 
 
 ```bash
 pnpm --filter @playme/loadtest start -- \
-  --target https://playme-api-prod.azurewebsites.net \
+  --target https://playme-api-prod2.azurewebsites.net \
   --mode sustained \
   --steps 10,25,50,100,200 \   # concurrent pairs per step (×2 = connections)
   --hold-sec 300 \             # measurement window per step
@@ -150,7 +150,7 @@ A **pair** is one self-driving match between two simulated players that stays al
 Every pair from one test machine shares one source IP, so the per-IP defaults (`POST /api/rooms` 30/min, `/join` 30/min — see [`security.md`](security.md) §5) throttle the **harness**, not the platform: a 200-pair ramp launched in a burst far exceeds 30 joins/min and most pairs would die on a `429 errors.rate.exceeded` during setup (these surface in a per-step "ramp/setup errors" block). The counts are bindable via `IpRateLimitingOptions`; before a run, widen them on the App Service:
 
 ```bash
-az webapp config appsettings set -g <rg> -n playme-api-prod --settings \
+az webapp config appsettings set -g <rg> -n playme-api-prod2 --settings \
   RateLimiting__Ip__RoomsCreatePermitLimit=600 \
   RateLimiting__Ip__RoomsJoinPermitLimit=600 \
   RateLimiting__Ip__RoomsGetPermitLimit=600
@@ -159,7 +159,7 @@ az webapp config appsettings set -g <rg> -n playme-api-prod --settings \
 **After the run, delete these overrides** (don't re-set them) so the code defaults reapply — a stale override silently wins over future default changes:
 
 ```bash
-az webapp config appsettings delete -g <rg> -n playme-api-prod \
+az webapp config appsettings delete -g <rg> -n playme-api-prod2 \
   --setting-names RateLimiting__Ip__RoomsCreatePermitLimit \
                   RateLimiting__Ip__RoomsJoinPermitLimit \
                   RateLimiting__Ip__RoomsGetPermitLimit
