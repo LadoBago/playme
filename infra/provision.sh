@@ -118,8 +118,13 @@ if ! az webapp show -g "${RG}" -n "${WEBAPP}" -o none 2>/dev/null; then
     --deployment-container-image-name "${PLACEHOLDER_IMAGE}" -o none
   # ARM has an eventual-consistency window right after `webapp create`: the
   # follow-up `webapp config set` can 404 even though the resource exists.
-  # Block until it's actually queryable before continuing.
-  az webapp wait -g "${RG}" -n "${WEBAPP}" --created --interval 5 --timeout 120
+  # Block until it's actually queryable before continuing. (`az webapp wait
+  # --created` is not available in current CLI versions — it errors with
+  # "'wait' is misspelled or not recognized" — so poll `show` instead.)
+  for _ in $(seq 1 24); do
+    az webapp show -g "${RG}" -n "${WEBAPP}" -o none 2>/dev/null && break
+    sleep 5
+  done
 fi
 
 log "web app: enable websockets, always-on, https-only, tls 1.2"

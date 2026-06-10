@@ -127,5 +127,5 @@ Audit headers with `securityheaders.com` before each release; target **A+**.
 ## 11. Incident response
 
 - **Alert channel: email.** Sentry routes errors to the address configured in the Sentry project; Azure Monitor routes App Service / Redis health alerts via the `playme-oncall` action group (see `infra/provision.sh`). Both targets are the same mailbox — set in `infra/provision.env` (`ALERT_EMAIL`) at provisioning time, and in the Sentry UI for the web + API projects.
-- If a secret leaks: rotate the Redis password (`az redis regenerate-keys -g playme-prod-rg -n playme-prod-redis --key-type Primary`, then re-run `infra/provision.sh` to push the new connection string), regenerate Sentry/PostHog keys, invalidate any active session tokens, redeploy. Azure Cache for Redis supports password rotation without downtime.
+- If a secret leaks: rotate the Redis password (`az redis regenerate-keys -g playme-prod-rg -n playme-prod-redis2 --key-type Primary`, then re-run `infra/provision.sh` to push the new connection string), regenerate Sentry/PostHog keys, invalidate any active session tokens, redeploy. Azure Cache for Redis supports password rotation without downtime.
 - Post-incident: write a short note in the repo (`docs/incidents/<date>-<slug>.md`) so we don't repeat it.

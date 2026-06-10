@@ -56,7 +56,7 @@ Cloudflare is the authoritative DNS for `playme.ge`. Records currently in the zo
 
 | Type | Name | Target | Proxy | Purpose |
 |---|---|---|---|---|
-| CNAME | `api` | `playme-api-prod.azurewebsites.net` | Proxied (orange) | API. Cloudflare terminates TLS for `api.playme.ge`. |
+| CNAME | `api` | `playme-api-prod2.azurewebsites.net` | Proxied (orange) | API. Cloudflare terminates TLS for `api.playme.ge`. |
 | A | `playme.ge` (apex) | Vercel edge IPs | Proxied | Canonical web host, served by Vercel. |
 | A | `www` | Vercel edge IPs | Proxied | 308-redirects to the apex. |
 | CAA | `playme.ge` | `letsencrypt.org`, `pki.goog`, `sectigo.com`, `comodoca.com`, `digicert.com`, `ssl.com` (issue + issuewild, minus `sectigo.com` on issuewild) | DNS-only | Restricts which CAs may issue certs. Covers the actual issuers in use: Let's Encrypt (Vercel apex/www), Google/Sectigo (Cloudflare edge), DigiCert (Azure managed cert for `api`). |
@@ -164,6 +164,18 @@ Both API telemetry env vars are accepted as empty strings and disable the integr
 Symptom from outside is identical for both: the web SDK reports normally, server-emitted events / errors disappear. We hit it with PostHog when reversi matches weren't appearing in Trends — `match_started` (web) was there, `match_ended` (server) wasn't.
 
 Both are propagated by `infra/provision.sh` from `infra/provision.env` (`SENTRY_DSN`, `POSTHOG_API_KEY`). Keep them populated there — that file is the source of truth per the script header. **A value added in the Azure Portal will be overwritten on the next `provision.sh` run** because `az webapp config appsettings set --settings` deterministically syncs the keys it owns. Restart the App Service after a change so ASP.NET picks up the new config. The `__` (double underscore) in env var names maps to `:` in ASP.NET configuration keys (`Sentry__Dsn` ↔ `Sentry:Dsn`). Historical events from before the var was set are unrecoverable.
+
+### 6.13 Subscription migration (2026-06-10) — what bit us moving tenants
+
+We moved the whole Azure footprint from a personal pay-as-you-go subscription (in an `outlook.com` tenant) to the **"Visual Studio Enterprise Subscription"** in the **JSC BasisBank** tenant (`bb.ge`), for the $150/mo VS Enterprise credit. The API/web hostnames and GHCR image were unchanged; everything else was a fresh `provision.sh` against the new subscription. The traps, in the order they fired:
+
+- **Resource providers start unregistered.** A brand-new subscription has `Microsoft.Web`, `Microsoft.Cache`, `Microsoft.Insights`, `Microsoft.ManagedIdentity`, `Microsoft.OperationalInsights` all `NotRegistered`. Register them (`az provider register -n <ns>`) before provisioning or the creates fail with `MissingSubscriptionRegistration`.
+- **Corporate tenant gates Microsoft Graph behind MFA.** ARM (resource) calls work on a normal token, but the AAD/OIDC steps (`az ad app create`, etc.) hit `AADSTS50076` until you re-auth with `az login --tenant <id> --scope https://graph.microsoft.com//.default` and clear MFA. The federated credential GitHub Actions uses is a *workload* identity, so CI deploys are **not** subject to this user-MFA. Also confirm the tenant allows app registration (`authorizationPolicy.defaultUserRolePermissions.allowedToCreateApps`); a bank tenant may not.
+- **Global names are reserved across tenants after deletion — and you can't self-serve a release.** App Service soft-deletes a deleted web app for ~30 days (no purge command), so `playme-api-prod` stayed `AlreadyExists`. Azure Cache for Redis rejects re-creating a just-deleted name in a *different* tenant outright ("Name unavailable for reservation"). We renamed to **`playme-api-prod2`** and **`playme-prod-redis2`** rather than wait or open a support ticket. The web app name is only referenced in the `api` CNAME target and the GitHub `AZURE_WEBAPP` var; the Redis name only in the derived connection string.
+- **App Service Managed Certificate requires the custom domain to resolve *directly* to the App Service.** With `api.playme.ge` proxied through Cloudflare (orange), Azure's eligibility check sees Cloudflare IPs and refuses ("Hostname not eligible … ensure an active CNAME set to `<app>.azurewebsites.net`"). Temporarily set the `api` CNAME to **DNS-only (grey)**, issue + SNI-bind the cert, then flip back to **Proxied (orange)** and confirm CF SSL mode is **Full (strict)**. This is the mechanic behind §6.1's finickiness.
+- **`az webapp wait --created` is gone from the CLI** (≥ 2.84.0 errors `'wait' is misspelled or not recognized`). `provision.sh` now polls `az webapp show` instead.
+- **Portal-created managed certs don't show in `az webapp config ssl list`** (they're `Microsoft.Web/certificates` resources). `provision.sh`'s cert step keys off that list, so on a re-run it may try to recreate an already-bound cert — find it with `az resource list --resource-type Microsoft.Web/certificates`.
+- **Vercel's server-side `PLAYME_API_URL` was pinned to the old direct origin** (`playme-api-prod.azurewebsites.net`, bypassing Cloudflare for SSR). The rename broke every SSR data-fetch with `getaddrinfo ENOTFOUND` while the client path (`NEXT_PUBLIC_API_URL` → `api.playme.ge`) kept working — homepage fine, room/SSR pages 500. Update `PLAYME_API_URL` in Vercel and **redeploy** (it's read at build time). Pointing it at `https://api.playme.ge` instead of the direct origin decouples SSR from the Azure hostname and prevents a repeat.
 
 ---
 
