@@ -102,6 +102,12 @@ az group create --name "${RG}" --location "${LOCATION}" -o none
 # and the SignalR backplane need no cluster-awareness; our Redis access is
 # single-key only (no multi-key Lua / transactions), so nothing relies on slot
 # placement.
+# --public-network-access Enabled is required by API version 2025-07-01 (the
+# API connects from App Service over the public endpoint with TLS + access
+# key, exactly like the old Azure Cache did — no VNet/private endpoint here).
+# Heads-up: az 2.86.0 (May 2026) flips --access-keys-auth to Disabled by
+# default; we rely on the access key in ConnectionStrings__Redis, so once on
+# 2.86.0+ this create must pass --access-keys-auth Enabled explicitly.
 REDIS_PID=""
 REDIS_LOG="$(mktemp -t provision-redis.XXXXXX)"
 log "redis: ${REDIS} (Azure Managed Redis, Balanced B0)"
@@ -116,6 +122,7 @@ else
     --minimum-tls-version 1.2 \
     --client-protocol Encrypted \
     --clustering-policy EnterpriseCluster \
+    --public-network-access Enabled \
     >"${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 fi
