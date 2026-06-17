@@ -27,6 +27,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const kaPath = localizedHref(path, 'ka');
   const enPath = localizedHref(path, 'en');
   const canonical = localizedHref(path, locale);
+  const image = {
+    url: `/opengraph-image/${locale}`,
+    alt: t('site.ogImageAlt'),
+  };
   // SEO-only strings (metaTitle / metaDescription) carry search synonyms;
   // the on-screen <h1> and subheading still render nameKey /
   // shortDescriptionKey. `title.absolute` bypasses the root layout's
@@ -52,11 +56,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: t(game.metaDescriptionKey),
       url: canonical,
       locale: locale === 'ka' ? 'ka_GE' : 'en_US',
+      images: [{ ...image, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
       title: t(game.nameKey),
       description: t(game.metaDescriptionKey),
+      images: [image],
     },
   };
 }
