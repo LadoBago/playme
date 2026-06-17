@@ -6,6 +6,10 @@
   <ItemGroup>
     <!-- ASP.NET Core / SignalR -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <!-- Transitive pin (CentralPackageTransitivePinningEnabled): SignalR pulls
+         MessagePack 2.5.187, flagged by GHSA-hv8m-jj95-wg3x (LZ4 decompression
+         AccessViolationException). 2.5.301 patches it on the 2.x line. -->
+    <PackageVersion Include="MessagePack" Version="2.5.301" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.0" />
