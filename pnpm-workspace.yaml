@@ -2,3 +2,14 @@ packages:
   - "apps/*"
   - "packages/*"
   - "infra/loadtest"
+
+# Transitive-dependency security overrides. Each pins a patched version for a
+# published advisory that reaches us only through a nested dependency we don't
+# declare directly.
+overrides:
+  # GHSA-96hv-2xvq-fx4p — ws DoS via tiny fragments. @microsoft/signalr's Node
+  # WebSocket fallback (loadtest harness only) pulls ws ^7.5.10; 7.5.11 patches.
+  "@microsoft/signalr>ws": "^7.5.11"
+  # GHSA-g5v3-... — protobufjs DoS via unbounded Any expansion. Reaches the web
+  # bundle through posthog-js → OpenTelemetry OTLP transformer (^7.x); 7.6.1+ patches.
+  "protobufjs@<7.6.1": "^7.6.4"
