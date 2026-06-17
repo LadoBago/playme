@@ -124,10 +124,11 @@ Semantic index of all Hub methods. **Literal C# signatures live in `RoomHub.cs`*
 | Method | Valid when | Effect | Server emits |
 |---|---|---|---|
 | `JoinRoom` | On SignalR connect; room in `WaitingForOpponent`, `InProgress`, `Ended`, or `AwaitingRematch` | Registers presence; reattaches via session cookie | `OpponentJoined` (challenger's first join), `OpponentReconnected` (reconnect during `InProgress`) |
-| `SubmitMove` | Room `InProgress`; caller is active player; effective clock > 0 | Validates move via Domain rules; applies; flips turn; reschedules timeout | `MoveAccepted` (both), `MoveRejected` (caller only), `MatchEnded` if win/draw |
+| `SubmitMove` | Room `InProgress`; caller is active player; effective clock > 0 | Validates move via Domain rules; applies; flips turn (unless the module returns `KeepTurn`); reschedules timeout | `MoveAccepted` (both), `MatchEnded` if win/draw. Rejection is **not** a broadcast event — it returns to the caller as a `HubException` reject code |
+| `SubmitSetup` | Room `SettingUp` (setup games only); caller is in the match; caller hasn't already committed | Validates & applies the caller's setup (one commit per side, final); completes setup when both sides have committed | `OpponentSetupCommitted` (other player only, readiness flag — never the payload) on an ordinary commit; `MatchStarted` (both) on the commit that completes setup |
 | `Resign` | Room `InProgress`; caller is in the match | Ends match | `MatchEnded(Outcome.Resign(caller))` |
-| `OfferRematch` | Room `Ended` (creates offer) OR `AwaitingRematch` from responder (implicit accept) | Records offer or starts new match | `RematchOffered`, or `MatchStarted` on implicit accept |
-| `AcceptRematch` | Room `AwaitingRematch`; caller is responder (not offerer) | Starts new match with swapped sides | `MatchStarted` |
+| `OfferRematch` | Room `Ended` (creates offer) OR `AwaitingRematch` from responder (implicit accept) | Records offer or starts new match | `RematchOffered`, or `MatchStarted` (`SetupStarted` for setup games) on implicit accept |
+| `AcceptRematch` | Room `AwaitingRematch`; caller is responder (not offerer) | Starts new match with swapped sides | `MatchStarted` (`SetupStarted` for setup games) |
 | `RejectRematch` | Room `AwaitingRematch`; caller is responder | Closes the room; rejector auto-routed | `RematchDeclined` to offerer |
 | `ExitRoom` | Room `Ended` or `AwaitingRematch` | Transitions room to `Closed` | `OpponentExited` to the still-present player |
 

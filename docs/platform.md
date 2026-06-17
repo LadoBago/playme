@@ -47,6 +47,7 @@ For the state machine and Redis schema, see [`state.md`](state.md). For Hub meth
 | `tictactoe` | Tic-Tac-Toe on N×N. `gameOptions: { boardSize ∈ {3, 6, 9} }` picks the grid; win length is derived deterministically (3→3, 6→4, 9→5). Sides: **X** and **O**. | [`games/tictactoe.md`](games/tictactoe.md) |
 | `connect4` | Connect 4 on 7×6 with gravity, win = 4 in a row. Colors: **red** and **yellow** (traditional pair). | [`games/connect4.md`](games/connect4.md) |
 | `reversi` | Classic Reversi on 8×8 with free central-square opening, win by majority disc count. Colors: **dark** and **light**. | [`games/reversi.md`](games/reversi.md) |
+| `seabattle` | Sea Battle (ჩაძირობანა) on a 10×10 grid per player, 20-cell fleet. Hidden-information game with a secret pre-match setup phase; a hit (or sunk) earns another shot. Opts into `IHiddenStateGame` (seam A) and `ISetupGame` (seam C), and retains turns via `MoveResult.KeepTurn`. Sides: **first** and **second**. | [`games/seabattle.md`](games/seabattle.md) |
 
 Each module owns: its board representation, legal-move validation, win/draw detection, and its UI rendering. **Do not extract a shared rules engine across modules** — that decision is intentional. Common features live only in the platform layer.
 
