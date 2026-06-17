@@ -8,10 +8,10 @@ namespace PlayMe.Api.RateLimiting;
 /// </summary>
 public static class RateLimitingPolicies
 {
-    /// <summary><c>POST /api/rooms</c> — per IP, 10/min.</summary>
+    /// <summary><c>POST /api/rooms</c> — per IP, 30/min.</summary>
     public const string RoomsCreate = "rooms-create";
 
-    /// <summary><c>POST /api/rooms/{code}/join</c> — per IP, 5/min.</summary>
+    /// <summary><c>POST /api/rooms/{code}/join</c> — per IP, 30/min.</summary>
     public const string RoomsJoin = "rooms-join";
 
     /// <summary>

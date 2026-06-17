@@ -58,9 +58,9 @@ internal static class RedisKeys
     /// seam C). One entry per room in
     /// <see cref="PlayMe.Domain.Platform.RoomStatus.SettingUp"/> — enrolled
     /// at SettingUp entry (deadline = entry + <c>ISetupGame.SetupBudget</c>),
-    /// ZREM'd when setup completes or the match ends during setup. The
-    /// sweeper forfeits the uncommitted side (or expires the room when
-    /// neither side committed).
+    /// ZREM'd when setup completes or the match ends during setup. On fire
+    /// the sweeper expires the room (terminal <c>Expired</c>) regardless of
+    /// who committed — setup expiry never awards a win.
     /// </summary>
     public const string SetupDeadlines = $"{Prefix}setup_deadlines";
 
