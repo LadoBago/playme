@@ -82,7 +82,7 @@ public sealed class RegisterPresenceHandler
                 {
                     var module = _games.GetModule(room.GameId);
                     matchJustStarted = room.TryStartMatch(
-                        module, module.DefaultClockBudget, now);
+                        module, module.ClockBudgetFor(room.GameOptions), now);
                 }
 
                 await _rooms.SaveAsync(room, ct);

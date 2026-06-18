@@ -54,13 +54,14 @@ public sealed class TicTacToeGameModule : IGameModule
     public string FirstMoveSide => TicTacToeSides.X;
 
     /// <summary>
-    /// Baseline budget used when the platform falls back to a single
-    /// per-game value (rematch clock today, until per-room time limits
-    /// land — see <see cref="PlatformConstants.GraceForBudget"/>). The
-    /// configure page picks size-specific defaults UI-side; this value
-    /// only governs scenarios that bypass UI selection.
+    /// Per-side clock budget, scaled to the board so larger boards get more
+    /// thinking time (docs/games/tictactoe.md): 3×3 → 1 min, 6×6 → 3 min,
+    /// 9×9 → 5 min. Derived from the same validated <c>boardSize</c> option
+    /// that drives the board shape; the platform passes the blob through
+    /// opaquely and never reads it (CLAUDE.md §7 "Platform thinness").
     /// </summary>
-    public TimeSpan DefaultClockBudget { get; } = TimeSpan.FromMinutes(3);
+    public TimeSpan ClockBudgetFor(JsonElement? options) =>
+        ClockBudgetForSize(ExtractBoardSize(options));
 
     public string OtherSide(string side) => side switch
     {
@@ -215,6 +216,20 @@ public sealed class TicTacToeGameModule : IGameModule
         9 => 5,
         _ => throw new ArgumentOutOfRangeException(nameof(boardSize),
             $"No win-length mapping for boardSize {boardSize}."),
+    };
+
+    /// <summary>
+    /// Canonical board-size → per-side clock-budget mapping
+    /// (docs/games/tictactoe.md): 3→1 min, 6→3 min, 9→5 min. Bigger boards
+    /// have more cells and longer winning runs, so they get more time.
+    /// </summary>
+    public static TimeSpan ClockBudgetForSize(int boardSize) => boardSize switch
+    {
+        3 => TimeSpan.FromMinutes(1),
+        6 => TimeSpan.FromMinutes(3),
+        9 => TimeSpan.FromMinutes(5),
+        _ => throw new ArgumentOutOfRangeException(nameof(boardSize),
+            $"No clock-budget mapping for boardSize {boardSize}."),
     };
 
     private static int ExtractBoardSize(JsonElement? options)

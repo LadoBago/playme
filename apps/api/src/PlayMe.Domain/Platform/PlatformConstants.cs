@@ -16,10 +16,11 @@ public static class PlatformConstants
     /// clock itself — the chess-clock timeout sweeper catches the abandon
     /// naturally and emits <c>Outcome.Timeout</c> instead.
     ///
-    /// Mapping today rests on <see cref="IGameModule.DefaultClockBudget"/>
-    /// since host-selected time limits aren't plumbed through yet. When
-    /// per-room time limits land, callers should switch to the room's
-    /// stored budget; the tier rule itself stays identical.
+    /// Mapping today rests on the budget the module returns from
+    /// <see cref="IGameModule.ClockBudgetFor"/> (which may vary by the room's
+    /// game options — e.g. Tic-Tac-Toe by board size). When host-selected
+    /// time limits land, callers should switch to the room's stored budget;
+    /// the tier rule itself stays identical.
     /// </summary>
     public static TimeSpan? GraceForBudget(TimeSpan budget)
     {

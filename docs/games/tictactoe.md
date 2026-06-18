@@ -6,7 +6,7 @@ Canonical rules spec for the `tictactoe` module — see [`platform.md`](../platf
 |---|---|
 | **Board** | N×N, `gameOptions: { boardSize ∈ {3, 6, 9} }` |
 | **Sides** | **X** and **O** — X moves first |
-| **Default clock budget** | 3 min per side ([`platform.md`](../platform.md) §1 #3) |
+| **Clock budget** | Scales with board size, per side: 3×3 → **1 min**, 6×6 → **3 min**, 9×9 → **5 min** ([`platform.md`](../platform.md) §1 #3) |
 
 ## Rules
 

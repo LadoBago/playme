@@ -199,7 +199,7 @@ public sealed class SubmitMoveHandler
                         // is what they have for this turn.
                         var remaining = match.Clock.EffectiveRemaining(nextActive, now);
                         var deadline = GraceSchedulingPolicy.ComputeDeadline(
-                            module.DefaultClockBudget, remaining, now);
+                            module.ClockBudgetFor(room.GameOptions), remaining, now);
                         if (deadline is not null)
                         {
                             await _graces.ScheduleAsync(code, nextActive, deadline.Value, ct);

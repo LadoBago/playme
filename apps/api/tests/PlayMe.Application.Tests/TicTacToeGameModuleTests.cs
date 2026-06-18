@@ -45,7 +45,18 @@ public sealed class TicTacToeGameModuleTests
         _module.FirstMoveSide.Should().Be(TicTacToeSides.X);
         _module.OtherSide(TicTacToeSides.X).Should().Be(TicTacToeSides.O);
         _module.OtherSide(TicTacToeSides.O).Should().Be(TicTacToeSides.X);
-        _module.DefaultClockBudget.Should().Be(TimeSpan.FromMinutes(3));
+    }
+
+    // --- Clock budget scales with board size ---
+
+    [Theory]
+    [InlineData(3, 1)]
+    [InlineData(6, 3)]
+    [InlineData(9, 5)]
+    public void ClockBudgetFor_scales_with_board_size(int boardSize, int expectedMinutes)
+    {
+        _module.ClockBudgetFor(Options(boardSize))
+            .Should().Be(TimeSpan.FromMinutes(expectedMinutes));
     }
 
     // --- ValidateOptions ---
