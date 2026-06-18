@@ -26,11 +26,15 @@ public interface IGameModule
     string FirstMoveSide { get; }
 
     /// <summary>
-    /// Per-side starting clock budget for this game. The platform reads this
-    /// when a match starts; it never enumerates per-game budgets itself
-    /// (CLAUDE.md §7 "Platform thinness").
+    /// Per-side starting clock budget for a match with the given validated
+    /// per-room <paramref name="options"/> blob (<see cref="Room.GameOptions"/>,
+    /// passed through opaquely). The platform reads this when a match starts
+    /// and on rematch; it never inspects <paramref name="options"/> itself —
+    /// the module alone decides whether the budget varies by options (e.g.
+    /// Tic-Tac-Toe scales it by board size). Modules without configurable
+    /// options ignore the argument (CLAUDE.md §7 "Platform thinness").
     /// </summary>
-    TimeSpan DefaultClockBudget { get; }
+    TimeSpan ClockBudgetFor(JsonElement? options);
 
     /// <summary>
     /// Validate per-room game options at room creation (Sprint 9 PR1).

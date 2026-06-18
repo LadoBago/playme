@@ -70,7 +70,7 @@ public sealed class SetupPhaseTests
                 Module);
             room.MarkConnected(Role.Host);
             room.MarkConnected(Role.Challenger);
-            room.TryStartMatch(Module, Module.DefaultClockBudget, Clock.UtcNow);
+            room.TryStartMatch(Module, Module.ClockBudgetFor(null), Clock.UtcNow);
             Rooms.Seed(room);
             return room;
         }
@@ -183,12 +183,12 @@ public sealed class SetupPhaseTests
         // The 42 unclocked setup seconds are discarded — the first mover
         // starts from the full budget at the completion moment.
         saved.CurrentMatch!.Clock.LastTickAt.Should().Be(f.Clock.UtcNow);
-        saved.CurrentMatch.Clock.HostRemaining.Should().Be(f.Module.DefaultClockBudget);
-        saved.CurrentMatch.Clock.ChallengerRemaining.Should().Be(f.Module.DefaultClockBudget);
+        saved.CurrentMatch.Clock.HostRemaining.Should().Be(f.Module.ClockBudgetFor(null));
+        saved.CurrentMatch.Clock.ChallengerRemaining.Should().Be(f.Module.ClockBudgetFor(null));
 
         f.SetupDeadlines.Cancelled.Should().ContainSingle();
         f.Timeouts.Scheduled.Should().ContainSingle()
-            .Which.Deadline.Should().Be(f.Clock.UtcNow + f.Module.DefaultClockBudget);
+            .Which.Deadline.Should().Be(f.Clock.UtcNow + f.Module.ClockBudgetFor(null));
     }
 
     [Fact]

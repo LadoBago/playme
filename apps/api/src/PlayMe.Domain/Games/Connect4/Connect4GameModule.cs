@@ -49,7 +49,8 @@ public sealed class Connect4GameModule : IGameModule
 
     public string FirstMoveSide => Connect4Sides.Red;
 
-    public TimeSpan DefaultClockBudget { get; } = TimeSpan.FromMinutes(3);
+    // Fixed per-side budget; Connect 4 has no per-room options.
+    public TimeSpan ClockBudgetFor(JsonElement? options) => TimeSpan.FromMinutes(3);
 
     public string OtherSide(string side) => side switch
     {

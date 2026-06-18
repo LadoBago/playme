@@ -44,7 +44,8 @@ public sealed class SeaBattleGameModule : IGameModule, IHiddenStateGame, ISetupG
 
     public string FirstMoveSide => SeaBattleSides.First;
 
-    public TimeSpan DefaultClockBudget { get; } = TimeSpan.FromMinutes(10);
+    // Fixed per-side battle-phase budget; Sea Battle has no per-room options.
+    public TimeSpan ClockBudgetFor(JsonElement? options) => TimeSpan.FromMinutes(10);
 
     public TimeSpan SetupBudget { get; } = TimeSpan.FromMinutes(2);
 

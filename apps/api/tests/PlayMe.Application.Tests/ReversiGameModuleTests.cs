@@ -27,7 +27,7 @@ public sealed class ReversiGameModuleTests
         _module.Id.Value.Should().Be("reversi");
         _module.ValidSides.Should().Equal(ReversiSides.Dark, ReversiSides.Light);
         _module.FirstMoveSide.Should().Be(ReversiSides.Dark);
-        _module.DefaultClockBudget.Should().Be(TimeSpan.FromMinutes(10));
+        _module.ClockBudgetFor(null).Should().Be(TimeSpan.FromMinutes(10));
         _module.OtherSide(ReversiSides.Dark).Should().Be(ReversiSides.Light);
         _module.OtherSide(ReversiSides.Light).Should().Be(ReversiSides.Dark);
     }

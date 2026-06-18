@@ -50,7 +50,8 @@ public sealed class ReversiGameModule : IGameModule
 
     public string FirstMoveSide => ReversiSides.Dark;
 
-    public TimeSpan DefaultClockBudget { get; } = TimeSpan.FromMinutes(10);
+    // Fixed per-side budget; Reversi has no per-room options.
+    public TimeSpan ClockBudgetFor(JsonElement? options) => TimeSpan.FromMinutes(10);
 
     public string OtherSide(string side) => side switch
     {

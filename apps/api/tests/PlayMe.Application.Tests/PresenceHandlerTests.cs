@@ -16,10 +16,15 @@ namespace PlayMe.Application.Tests;
 /// </summary>
 public sealed class PresenceHandlerTests
 {
-    // Matches TicTacToeGameModule.DefaultClockBudget — the platform pulls
-    // the budget off the module when TryStartMatch fires, so changing the
-    // module's default ripples here.
+    // Explicit budget handed to RoomFactory.InProgress fixtures. Kept above
+    // the 1-min tier so the in-progress disconnect grace (60s) still applies —
+    // these tests exercise grace/reconnect, not the module's size-derived budget.
     private static readonly TimeSpan Budget = TimeSpan.FromMinutes(3);
+
+    // What TryStartMatch installs for the default 3×3 fixture: tictactoe
+    // derives its clock budget from boardSize (3×3 → 1 min). See
+    // TicTacToeGameModule.ClockBudgetFor.
+    private static readonly TimeSpan StartBudget = TimeSpan.FromMinutes(1);
 
     [Fact]
     public async Task RegisterPresence_starts_match_initialises_clock_and_schedules_first_timeout()
@@ -74,12 +79,12 @@ public sealed class PresenceHandlerTests
         challengerResult.Value.Reconnected.Should().BeFalse();
 
         var saved = await rooms.LoadAsync(new RoomCode(RoomFactory.RoomCodeValue), default);
-        saved!.CurrentMatch!.Clock.HostRemaining.Should().Be(Budget);
-        saved.CurrentMatch.Clock.ChallengerRemaining.Should().Be(Budget);
+        saved!.CurrentMatch!.Clock.HostRemaining.Should().Be(StartBudget);
+        saved.CurrentMatch.Clock.ChallengerRemaining.Should().Be(StartBudget);
         saved.CurrentMatch.Clock.ActivePlayer.Should().Be(Role.Host);
 
         timeouts.Scheduled.Should().HaveCount(1);
-        timeouts.Scheduled[0].Deadline.Should().Be(clock.UtcNow + Budget);
+        timeouts.Scheduled[0].Deadline.Should().Be(clock.UtcNow + StartBudget);
 
         // The WaitingForOpponent → InProgress transition cancels the
         // unjoined-expiry entry so the sweeper doesn't fire room_expired
@@ -89,12 +94,11 @@ public sealed class PresenceHandlerTests
     }
 
     // OneMin-tier coverage (no grace for budgets ≤ 1 min, per
-    // docs/platform.md §1 #7) moved to GraceSchedulingPolicyTests
-    // — the previous handler-level test depended on the legacy
-    // tictactoe-3x3 module having DefaultClockBudget = 60s. With that
-    // module gone in Sprint 9 PR3, no remaining module returns the tier
-    // value via DefaultClockBudget, so the behavior is verified at the
-    // policy layer instead.
+    // docs/platform.md §1 #7) lives in GraceSchedulingPolicyTests, which
+    // exercises the tier rule directly across all budgets. The unified
+    // tictactoe module does return 1 min for the 3×3 board, but these
+    // handler tests pin the start-clock / reconnect plumbing rather than
+    // re-deriving the grace tiers, so they keep an explicit >1-min Budget.
 
 
     [Fact]

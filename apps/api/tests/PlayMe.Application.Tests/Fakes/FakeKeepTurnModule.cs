@@ -25,7 +25,7 @@ public sealed class FakeKeepTurnModule : IGameModule
 
     public string FirstMoveSide => "first";
 
-    public TimeSpan DefaultClockBudget => TimeSpan.FromMinutes(1);
+    public TimeSpan ClockBudgetFor(JsonElement? options) => TimeSpan.FromMinutes(1);
 
     public string? ValidateOptions(JsonElement? options) => null;
 

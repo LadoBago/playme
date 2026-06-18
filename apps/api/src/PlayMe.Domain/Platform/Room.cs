@@ -398,7 +398,7 @@ public sealed class Room
             module.NewMatch(GameOptions),
             module.FirstMoveSide,
             firstMover,
-            module.DefaultClockBudget,
+            module.ClockBudgetFor(GameOptions),
             now);
 
         RematchOffererRole = null;

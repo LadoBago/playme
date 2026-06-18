@@ -38,7 +38,7 @@ public sealed class Connect4GameModuleTests
     {
         _module.Id.Value.Should().Be("connect4");
         _module.ValidSides.Should().Equal(Connect4Sides.Red, Connect4Sides.Yellow);
-        _module.DefaultClockBudget.Should().Be(TimeSpan.FromMinutes(3));
+        _module.ClockBudgetFor(null).Should().Be(TimeSpan.FromMinutes(3));
         _module.OtherSide(Connect4Sides.Red).Should().Be(Connect4Sides.Yellow);
         _module.OtherSide(Connect4Sides.Yellow).Should().Be(Connect4Sides.Red);
     }

@@ -28,7 +28,7 @@ public sealed class FakeSetupGameModule : IGameModule, ISetupGame
 
     public string FirstMoveSide => "first";
 
-    public TimeSpan DefaultClockBudget => TimeSpan.FromMinutes(3);
+    public TimeSpan ClockBudgetFor(JsonElement? options) => TimeSpan.FromMinutes(3);
 
     public TimeSpan SetupBudget => TimeSpan.FromMinutes(2);
 

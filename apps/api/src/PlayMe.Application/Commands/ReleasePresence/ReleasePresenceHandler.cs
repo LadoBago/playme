@@ -123,7 +123,7 @@ public sealed class ReleasePresenceHandler
                     var now = _clock.UtcNow;
                     var remaining = room.CurrentMatch.Clock.EffectiveRemaining(cmd.CallerRole, now);
                     var deadline = GraceSchedulingPolicy.ComputeDeadline(
-                        module.DefaultClockBudget, remaining, now);
+                        module.ClockBudgetFor(room.GameOptions), remaining, now);
                     if (deadline is not null)
                     {
                         await _graces.ScheduleAsync(code, cmd.CallerRole, deadline.Value, ct);

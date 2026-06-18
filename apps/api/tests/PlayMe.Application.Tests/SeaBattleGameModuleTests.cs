@@ -349,7 +349,7 @@ public sealed class SeaBattleGameModuleTests
         Module.Id.Value.Should().Be("seabattle");
         Module.ValidSides.Should().Equal("first", "second");
         Module.FirstMoveSide.Should().Be("first");
-        Module.DefaultClockBudget.Should().Be(TimeSpan.FromMinutes(10));
+        Module.ClockBudgetFor(null).Should().Be(TimeSpan.FromMinutes(10));
         Module.SetupBudget.Should().Be(TimeSpan.FromMinutes(2));
         Module.OtherSide("first").Should().Be("second");
         Module.ValidateOptions(null).Should().BeNull();
