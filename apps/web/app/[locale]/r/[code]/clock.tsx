@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ClockSnapshotDto, Role } from '@playme/shared';
 import { extrapolateClock, formatClock } from '@/lib/clock';
 import { useTranslator } from '@/lib/use-locale';
+import { EmoteBubble, type IncomingEmote } from '@/features/emote';
 
 interface ClockProps {
   snapshot: ClockSnapshotDto;
@@ -18,6 +19,12 @@ interface ClockProps {
    * "active" side's clock past the moment of victory.
    */
   isFinal: boolean;
+  /**
+   * Latest emote the opponent sent — rendered as a transient bubble over
+   * the opponent's clock face (the one strip that's always present and in
+   * the same spot whenever emotes are allowed). Null when none is showing.
+   */
+  opponentEmote?: IncomingEmote | null;
 }
 
 /**
@@ -33,7 +40,7 @@ interface ClockProps {
  * new server time without trusting the client's wall clock against
  * <c>lastTickAt</c> directly.
  */
-export function Clock({ snapshot, callerRole, isFinal }: ClockProps) {
+export function Clock({ snapshot, callerRole, isFinal, opponentEmote = null }: ClockProps) {
   const { t } = useTranslator();
   const receivedAtRef = useRef<number>(Date.now());
   // Reset the local reference whenever a new snapshot reference comes in.
@@ -73,7 +80,9 @@ export function Clock({ snapshot, callerRole, isFinal }: ClockProps) {
   return (
     <div className="match-clock" role="group" aria-label={t('match.clock.label')}>
       <ClockFace label={t('match.you')} ms={youMs} active={youActive} />
-      <ClockFace label={t('match.opponent')} ms={opponentMs} active={opponentActive} />
+      <ClockFace label={t('match.opponent')} ms={opponentMs} active={opponentActive}>
+        <EmoteBubble emote={opponentEmote} />
+      </ClockFace>
     </div>
   );
 }
@@ -84,10 +93,13 @@ function ClockFace({
   label,
   ms,
   active,
+  children,
 }: {
   label: string;
   ms: number;
   active: boolean;
+  /** Overlay content anchored to this face (e.g. the opponent emote bubble). */
+  children?: React.ReactNode;
 }) {
   const classNames = ['match-clock__side'];
   if (active) classNames.push('match-clock__side--active');
@@ -97,6 +109,7 @@ function ClockFace({
     <div className={classNames.join(' ')} aria-live={active ? 'polite' : 'off'}>
       <span className="match-clock__role">{label}</span>
       <span className="match-clock__time">{formatClock(ms)}</span>
+      {children}
     </div>
   );
 }

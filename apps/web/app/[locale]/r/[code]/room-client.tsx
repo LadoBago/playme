@@ -8,6 +8,7 @@ import {
   localizedHref,
   PlaymeClient,
   RoomHubClient,
+  type EmoteId,
   type I18nKey,
   type RoomDto,
   type RoomExpiryReason,
@@ -15,6 +16,7 @@ import {
 } from '@playme/shared';
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { findGameModule } from '@/features/games/registry';
+import { EmotePicker, type IncomingEmote } from '@/features/emote';
 import { track } from '@/lib/analytics';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useTranslator } from '@/lib/use-locale';
@@ -85,6 +87,10 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // "Opponent declined" notice from the generic "Opponent left" banner.
   // Both end the room in `closed`, so the room status alone can't say which.
   const [declined, setDeclined] = useState(false);
+  // Latest emote the opponent sent, with a monotonic nonce so a repeat of
+  // the same emote still re-triggers the bubble. Transient — never room
+  // state — so it lives only here and is not persisted or replayed.
+  const [incomingEmote, setIncomingEmote] = useState<IncomingEmote | null>(null);
   // Set when the server's RoomExpired SignalR event lands, to the reason
   // it carried: 'unjoined' (the WaitingForOpponent room reached its
   // 30-min deadline) or 'setupTimeout' (neither player committed setup
@@ -152,6 +158,13 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onRematchDeclined: ({ room: r }) => {
         setRoom(r);
         setDeclined(true);
+      },
+      onEmoteReceived: ({ emoteId }) => {
+        // Ephemeral signal — no room state to merge. `from` is always the
+        // opponent (the server relays only to the other side) and the
+        // bubble anchors there, so the role isn't needed. The monotonic
+        // nonce restarts the bubble animation + dismiss timer on repeats.
+        setIncomingEmote({ emoteId, nonce: performance.now() });
       },
       onRoomExpired: ({ reason }) => {
         // Server reaped the room — its Redis state is already gone.
@@ -477,6 +490,19 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     }
   }, []);
 
+  // Fire-and-forget emote send. The server validates and rate-limits;
+  // over-limit / out-of-phase sends are dropped silently, and the fixed
+  // picker can't produce an unknown id — so a failure here needs no banner.
+  const handleSendEmote = useCallback((emoteId: EmoteId) => {
+    void (async () => {
+      try {
+        await hubRef.current?.sendEmote(emoteId);
+      } catch {
+        // intentional — see above
+      }
+    })();
+  }, []);
+
   const handleOfferRematch = useCallback(async (): Promise<void> => {
     setError(null);
     try {
@@ -603,6 +629,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       room={room}
       role={role}
       declined={declined}
+      incomingEmote={incomingEmote}
       onSubmitMove={handleSubmitMove}
       onSubmitSetup={handleSubmitSetup}
       onResign={handleResign}
@@ -610,6 +637,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onOfferRematch={handleOfferRematch}
       onAcceptRematch={handleAcceptRematch}
       onRejectRematch={handleRejectRematch}
+      onSendEmote={handleSendEmote}
       error={error}
       connectionStatus={connectionStatus}
       onReconnect={handleManualReconnect}
@@ -642,6 +670,7 @@ interface MatchViewProps {
   room: RoomDto;
   role: Role | null;
   declined: boolean;
+  incomingEmote: IncomingEmote | null;
   onSubmitMove: (payload: unknown) => void;
   onSubmitSetup: (payload: unknown) => void;
   onResign: () => Promise<void>;
@@ -649,6 +678,7 @@ interface MatchViewProps {
   onOfferRematch: () => Promise<void>;
   onAcceptRematch: () => Promise<void>;
   onRejectRematch: () => Promise<void>;
+  onSendEmote: (id: EmoteId) => void;
   error: string | null;
   connectionStatus: 'live' | 'reconnecting' | 'lost';
   onReconnect: () => void;
@@ -658,6 +688,7 @@ function MatchView({
   room,
   role,
   declined,
+  incomingEmote,
   onSubmitMove,
   onSubmitSetup,
   onResign,
@@ -665,6 +696,7 @@ function MatchView({
   onOfferRematch,
   onAcceptRematch,
   onRejectRematch,
+  onSendEmote,
   error,
   connectionStatus,
   onReconnect,
@@ -683,6 +715,19 @@ function MatchView({
   const isMyTurn =
     !inSetup && match != null && match.outcome == null && mySide != null && mySide === match.sideToMove;
   const matchInProgress = match != null && match.outcome == null && !inSetup;
+
+  // Emotes (platform reaction): available during active play and on the
+  // post-game / rematch screen; never during setup or before the opponent
+  // joins. The trigger sits in the controls band so it costs no board
+  // height; the opponent's incoming emote shows on their clock face.
+  const emotesAllowed =
+    role != null &&
+    (room.status === 'inProgress' ||
+      room.status === 'ended' ||
+      room.status === 'awaitingRematch');
+  const emotePicker = emotesAllowed ? (
+    <EmotePicker onSend={onSendEmote} disabled={connectionStatus !== 'live'} />
+  ) : null;
 
   const [confirmResignOpen, setConfirmResignOpen] = useState(false);
   const [resignPending, setResignPending] = useState(false);
@@ -835,7 +880,12 @@ function MatchView({
       <MatchHeader room={room} role={role} />
 
       {inSetup ? null : (
-        <Clock snapshot={match.clock} callerRole={role} isFinal={match.outcome != null} />
+        <Clock
+          snapshot={match.clock}
+          callerRole={role}
+          isFinal={match.outcome != null}
+          opponentEmote={incomingEmote}
+        />
       )}
 
       {connectionStatus !== 'live' ? (
@@ -895,7 +945,8 @@ function MatchView({
       />
 
       {matchInProgress ? (
-        <div className="match-controls">
+        <div className="match-controls match-controls--split">
+          {emotePicker}
           <button
             type="button"
             className="button-danger-soft"
@@ -910,6 +961,7 @@ function MatchView({
       <PostMatchPanel
         room={room}
         role={role}
+        emoteSlot={emotePicker}
         offerPending={offerPending}
         acceptPending={acceptPending}
         exitPending={exitPending}
@@ -967,6 +1019,7 @@ function MatchView({
 function PostMatchPanel({
   room,
   role,
+  emoteSlot,
   offerPending,
   acceptPending,
   exitPending,
@@ -977,6 +1030,9 @@ function PostMatchPanel({
 }: {
   room: RoomDto;
   role: Role | null;
+  /** Emote trigger to seat at the left of the controls band, or null when
+   *  emotes aren't available in the current state (e.g. room closed). */
+  emoteSlot: React.ReactNode;
   offerPending: boolean;
   acceptPending: boolean;
   exitPending: boolean;
@@ -1004,22 +1060,25 @@ function PostMatchPanel({
 
   if (isResponder) {
     return (
-      <div className="match-controls">
-        <button
-          type="button"
-          className="button-danger-soft"
-          onClick={onRejectClick}
-        >
-          {t('match.rematch.reject.button')}
-        </button>
-        <button
-          type="button"
-          className="button-primary"
-          onClick={onAccept}
-          disabled={acceptPending}
-        >
-          {t('match.rematch.accept.button')}
-        </button>
+      <div className="match-controls match-controls--split">
+        {emoteSlot}
+        <div className="match-controls__actions">
+          <button
+            type="button"
+            className="button-danger-soft"
+            onClick={onRejectClick}
+          >
+            {t('match.rematch.reject.button')}
+          </button>
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onAccept}
+            disabled={acceptPending}
+          >
+            {t('match.rematch.accept.button')}
+          </button>
+        </div>
       </div>
     );
   }
@@ -1027,17 +1086,20 @@ function PostMatchPanel({
   if (isOfferer) {
     return (
       <div className="match-controls match-controls--split">
-        <button
-          type="button"
-          className="text-link"
-          onClick={onBackToLobby}
-          disabled={exitPending}
-          aria-label={t('match.backToLobby')}
-        >
-          <span aria-hidden="true">← </span>
-          <span className="label-full">{t('match.backToLobby')}</span>
-          <span className="label-short">{t('match.backToLobby.short')}</span>
-        </button>
+        {emoteSlot}
+        <div className="match-controls__actions">
+          <button
+            type="button"
+            className="text-link"
+            onClick={onBackToLobby}
+            disabled={exitPending}
+            aria-label={t('match.backToLobby')}
+          >
+            <span aria-hidden="true">← </span>
+            <span className="label-full">{t('match.backToLobby')}</span>
+            <span className="label-short">{t('match.backToLobby.short')}</span>
+          </button>
+        </div>
       </div>
     );
   }
@@ -1058,29 +1120,32 @@ function PostMatchPanel({
   const canOffer = room.status === 'ended' && opponentConnected;
   return (
     <div className="match-controls match-controls--split">
-      <button
-        type="button"
-        className="text-link"
-        onClick={onBackToLobby}
-        disabled={exitPending}
-        aria-label={t('match.backToLobby')}
-      >
-        <span aria-hidden="true">← </span>
-        <span className="label-full">{t('match.backToLobby')}</span>
-        <span className="label-short">{t('match.backToLobby.short')}</span>
-      </button>
-      {canOffer ? (
+      {emoteSlot}
+      <div className="match-controls__actions">
         <button
           type="button"
-          className="button-primary"
-          onClick={onOffer}
-          disabled={offerPending}
-          aria-label={t('match.rematch.offer.button')}
+          className="text-link"
+          onClick={onBackToLobby}
+          disabled={exitPending}
+          aria-label={t('match.backToLobby')}
         >
-          <span className="label-full">{t('match.rematch.offer.button')}</span>
-          <span className="label-short">{t('match.rematch.offer.short')}</span>
+          <span aria-hidden="true">← </span>
+          <span className="label-full">{t('match.backToLobby')}</span>
+          <span className="label-short">{t('match.backToLobby.short')}</span>
         </button>
-      ) : null}
+        {canOffer ? (
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onOffer}
+            disabled={offerPending}
+            aria-label={t('match.rematch.offer.button')}
+          >
+            <span className="label-full">{t('match.rematch.offer.button')}</span>
+            <span className="label-short">{t('match.rematch.offer.short')}</span>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
