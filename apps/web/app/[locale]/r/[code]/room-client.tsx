@@ -132,6 +132,11 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       onOpponentJoined: ({ room: r }) => setRoom(r),
       onMatchStarted: ({ room: r }) => {
         setRoom(r);
+        // A new round starts clean — drop any emote left over from the
+        // previous match so it doesn't replay when the match subtree (and
+        // its EmoteBubble) remounts for the rematch. Emotes are ephemeral
+        // per-match by design.
+        setIncomingEmote(null);
         // Fires on both clients — sender and receiver. We don't dedupe
         // because PostHog collapses by distinct_id in insight queries;
         // coordinating dedup here would add a side-channel event for no
@@ -144,7 +149,12 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       // when the room enters settingUp; OpponentSetupCommitted is the
       // role-level readiness ping. Both just refresh the snapshot — the
       // game view renders the placement screen off room.status + state.
-      onSetupStarted: ({ room: r }) => setRoom(r),
+      onSetupStarted: ({ room: r }) => {
+        setRoom(r);
+        // Same as onMatchStarted: a rematch re-entering setup clears any
+        // stale emote from the prior match.
+        setIncomingEmote(null);
+      },
       onOpponentSetupCommitted: ({ room: r }) => setRoom(r),
       onMoveAccepted: ({ room: r }) => {
         setRoom(r);
