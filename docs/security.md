@@ -78,6 +78,7 @@ The three per-IP middleware permit counts are configurable via the `RateLimiting
 | `RoomHub.Resign` | Application | per session | 5 / min |
 | `RoomHub.ClaimVictory` | Application | per session | 5 / min |
 | `RoomHub.ExitRoom` | Application | per session | 10 / min |
+| `RoomHub.SendEmote` | Application | per session | 3 / 6 s (strict — emote is mash-prone; over-limit sends are dropped silently, not errored) |
 | Any SignalR message | SignalR pipeline | per connection | 20 / sec hard ceiling |
 | `/r/<roomCode>` enumeration | Vercel edge | per IP | 60 / min |
 

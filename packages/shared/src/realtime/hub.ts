@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import type { ZodType } from 'zod';
 import type {
+  EmoteReceivedPayload,
   MatchEndedPayload,
   MatchStartedPayload,
   MoveAcceptedPayload,
@@ -15,7 +16,9 @@ import type {
   SetupStartedPayload,
 } from './events';
 import { RoomHubEvent } from './events';
+import type { EmoteId } from './emotes';
 import {
+  EmoteReceivedPayloadSchema,
   MatchEndedPayloadSchema,
   MatchStartedPayloadSchema,
   MoveAcceptedPayloadSchema,
@@ -57,6 +60,8 @@ export interface RoomHubHandlers {
   onOpponentExited?: (payload: OpponentExitedPayload) => void;
   onRematchOffered?: (payload: RematchOfferedPayload) => void;
   onRematchDeclined?: (payload: RematchDeclinedPayload) => void;
+  /** The opponent sent an in-match emote — render it as a transient bubble. */
+  onEmoteReceived?: (payload: EmoteReceivedPayload) => void;
   /**
    * Fires when the server reaps a `WaitingForOpponent` room whose
    * 30-minute deadline elapsed without a challenger joining. The
@@ -204,6 +209,11 @@ export class RoomHubClient {
       RoomHubEvent.RoomExpired,
       RoomExpiredPayloadSchema,
       handlers.onRoomExpired,
+    );
+    this._bindEvent(
+      RoomHubEvent.EmoteReceived,
+      EmoteReceivedPayloadSchema,
+      handlers.onEmoteReceived,
     );
     if (handlers.onReconnecting) {
       this._connection.onreconnecting((err) => handlers.onReconnecting!(err ?? undefined));
@@ -378,6 +388,18 @@ export class RoomHubClient {
   async rejectRematch(): Promise<RoomDto> {
     const raw = await this._invoke<unknown>('RejectRematch');
     return RoomSchema.parse(raw) as unknown as RoomDto;
+  }
+
+  /**
+   * Call Hub.SendEmote — relay an in-match emote to the opponent. Fire-and-
+   * forget: the server returns nothing, validates the id against the shared
+   * allowlist, and silently drops rate-limited or out-of-phase sends. Resolves
+   * once the server has accepted the call; rejects only on a genuine error
+   * (e.g. errors.emote.unknown for an id outside the allowlist, or
+   * errors.session.unauthorized).
+   */
+  async sendEmote(emoteId: EmoteId): Promise<void> {
+    await this._invoke<void>('SendEmote', emoteId);
   }
 
   get state(): signalR.HubConnectionState {

@@ -2,6 +2,7 @@
 // (apps/api/src/PlayMe.Api/Hubs/RoomHubEvents.cs). Keep in sync.
 
 import type { Role, RoomDto } from '../api/types';
+import type { EmoteId } from './emotes';
 
 export const RoomHubEvent = {
   OpponentJoined: 'OpponentJoined',
@@ -17,6 +18,7 @@ export const RoomHubEvent = {
   RematchOffered: 'RematchOffered',
   RematchDeclined: 'RematchDeclined',
   RoomExpired: 'RoomExpired',
+  EmoteReceived: 'EmoteReceived',
 } as const;
 
 export type RoomHubEventName = (typeof RoomHubEvent)[keyof typeof RoomHubEvent];
@@ -105,4 +107,15 @@ export type RoomExpiryReason = 'unjoined' | 'setupTimeout';
  */
 export interface RoomExpiredPayload {
   reason: RoomExpiryReason;
+}
+
+/**
+ * An in-match emote the opponent sent (a platform capability, not game
+ * state). Carries only the sender's role and the validated emote id — no
+ * room state — because an emote mutates nothing. The receiver shows it as a
+ * transient bubble and discards it; nothing is persisted or replayed.
+ */
+export interface EmoteReceivedPayload {
+  from: Role;
+  emoteId: EmoteId;
 }

@@ -131,6 +131,7 @@ Semantic index of all Hub methods. **Literal C# signatures live in `RoomHub.cs`*
 | `AcceptRematch` | Room `AwaitingRematch`; caller is responder (not offerer) | Starts new match with swapped sides | `MatchStarted` (`SetupStarted` for setup games) |
 | `RejectRematch` | Room `AwaitingRematch`; caller is responder | Closes the room; rejector auto-routed | `RematchDeclined` to offerer |
 | `ExitRoom` | Room `Ended` or `AwaitingRematch` | Transitions room to `Closed` | `OpponentExited` to the still-present player |
+| `SendEmote` | Room `InProgress`, `Ended`, or `AwaitingRematch`; caller is in the match | Relays an ephemeral emote reaction (validated against the platform allowlist). Mutates nothing — no room state, no lock, not persisted | `EmoteReceived` to the opponent. Out-of-phase or rate-limited sends are dropped silently; an unknown emote id returns a `HubException` |
 
 When adding a new Hub method: append a row here, then implement.
 

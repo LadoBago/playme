@@ -9,6 +9,7 @@ using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
+using PlayMe.Application.Commands.SendEmote;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Commands.SubmitSetup;
 using PlayMe.Application.Dtos;
@@ -44,6 +45,7 @@ public sealed class RoomHub : Hub
     private readonly OfferRematchHandler _offerRematch;
     private readonly AcceptRematchHandler _acceptRematch;
     private readonly RejectRematchHandler _rejectRematch;
+    private readonly SendEmoteHandler _sendEmote;
     private readonly IGameModuleRegistry _games;
 
     public RoomHub(
@@ -57,6 +59,7 @@ public sealed class RoomHub : Hub
         OfferRematchHandler offerRematch,
         AcceptRematchHandler acceptRematch,
         RejectRematchHandler rejectRematch,
+        SendEmoteHandler sendEmote,
         IGameModuleRegistry games)
     {
         _sessionReader = sessionReader;
@@ -69,6 +72,7 @@ public sealed class RoomHub : Hub
         _offerRematch = offerRematch;
         _acceptRematch = acceptRematch;
         _rejectRematch = rejectRematch;
+        _sendEmote = sendEmote;
         _games = games;
     }
 
@@ -426,6 +430,42 @@ public sealed class RoomHub : Hub
             Context.ConnectionAborted);
 
         return ForCaller(value.Room, session);
+    }
+
+    /// <summary>
+    /// Relay an in-match emote to the opponent — a platform capability that
+    /// works for every game and touches no game module (CLAUDE.md §7). The
+    /// handler validates the id against the platform allowlist, enforces the
+    /// per-session rate limit, and gates on room status; an unknown id throws
+    /// a <see cref="HubException"/>, while a rate-limited or out-of-phase send
+    /// resolves as a silent no-op.
+    ///
+    /// Because an emote carries no room state, it bypasses
+    /// <see cref="SendToOpponentAsync"/> (whose job is room-state projection
+    /// for hidden-information games) and broadcasts a tiny
+    /// <c>{ from, emoteId }</c> payload straight to the other connections in
+    /// the room group. Returns nothing — the client fire-and-forgets.
+    /// </summary>
+    public async Task SendEmote(string emoteId)
+    {
+        var session = RequireSession();
+        var cmd = new SendEmoteCommand(
+            session.RoomCode.Value, session.PlayerId.Value, session.Role, emoteId);
+
+        var result = await _sendEmote.HandleAsync(cmd, Context.ConnectionAborted);
+        if (!result.Succeeded)
+        {
+            throw new HubException(result.Error!);
+        }
+
+        if (result.Value!.Effect == SendEmoteEffect.Delivered)
+        {
+            await Clients.OthersInGroup(GroupName(session.RoomCode.Value))
+                .SendAsync(
+                    RoomHubEvents.EmoteReceived,
+                    new { from = session.Role, emoteId },
+                    Context.ConnectionAborted);
+        }
     }
 
     /// <summary>
