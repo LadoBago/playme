@@ -887,7 +887,7 @@ function MatchView({
         </button>
       ) : null}
 
-      <MatchHeader room={room} role={role} />
+      <MatchHeader room={room} role={role} showScore={inSetup} />
 
       {inSetup ? null : (
         <Clock
@@ -895,6 +895,7 @@ function MatchView({
           callerRole={role}
           isFinal={match.outcome != null}
           opponentEmote={incomingEmote}
+          score={room.score}
         />
       )}
 

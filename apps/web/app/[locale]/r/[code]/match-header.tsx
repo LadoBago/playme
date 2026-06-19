@@ -3,21 +3,28 @@
 import { type RoomDto, type Role } from '@playme/shared';
 import { findGameModule } from '@/features/games/registry';
 import { useTranslator } from '@/lib/use-locale';
+import { SeriesScore } from './clock';
 
 interface MatchHeaderProps {
   room: RoomDto;
   role: Role | null;
+  /**
+   * Show the series score in the header's middle column. Set during the
+   * setup phase, when no clock row (which otherwise carries the score) is
+   * rendered — so a rematch series keeps its running score visible.
+   */
+  showScore?: boolean;
 }
 
-export function MatchHeader({ room, role }: MatchHeaderProps) {
+export function MatchHeader({ room, role, showScore = false }: MatchHeaderProps) {
   const { t, locale } = useTranslator();
   // While role is null (initial hydrate — the SignalR JoinRoom round-trip
   // hasn't resolved the caller yet) fall back to host-on-left with the real
-  // display names, mirroring the score fallback below. The names come from
-  // the SSR snapshot, so the header — the page's LCP element — paints on
-  // first render instead of waiting out the handshake. The "You"/"Opponent"
-  // captions render a non-breaking space meanwhile so the line keeps its
-  // height (no layout shift when they fill in).
+  // display names. The names come from the SSR snapshot, so the header — the
+  // page's LCP element — paints on first render instead of waiting out the
+  // handshake. The you/opponent caption is screen-reader-only now (the clock
+  // strip below carries the visible label), so there's no layout shift to
+  // reserve space for.
   const myPlayer = role === 'challenger' ? room.challenger : room.host;
   const opponentPlayer = role === 'challenger' ? room.host : room.challenger;
 
@@ -30,81 +37,55 @@ export function MatchHeader({ room, role }: MatchHeaderProps) {
   const opponentSideLabel =
     opponentPlayer?.side != null ? (getSideLabel?.(opponentPlayer.side, locale) ?? null) : null;
 
-  // Score is always rendered from the viewer's perspective so the left
-  // number sits under the left card. When role is null (initial hydrate)
-  // we fall back to host-on-left.
+  // Score from the viewer's perspective (host-on-left fallback while role is
+  // null). Only worth showing during setup once a series is under way — the
+  // first match's setup would just read 0 – 0.
   const myWins = role === 'challenger' ? room.score.challenger : room.score.host;
   const opponentWins = role === 'challenger' ? room.score.host : room.score.challenger;
+  const seriesStarted = room.score.host + room.score.challenger + room.score.draws > 0;
+  const showSetupScore = showScore && seriesStarted;
 
   return (
     <div className="match-meta">
       <PlayerCard
-        label={role === null ? '\u00A0' : t('match.you')}
+        roleLabel={t('match.you')}
         name={myPlayer?.displayName ?? '?'}
         sideLabel={mySideLabel}
-        wins={myWins}
       />
-      <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={room.score.draws} />
+      {/* Middle cell: keeps the two names in the same grid columns as the two
+          clock rectangles below. During setup (no clock row) it carries the
+          running series score; otherwise it's an empty spacer. */}
+      {showSetupScore ? (
+        <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={room.score.draws} />
+      ) : (
+        <span className="match-meta__gap" aria-hidden="true" />
+      )}
       <PlayerCard
-        label={role === null ? '\u00A0' : t('match.opponent')}
+        roleLabel={t('match.opponent')}
         name={opponentPlayer?.displayName ?? '…'}
         sideLabel={opponentSideLabel}
-        wins={opponentWins}
       />
-    </div>
-  );
-}
-
-function SeriesScore({
-  myWins,
-  opponentWins,
-  draws,
-}: {
-  myWins: number;
-  opponentWins: number;
-  draws: number;
-}) {
-  const { t, tf } = useTranslator();
-  // role="group" — aria-label is prohibited on a generic div (WCAG 4.1.2).
-  return (
-    <div className="match-score" role="group" aria-label={t('match.score.label')}>
-      <span className="match-score__counts">
-        {myWins}
-        <span className="match-score__dash" aria-hidden="true">
-          {' – '}
-        </span>
-        {opponentWins}
-      </span>
-      {draws > 0 ? (
-        <span className="match-score__draws">
-          {draws === 1 ? t('match.score.draws.one') : tf('match.score.draws.other', { count: draws })}
-        </span>
-      ) : null}
     </div>
   );
 }
 
 function PlayerCard({
-  label,
+  roleLabel,
   name,
   sideLabel,
-  wins,
 }: {
-  label: string;
+  roleLabel: string;
   name: string;
   sideLabel: string | null;
-  wins: number;
 }) {
-  const { t, tf } = useTranslator();
-  const winsLabel =
-    wins === 1 ? t('match.score.wins.one') : tf('match.score.wins.other', { count: wins });
   return (
     <div className="match-meta__player">
-      <span className="match-meta__role">{label}</span>
+      {/* You/Opponent is shown on the clock strip below; keep it here for
+          screen readers so the name still announces whose it is. */}
+      <span className="visually-hidden">{roleLabel}</span>
       <span className="match-meta__name">
         {name}
         {sideLabel ? ` · ${sideLabel}` : ''}
-        <span className="match-meta__wins"> — {winsLabel}</span>
       </span>
     </div>
   );

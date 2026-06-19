@@ -199,8 +199,6 @@ export const ka: Record<EnKey, string> = {
   'match.score.label': 'ანგარიში',
   'match.score.draws.one': '1 ფრე',
   'match.score.draws.other': '{count} ფრე',
-  'match.score.wins.one': '1 მოგება',
-  'match.score.wins.other': '{count} მოგება',
   'match.rules.button': 'წესები',
   'match.rules.close': 'დახურვა',
   'match.board.label': 'თამაშის დაფა',

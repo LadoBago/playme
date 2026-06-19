@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { ClockSnapshotDto, Role } from '@playme/shared';
+import type { ClockSnapshotDto, Role, ScoreDto } from '@playme/shared';
 import { extrapolateClock, formatClock } from '@/lib/clock';
 import { useTranslator } from '@/lib/use-locale';
 import { EmoteBubble, type IncomingEmote } from '@/features/emote';
@@ -25,6 +25,9 @@ interface ClockProps {
    * the same spot whenever emotes are allowed). Null when none is showing.
    */
   opponentEmote?: IncomingEmote | null;
+  /** Series score, shown between the two clock faces from the viewer's
+   *  perspective (left = you, right = opponent). */
+  score: ScoreDto;
 }
 
 /**
@@ -40,7 +43,13 @@ interface ClockProps {
  * new server time without trusting the client's wall clock against
  * <c>lastTickAt</c> directly.
  */
-export function Clock({ snapshot, callerRole, isFinal, opponentEmote = null }: ClockProps) {
+export function Clock({
+  snapshot,
+  callerRole,
+  isFinal,
+  opponentEmote = null,
+  score,
+}: ClockProps) {
   const { t } = useTranslator();
   const receivedAtRef = useRef<number>(Date.now());
   // Reset the local reference whenever a new snapshot reference comes in.
@@ -77,12 +86,54 @@ export function Clock({ snapshot, callerRole, isFinal, opponentEmote = null }: C
   const opponentActive =
     !isFinal && callerRole != null && snapshot.activePlayer !== callerRole;
 
+  // Score from the viewer's perspective so the left count sits under the
+  // left (you) clock. Host-on-left fallback while role is still null.
+  const myWins = callerRole === 'challenger' ? score.challenger : score.host;
+  const opponentWins = callerRole === 'challenger' ? score.host : score.challenger;
+
   return (
     <div className="match-clock" role="group" aria-label={t('match.clock.label')}>
       <ClockFace label={t('match.you')} ms={youMs} active={youActive} />
+      <SeriesScore myWins={myWins} opponentWins={opponentWins} draws={score.draws} />
       <ClockFace label={t('match.opponent')} ms={opponentMs} active={opponentActive}>
         <EmoteBubble emote={opponentEmote} />
       </ClockFace>
+    </div>
+  );
+}
+
+/**
+ * Centred series scoreboard between the two clock faces. Reads from the
+ * viewer's perspective: left number = you, right number = opponent. The
+ * draws subtitle appears only when draws > 0. Exported so the match header
+ * can render the same scoreboard during the setup phase, when no clock (and
+ * thus no clock-row score) is shown.
+ */
+export function SeriesScore({
+  myWins,
+  opponentWins,
+  draws,
+}: {
+  myWins: number;
+  opponentWins: number;
+  draws: number;
+}) {
+  const { t, tf } = useTranslator();
+  // role="group" — aria-label is prohibited on a generic div (WCAG 4.1.2).
+  return (
+    <div className="match-score" role="group" aria-label={t('match.score.label')}>
+      <span className="match-score__counts">
+        {myWins}
+        <span className="match-score__dash" aria-hidden="true">
+          {' – '}
+        </span>
+        {opponentWins}
+      </span>
+      {draws > 0 ? (
+        <span className="match-score__draws">
+          {draws === 1 ? t('match.score.draws.one') : tf('match.score.draws.other', { count: draws })}
+        </span>
+      ) : null}
     </div>
   );
 }
