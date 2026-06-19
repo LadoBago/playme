@@ -4,11 +4,10 @@ import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { createTranslator } from '@playme/shared';
 import { LangSync } from '@/features/locale/lang-sync';
-import { LocaleToggle } from '@/features/locale/locale-toggle';
 import { InstallPromptInit } from '@/features/pwa/install-prompt-init';
 import { ServiceWorkerRegister } from '@/features/pwa/sw-register';
 import { themeFoucScript } from '@/features/theme/fouc-script';
-import { ThemeToggle } from '@/features/theme/theme-toggle';
+import { Toolbar } from '@/features/toolbar/toolbar';
 import { AnalyticsBoot } from '@/lib/analytics-boot';
 import { getServerLocale } from '@/lib/locale';
 import { SITE_URL } from '@/lib/site';
@@ -155,10 +154,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <ServiceWorkerRegister />
         <InstallPromptInit />
         <LangSync />
-        <div className="toolbar">
-          <LocaleToggle />
-          <ThemeToggle />
-        </div>
+        <Toolbar />
         {children}
       </body>
     </html>

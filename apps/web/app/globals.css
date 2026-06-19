@@ -270,9 +270,69 @@ textarea {
   top: 0.75rem;
   right: 0.75rem;
   z-index: 10;
+}
+
+/* The toggles. Inline on wide; on narrow they fold into the dropdown below
+ * the settings trigger (see the media query). */
+.toolbar__panel {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Settings trigger that reveals the fold — hidden on wide (the toggles show
+ * inline), shown on narrow. Matches the toggle buttons' square shape. */
+.toolbar__trigger {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.toolbar__trigger:hover:not(:disabled) {
+  background: var(--highlight);
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
+.toolbar__trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Narrow: collapse the toggles behind the settings trigger. */
+@media (max-width: 560px) {
+  .toolbar__trigger {
+    display: inline-flex;
+  }
+
+  .toolbar__panel {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    flex-direction: column;
+    padding: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-elevated);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Folded shut until the trigger opens it. */
+  .toolbar__panel:not(.toolbar__panel--open) {
+    display: none;
+  }
 }
 
 /* --- Locale toggle (Sprint 6) ---

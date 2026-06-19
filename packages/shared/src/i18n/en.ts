@@ -296,6 +296,11 @@ export const en = {
   'theme.toggle.next.system': 'Use system theme',
   'theme.toggle.next.light': 'Switch to light theme',
 
+  // --- Toolbar fold (narrow screens) ---
+  // aria-label for the settings button that reveals the language + theme
+  // toggles when they're folded away on small screens.
+  'toolbar.settings': 'Language and theme',
+
   // --- App-level error / not-found chrome ---
   'errors.boundary.title': 'Something went wrong.',
   'errors.boundary.retry': 'Try again',
