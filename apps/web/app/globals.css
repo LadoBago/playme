@@ -1612,15 +1612,41 @@ textarea {
   background: transparent;
   color: var(--fg);
   cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
 }
 
 .emote-picker__option:hover {
   background: var(--bg-sunken);
+  color: var(--accent);
+}
+
+/* Press feedback for pointer devices (no hover on touch — the picked
+ * flash below covers that case). */
+.emote-picker__option:active {
+  transform: scale(0.88);
 }
 
 .emote-picker__option:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+
+/* The chosen emote flashes this state for a beat before the tray closes,
+ * so the tap visibly registers on every input type. */
+.emote-picker__option--picked {
+  background: var(--highlight);
+  color: var(--accent);
+  transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emote-picker__option:active,
+  .emote-picker__option--picked {
+    transform: none;
+  }
 }
 
 /* Transient bubble for a received emote, anchored above the opponent's

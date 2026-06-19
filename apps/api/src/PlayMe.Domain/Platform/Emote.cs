@@ -15,9 +15,9 @@ public static class Emote
     public static readonly IReadOnlySet<string> Ids = new HashSet<string>(StringComparer.Ordinal)
     {
         "smile",
+        "like",
         "heart",
         "clap",
-        "wow",
         "poke",
         "cry",
     };

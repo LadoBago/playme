@@ -169,7 +169,7 @@ export const en = {
   'match.emote.smile': 'Smile',
   'match.emote.heart': 'Heart',
   'match.emote.clap': 'Clap',
-  'match.emote.wow': 'Wow',
+  'match.emote.like': 'Like',
   'match.emote.poke': 'Poke',
   'match.emote.cry': 'Cry',
   'match.result.youWin': 'You win!',

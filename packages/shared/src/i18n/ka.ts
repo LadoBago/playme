@@ -155,7 +155,7 @@ export const ka: Record<EnKey, string> = {
   'match.emote.smile': 'ღიმილი',
   'match.emote.heart': 'გული',
   'match.emote.clap': 'ტაში',
-  'match.emote.wow': 'გაოცება',
+  'match.emote.like': 'მოწონება',
   'match.emote.poke': 'უჯიკე',
   'match.emote.cry': 'ტირილი',
   'match.result.youWin': 'შენ მოიგე!',

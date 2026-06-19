@@ -12,6 +12,13 @@ import { EmoteIcon } from './emote-icon';
  */
 const COOLDOWN_MS = 2_500;
 
+/**
+ * How long the chosen emote stays highlighted before the tray closes — a
+ * visible "got it" confirmation, since the send itself is instant and
+ * otherwise invisible (especially on touch, where there's no hover).
+ */
+const PICK_FEEDBACK_MS = 180;
+
 interface EmotePickerProps {
   onSend: (id: EmoteId) => void;
   /** Suppressed while the connection isn't live (the send would be lost). */
@@ -28,13 +35,17 @@ export function EmotePicker({ onSend, disabled = false }: EmotePickerProps) {
   const { t } = useTranslator();
   const [open, setOpen] = useState(false);
   const [coolingDown, setCoolingDown] = useState(false);
+  // The emote currently flashing its "picked" confirmation, if any.
+  const [picked, setPicked] = useState<EmoteId | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cooldownTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const trayId = useId();
 
   useEffect(
     () => () => {
       if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
+      if (closeTimer.current) clearTimeout(closeTimer.current);
     },
     [],
   );
@@ -59,9 +70,15 @@ export function EmotePicker({ onSend, disabled = false }: EmotePickerProps) {
 
   const handlePick = useCallback(
     (id: EmoteId) => {
+      // Send immediately; keep the tray open just long enough to flash the
+      // chosen emote so the tap reads as registered, then close.
       onSend(id);
-      setOpen(false);
+      setPicked(id);
       setCoolingDown(true);
+      closeTimer.current = setTimeout(() => {
+        setOpen(false);
+        setPicked(null);
+      }, PICK_FEEDBACK_MS);
       cooldownTimer.current = setTimeout(() => setCoolingDown(false), COOLDOWN_MS);
     },
     [onSend],
@@ -78,7 +95,11 @@ export function EmotePicker({ onSend, disabled = false }: EmotePickerProps) {
               key={id}
               type="button"
               role="menuitem"
-              className="emote-picker__option"
+              className={
+                picked === id
+                  ? 'emote-picker__option emote-picker__option--picked'
+                  : 'emote-picker__option'
+              }
               aria-label={t(`match.emote.${id}`)}
               onClick={() => handlePick(id)}
             >
