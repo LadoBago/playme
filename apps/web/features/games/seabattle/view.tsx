@@ -170,9 +170,11 @@ export const SeaBattleView: GameView = ({
   };
 
   // Narrow-screen board pager: the two grids form a scroll-snap carousel
-  // (one board per swipe); these track which slide is in view so the tab
-  // pills reflect it. On wide containers the boards sit side by side and
-  // the pills are hidden — the scroll state simply never changes.
+  // (one board per swipe). A segmented toggle above the carousel shows both
+  // board titles together; `activeBoard` tracks which slide is in view so
+  // the matching title reads active and tapping a title scrolls to it. On
+  // wide containers the boards sit side by side, the toggle is hidden and
+  // each board carries its own heading, so this state simply never changes.
   const boardsRef = useRef<HTMLDivElement | null>(null);
   const [activeBoard, setActiveBoard] = useState<'target' | 'fleet'>('target');
   const onBoardsScroll = () => {
@@ -250,6 +252,31 @@ export const SeaBattleView: GameView = ({
 
   return (
     <div className="sb sb--battle stack">
+      {/* Both board titles as a segmented toggle above the carousel — the
+          active half is the board in view; tapping the other scrolls to it.
+          Narrow-screen only (hidden on wide, where both boards show with
+          their own headings). Plain toggle buttons, not a tablist: the
+          boards aren't tabpanels, and hiding a focusable button behind
+          aria-hidden trips the blocked-aria-hidden warning when it's
+          focused. */}
+      <div className="sb__tabs">
+        <button
+          type="button"
+          className={`sb__tab ${activeBoard === 'target' ? 'sb__tab--active' : ''}`}
+          aria-pressed={activeBoard === 'target'}
+          onClick={() => scrollToBoard('target')}
+        >
+          {t('games.seabattle.board.target')}
+        </button>
+        <button
+          type="button"
+          className={`sb__tab ${activeBoard === 'fleet' ? 'sb__tab--active' : ''}`}
+          aria-pressed={activeBoard === 'fleet'}
+          onClick={() => scrollToBoard('fleet')}
+        >
+          {t('games.seabattle.board.yours')}
+        </button>
+      </div>
       {/* DOM order keeps enemy waters first (first slide of the narrow
           carousel and first in tab order — it's the action board); the
           wide-container row-reverse puts the own fleet on the left, enemy
@@ -270,30 +297,6 @@ export const SeaBattleView: GameView = ({
           label={t('games.seabattle.board.yours')}
           t={{ t, tf }}
         />
-      </div>
-      {/* Pager pills sit below the carousel, next to the thumb on phones.
-          They use the short `tab.*` labels (one line in Georgian) — the
-          full `board.*` texts stay on the grid headings above. Plain
-          toggle buttons, not a tablist: the boards aren't tabpanels, and
-          hiding focusable buttons behind aria-hidden trips the blocked
-          aria-hidden warning the moment one takes focus. */}
-      <div className="sb__tabs">
-        <button
-          type="button"
-          className={`radio-pill ${activeBoard === 'target' ? 'radio-pill--active' : ''}`}
-          aria-pressed={activeBoard === 'target'}
-          onClick={() => scrollToBoard('target')}
-        >
-          {t('games.seabattle.tab.target')}
-        </button>
-        <button
-          type="button"
-          className={`radio-pill ${activeBoard === 'fleet' ? 'radio-pill--active' : ''}`}
-          aria-pressed={activeBoard === 'fleet'}
-          onClick={() => scrollToBoard('fleet')}
-        >
-          {t('games.seabattle.tab.yours')}
-        </button>
       </div>
     </div>
   );

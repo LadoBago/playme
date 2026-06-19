@@ -247,10 +247,6 @@ export const ka: Record<EnKey, string> = {
   'games.seabattle.setup.opponentPlacing': 'მოწინააღმდეგე გემებს ალაგებს.',
   'games.seabattle.board.yours': 'შენი ფლოტი',
   'games.seabattle.board.target': 'მოწინააღმდეგის წყლები',
-  // Short forms for the narrow-screen board pager pills — the full
-  // `board.*` headings don't fit the pills on one line in Georgian.
-  'games.seabattle.tab.yours': 'ჩემი გემები',
-  'games.seabattle.tab.target': 'მოწინააღმდეგე',
   'games.seabattle.cell.fire': 'ისროლე: სტრიქონი {row}, სვეტი {col}',
   'games.seabattle.cell.miss': 'აცილება: სტრიქონი {row}, სვეტი {col}',
   'games.seabattle.cell.hit': 'მოხვედრა: სტრიქონი {row}, სვეტი {col}',
