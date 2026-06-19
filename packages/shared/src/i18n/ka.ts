@@ -270,6 +270,9 @@ export const ka: Record<EnKey, string> = {
   'theme.toggle.next.system': 'გადართე სისტემურ თემაზე',
   'theme.toggle.next.light': 'გადართე ნათელ თემაზე',
 
+  // --- Toolbar fold (narrow screens) ---
+  'toolbar.settings': 'ენა და თემა',
+
   // --- App-level error / not-found chrome ---
   'errors.boundary.title': 'რაღაც შეცდომა მოხდა.',
   'errors.boundary.retry': 'სცადე თავიდან',
