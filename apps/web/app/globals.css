@@ -1892,6 +1892,14 @@ textarea {
   color: var(--fg-muted);
 }
 
+/* In battle the segmented toggle above the carousel names the visible board,
+   so the per-board headings are redundant on narrow — hidden here, shown
+   again on wide (where both boards sit side by side). Scoped to .sb--battle
+   so the setup screen's single-board heading is untouched. */
+.sb--battle .sb__board-label {
+  display: none;
+}
+
 .sb__grid {
   display: grid;
   grid-template-columns: repeat(10, var(--sb-cell));
@@ -2085,10 +2093,54 @@ button.sb__cell:disabled {
   scroll-snap-stop: always;
 }
 
+/* Tighten the board up under the toggle — the toggle is the board's header,
+   not a separate section, so the default 1rem .stack gap wastes height. */
+.sb--battle {
+  gap: 0.4rem;
+}
+
+/* Both board titles as a segmented toggle above the carousel. Each half is
+   an equal-width button; the active one (board in view) carries the accent
+   highlight, the other reads muted. */
 .sb__tabs {
   display: flex;
-  gap: 0.4rem;
-  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+}
+
+.sb__tab {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sb__tab:hover {
+  color: var(--fg);
+}
+
+.sb__tab--active {
+  background: var(--highlight);
+  color: var(--accent);
+}
+
+.sb__tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @container match (min-width: 880px) {
@@ -2096,9 +2148,14 @@ button.sb__cell:disabled {
     width: auto;
   }
 
-  /* Wide: both boards visible side by side — pager off, pills gone. */
+  /* Wide: both boards visible side by side — the toggle is dropped (and with
+     it its focusable buttons), and each board reverts to its own heading. */
   .sb__tabs {
     display: none;
+  }
+
+  .sb--battle .sb__board-label {
+    display: block;
   }
 
   .sb--battle .sb__boards {

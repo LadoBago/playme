@@ -267,10 +267,6 @@ export const en = {
   'games.seabattle.setup.opponentPlacing': 'Your opponent is placing their fleet.',
   'games.seabattle.board.yours': 'Your fleet',
   'games.seabattle.board.target': 'Enemy waters',
-  // Short forms for the narrow-screen board pager pills. English already
-  // fits on one line, so they match the board headings; Georgian shortens.
-  'games.seabattle.tab.yours': 'Your fleet',
-  'games.seabattle.tab.target': 'Enemy waters',
   'games.seabattle.cell.fire': 'Fire at row {row}, column {col}',
   'games.seabattle.cell.miss': 'Miss at row {row}, column {col}',
   'games.seabattle.cell.hit': 'Hit at row {row}, column {col}',
