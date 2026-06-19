@@ -219,8 +219,6 @@ export const en = {
   'match.score.label': 'Series',
   'match.score.draws.one': '1 draw',
   'match.score.draws.other': '{count} draws',
-  'match.score.wins.one': '1 win',
-  'match.score.wins.other': '{count} wins',
   'match.rules.button': 'Rules',
   'match.rules.close': 'Close',
   'match.board.label': 'Game board',

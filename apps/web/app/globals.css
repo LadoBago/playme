@@ -719,37 +719,32 @@ textarea {
   container-name: match;
 }
 
+/* Shares the clock row's 3-column grid (you | score | opponent) so each name
+ * sits in the same column as its clock rectangle below — see .match-clock. */
 .match-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 4.5rem 1fr;
+  gap: 0.75rem;
   align-items: center;
 }
 
 .match-meta__player {
   display: flex;
   flex-direction: column;
-}
-
-.match-meta__role {
-  font-size: 0.8rem;
-  color: var(--fg-muted);
+  min-width: 0;
+  /* Match the clock rectangle's horizontal padding so the name starts at the
+   * same x as the time inside its clock (the rectangle's content edge). */
+  padding: 0 0.8rem;
 }
 
 .match-meta__name {
   font-weight: 600;
 }
 
-/* Per-player win count shown only when the header stacks vertically —
- * keeps each player's tally next to their name instead of leaving the
- * central scoreboard floating between rows. Sits inline inside
- * `.match-meta__name`, so we override its bold weight. */
-.match-meta__wins {
-  display: none;
-  font-weight: normal;
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
+/* Names sit just above the clock strip (the you/opponent caption moved onto
+ * the clock), so pull the clock up against the default 1rem .stack gap. */
+.match-meta + .match-clock {
+  margin-top: -0.55rem;
 }
 
 /* Responsive post-match action labels: full descriptive text by default,
@@ -761,22 +756,6 @@ textarea {
 }
 
 @container match (max-width: 560px) {
-  .match-meta {
-    flex-direction: column;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    /* The central scoreboard collapses to zero height here (counts are
-     * hidden below) yet still contributes a flex gap on each side, so the
-     * visible space between the two player rows is gap × 2. Halve the gap
-     * to keep that combined space moderate (~1rem). */
-    gap: 0.5rem;
-  }
-  .match-score__counts {
-    display: none;
-  }
-  .match-meta__wins {
-    display: inline;
-  }
   /* Swap the descriptive post-match action labels for short forms so the
    * back link + rematch CTA stay on one line on narrow boards. The full
    * text remains each button's aria-label. */
@@ -788,15 +767,17 @@ textarea {
   }
 }
 
-/* Centred series scoreboard between the two player cards. Reads from
+/* Centred series scoreboard between the two clock faces. Reads from
  * the viewer's perspective: left number = you, right number = opponent.
  * Draws subtitle only appears when draws > 0 so the slot doesn't dilute
- * a zero-draw series. */
+ * a zero-draw series. Centred vertically so it sits level with the times
+ * even though the clock boxes are taller. */
 .match-score {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 4.5rem;
+  justify-content: center;
+  min-width: 4rem;
 }
 
 .match-score__counts {
@@ -869,15 +850,16 @@ textarea {
   justify-self: start;
 }
 
+/* you | score | opponent — the same grid as .match-meta so the names above
+ * line up with their clock rectangles. The middle column holds the score. */
 .match-clock {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 4.5rem 1fr;
   gap: 0.75rem;
-  justify-content: space-between;
   align-items: stretch;
 }
 
 .match-clock__side {
-  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
