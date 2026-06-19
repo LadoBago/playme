@@ -306,4 +306,5 @@ export const ka: Record<EnKey, string> = {
   'errors.setup.notInSetup': 'განლაგების ეტაპი დასრულებულია.',
   'errors.setup.alreadyCommitted': 'განლაგება უკვე დაადასტურე.',
   'errors.setup.invalidFleet': 'გემების განლაგება არასწორია. აურიე და სცადე თავიდან.',
+  'errors.emote.unknown': 'ეს რეაქცია მიუწვდომელია.',
 };

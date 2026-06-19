@@ -14,6 +14,7 @@ using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
 using PlayMe.Application.Commands.Resign;
+using PlayMe.Application.Commands.SendEmote;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Commands.SubmitSetup;
 using PlayMe.Application.Games.Connect4;
@@ -47,6 +48,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<OfferRematchHandler>();
         services.AddScoped<AcceptRematchHandler>();
         services.AddScoped<RejectRematchHandler>();
+        services.AddScoped<SendEmoteHandler>();
         services.AddScoped<AdjudicateTimeoutHandler>();
         services.AddScoped<AdjudicateSetupTimeoutHandler>();
         services.AddScoped<AdjudicateDisconnectGraceHandler>();

@@ -20,4 +20,11 @@ public static class RoomHubEvents
     public const string RematchOffered = "RematchOffered";
     public const string RematchDeclined = "RematchDeclined";
     public const string RoomExpired = "RoomExpired";
+
+    /// <summary>
+    /// In-match emote reaction relayed to the opponent. Unlike every other
+    /// event here it carries no room state — just the sender's role and the
+    /// emote id — because an emote mutates nothing (CLAUDE.md §7).
+    /// </summary>
+    public const string EmoteReceived = "EmoteReceived";
 }

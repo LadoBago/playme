@@ -44,4 +44,16 @@ public static class SessionRateLimitPolicies
     /// </summary>
     public static readonly RateLimitPolicy SubmitSetup =
         new("setup", Limit: 5, Window: TimeSpan.FromSeconds(10));
+
+    /// <summary>
+    /// In-match emote reactions (ephemeral player-to-player signal). An
+    /// emote is exactly the thing a player mashes to annoy an opponent, so
+    /// the floor is strict: averaging one per ~2 s, with a small burst of 3
+    /// to allow a quick flurry before throttling. The web client also
+    /// self-disables the trigger briefly after a send; this server window is
+    /// the authoritative backstop. Over-limit sends are dropped silently
+    /// (no broadcast, no error) rather than surfaced to the sender.
+    /// </summary>
+    public static readonly RateLimitPolicy Emote =
+        new("emote", Limit: 3, Window: TimeSpan.FromSeconds(6));
 }

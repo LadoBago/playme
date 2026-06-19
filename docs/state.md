@@ -114,6 +114,7 @@ Broadcast to both clients via SignalR unless noted. **Hidden-state games** (modu
 | `OpponentReconnected` | dropped player rejoins (before *or after* grace, while match is still `InProgress`) | sent to the still-connected player |
 | `OpponentExited` | a player leaves the room while in `Ended` or `AwaitingRematch` — either via an explicit `ExitRoom()` call (immediate) or via a SignalR disconnect that doesn't reconnect within the post-match reconnect grace (10 s, see §2.4 invariants) | sent to the still-present player; their UI shows "opponent left" + a manual "Back to lobby" button. Room transitions to `Closed`. |
 | `RoomExpired` | room reaches `Expired` or post-`Ended` cleanup TTL | `reason`: `unjoined` (the `WaitingForOpponent` 30-min window elapsed with no challenger) or `setupTimeout` (a setup game's deadline elapsed before both sides committed — setup expiry never awards a win, regardless of who committed) |
+| `EmoteReceived` | a player sends an in-match emote via `SendEmote` (valid in `InProgress`, `Ended`, `AwaitingRematch`) | sent to the opponent only; `from` (sender role) + `emoteId` (from the platform allowlist). **Carries no room state** — an emote is an ephemeral reaction, not a state mutation: nothing is persisted and it is never replayed on reconnect. Rate-limited per session ([`security.md`](security.md) §5); over-limit and out-of-phase sends are dropped silently |
 
 ### 2.4 Invariants
 

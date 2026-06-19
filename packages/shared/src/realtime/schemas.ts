@@ -5,7 +5,9 @@
 
 import { z } from 'zod';
 import { RoleSchema, RoomSchema } from '../api/schemas';
+import { EMOTE_IDS } from './emotes';
 import type {
+  EmoteReceivedPayload,
   MatchEndedPayload,
   MatchStartedPayload,
   MoveAcceptedPayload,
@@ -61,6 +63,13 @@ export const RoomExpiredPayloadSchema = z.object({
   reason: z.enum(['unjoined', 'setupTimeout']),
 });
 
+// `emoteId` is validated against the shared allowlist (Domain/Platform/
+// Emote.cs on the server) — an unknown id is dropped as a malformed payload.
+export const EmoteReceivedPayloadSchema = z.object({
+  from: RoleSchema,
+  emoteId: z.enum(EMOTE_IDS),
+});
+
 type _AssertOpponentJoined = z.infer<typeof OpponentJoinedPayloadSchema> extends OpponentJoinedPayload
   ? true
   : false;
@@ -109,6 +118,11 @@ type _AssertRematchDeclined = z.infer<
 type _AssertRoomExpired = z.infer<typeof RoomExpiredPayloadSchema> extends RoomExpiredPayload
   ? true
   : false;
+type _AssertEmoteReceived = z.infer<
+  typeof EmoteReceivedPayloadSchema
+> extends EmoteReceivedPayload
+  ? true
+  : false;
 
 export type _RealtimeSchemaDriftGuards = [
   _AssertOpponentJoined,
@@ -123,4 +137,5 @@ export type _RealtimeSchemaDriftGuards = [
   _AssertRematchOffered,
   _AssertRematchDeclined,
   _AssertRoomExpired,
+  _AssertEmoteReceived,
 ];

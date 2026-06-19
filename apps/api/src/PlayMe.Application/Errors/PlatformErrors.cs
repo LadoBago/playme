@@ -49,6 +49,11 @@ public static class PlatformErrors
     public const string SetupNotInSetup = "errors.setup.notInSetup";
     public const string SetupAlreadyCommitted = "errors.setup.alreadyCommitted";
 
+    // --- Emote (in-match reactions). The allowlist itself lives in
+    //     Domain/Platform/Emote.cs; an unknown id is a client/contract
+    //     violation, so it surfaces rather than being dropped silently. ---
+    public const string EmoteUnknown = "errors.emote.unknown";
+
     // --- Session / authorization ---
     public const string SessionUnauthorized = "errors.session.unauthorized";
 

@@ -333,6 +333,7 @@ export const en = {
   'errors.setup.notInSetup': 'The setup phase is over.',
   'errors.setup.alreadyCommitted': "You've already confirmed your setup.",
   'errors.setup.invalidFleet': 'That fleet placement is invalid. Shuffle and try again.',
+  'errors.emote.unknown': 'That reaction isn’t available.',
 } as const;
 
 export type EnKey = keyof typeof en;
