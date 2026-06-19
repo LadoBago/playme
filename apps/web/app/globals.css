@@ -264,7 +264,7 @@ textarea {
 }
 
 /* --- Locale toggle (Sprint 6) ---
- * Same circular shape as .theme-toggle so the two toolbar affordances
+ * Same rounded-rect shape as .theme-toggle so the two toolbar affordances
  * read as siblings. Shows the *active* locale's 2-letter code; click
  * switches to the other (only two states, so cycle = switch). The
  * i18n catalog feeds the aria-label only — the visible label is the
@@ -278,7 +278,7 @@ textarea {
   justify-content: center;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 8px;
   background: var(--bg-elevated);
   color: var(--fg-muted);
   font-size: 0.72rem;
@@ -303,7 +303,7 @@ textarea {
 }
 
 /* --- Theme toggle (Sprint 6) ---
- * Cycling icon button (light → dark → system → light). Circular shape
+ * Cycling icon button (light → dark → system → light). Rounded-rect shape
  * + currentColor SVGs let the icon take whatever the theme's foreground
  * colour is. */
 
@@ -315,7 +315,7 @@ textarea {
   justify-content: center;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 8px;
   background: var(--bg-elevated);
   color: var(--fg-muted);
   transition:
