@@ -43,6 +43,18 @@
   --c4-red-rim: #a02028;
   --c4-yellow-rim: #e8b923;
   --c4-yellow-inner-shadow: rgba(180, 130, 0, 0.55);
+
+  /* Emote signature hues. Each reaction paints itself in its own color when
+   * sent/received (see .emote-icon--colorful). Like the Connect 4 piece
+   * tokens above, these stay legible on both the cream and dark backgrounds,
+   * so a single set serves both themes and the token indirection keeps the
+   * hex out of the components. */
+  --emote-smile: #f5a623;
+  --emote-heart: #e0245e;
+  --emote-like: #2f80ed;
+  --emote-cry: #4a90d9;
+  --emote-clap: #f2853f;
+  --emote-poke: #8b5cf6;
 }
 
 /* Dark-mode tokens. Two selectors so the manual theme toggle (Sprint 6)
@@ -1639,7 +1651,7 @@ textarea {
 .emote-picker__option--picked {
   background: var(--highlight);
   color: var(--accent);
-  transform: scale(1.12);
+  transform: scale(1.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1649,36 +1661,91 @@ textarea {
   }
 }
 
+/* Per-emote hue, mapped once from the `data-emote` attribute. Both the
+ * colorful glyph (which paints itself with `color`) and the bubble (which
+ * tints its sparks + rim) read `--emote-color`, so the mapping lives in a
+ * single place. */
+.emote-icon--colorful[data-emote='smile'],
+.emote-bubble[data-emote='smile'] {
+  --emote-color: var(--emote-smile);
+}
+.emote-icon--colorful[data-emote='heart'],
+.emote-bubble[data-emote='heart'] {
+  --emote-color: var(--emote-heart);
+}
+.emote-icon--colorful[data-emote='like'],
+.emote-bubble[data-emote='like'] {
+  --emote-color: var(--emote-like);
+}
+.emote-icon--colorful[data-emote='cry'],
+.emote-bubble[data-emote='cry'] {
+  --emote-color: var(--emote-cry);
+}
+.emote-icon--colorful[data-emote='clap'],
+.emote-bubble[data-emote='clap'] {
+  --emote-color: var(--emote-clap);
+}
+.emote-icon--colorful[data-emote='poke'],
+.emote-bubble[data-emote='poke'] {
+  --emote-color: var(--emote-poke);
+}
+
+/* A colorful glyph paints itself in its own hue (set on the element so it
+ * wins over any inherited `color`, e.g. the picker's --picked accent). */
+.emote-icon--colorful {
+  color: var(--emote-color);
+}
+
 /* Transient bubble for a received emote, anchored above the opponent's
  * clock face. Non-interactive; auto-removed by the component after its
  * timeout. */
 .emote-bubble {
   position: absolute;
-  top: -0.85rem;
+  top: -1.15rem;
   right: 0.5rem;
-  width: 2rem;
-  height: 2rem;
-  padding: 0.3rem;
+  width: 2.7rem;
+  height: 2.7rem;
+  padding: 0.34rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  /* Rim + glow pick up the emote's hue (the glyph paints itself). */
+  border: 1px solid color-mix(in srgb, var(--emote-color, var(--accent)) 45%, var(--border));
   border-radius: 999px;
   background: var(--bg-elevated);
-  color: var(--accent);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--emote-color, transparent) 28%, transparent);
   pointer-events: none;
   transform-origin: bottom center;
-  animation: emote-pop 0.28s ease-out;
+  /* Springy pop-in (overshoot via the bezier), then a gentle rise-and-fade
+   * out timed so the bubble has cleared by the time the component removes it
+   * at VISIBLE_MS (3.5 s = 3.18 s delay + 0.32 s). */
+  animation:
+    emote-pop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    emote-bubble-out 0.32s ease-in 3.18s forwards;
+}
+
+/* Sparkle burst — small dots fired out along even spokes (vectors set inline
+ * per spark as --dx/--dy). Centred on the bubble; overflow is visible so they
+ * fly past its edge. Purely decorative (aria-hidden on each). */
+.emote-bubble__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: -0.15rem 0 0 -0.15rem;
+  border-radius: 999px;
+  background: var(--emote-color, var(--accent));
+  pointer-events: none;
+  animation: emote-spark 0.5s ease-out both;
 }
 
 @keyframes emote-pop {
   0% {
-    transform: translateY(0.4rem) scale(0.6);
+    transform: translateY(0.5rem) scale(0.3);
     opacity: 0;
   }
-  60% {
-    transform: translateY(0) scale(1.08);
+  55% {
     opacity: 1;
   }
   100% {
@@ -1687,9 +1754,35 @@ textarea {
   }
 }
 
+@keyframes emote-bubble-out {
+  to {
+    transform: translateY(-0.35rem) scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes emote-spark {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .emote-bubble {
     animation: none;
+  }
+
+  /* No burst when motion is reduced — they'd otherwise sit as static dots. */
+  .emote-bubble__spark {
+    display: none;
   }
 }
 

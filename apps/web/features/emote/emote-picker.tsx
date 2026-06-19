@@ -103,7 +103,7 @@ export function EmotePicker({ onSend, disabled = false }: EmotePickerProps) {
               aria-label={t(`match.emote.${id}`)}
               onClick={() => handlePick(id)}
             >
-              <EmoteIcon id={id} />
+              <EmoteIcon id={id} colorful={picked === id} />
             </button>
           ))}
         </div>
