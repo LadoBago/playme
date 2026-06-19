@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslator } from '@/lib/use-locale';
 import type { GameView, GameViewProps, TurnStatusExtraProps } from '../types';
 import { generateFleet } from './fleet';
@@ -187,6 +187,28 @@ export const SeaBattleView: GameView = ({
     if (!el) return;
     el.scrollTo({ left: board === 'target' ? 0 : el.scrollWidth, behavior: 'smooth' });
   };
+
+  // Pick the opening slide once per battle: the player shooting first
+  // (canPlay at battle start) lands on enemy waters — their action board —
+  // while the player shooting second lands on their own fleet, which is all
+  // they can look at until their turn. Done once (a ref guard) so later turn
+  // changes never yank the carousel mid-game; reset when a rematch drops
+  // back to setup so the next battle re-picks for the swapped sides. The
+  // jump is instant (no smooth) — it's just where the player starts.
+  const phase = model?.phase;
+  const battleBoardInit = useRef(false);
+  useEffect(() => {
+    if (phase === 'setup') {
+      battleBoardInit.current = false;
+      return;
+    }
+    if (phase !== 'battle' || battleBoardInit.current) return;
+    battleBoardInit.current = true;
+    const opening = canPlay ? 'target' : 'fleet';
+    setActiveBoard(opening);
+    const el = boardsRef.current;
+    if (el) el.scrollTo({ left: opening === 'target' ? 0 : el.scrollWidth });
+  }, [phase, canPlay]);
 
   if (!model) {
     return <p className="banner banner--error">{t('errors.unknown')}</p>;
