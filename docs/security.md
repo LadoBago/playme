@@ -117,8 +117,16 @@ Audit headers with `securityheaders.com` before each release; target **A+**.
 ## 9. Dependency security
 
 - **Renovate** (or Dependabot) configured for both `pnpm` and NuGet. PRs reviewed at least weekly.
-- CI runs `pnpm audit --prod` and `dotnet list package --vulnerable --include-transitive`; **high or critical findings fail the build**.
+- CI runs `pnpm audit --prod --audit-level high` and `dotnet list package --vulnerable --include-transitive`; **high or critical findings fail the build**.
 - Pin major versions. Minor/patch bumps may auto-merge for non-prod-runtime packages once tests are green; everything else requires a human approval.
+
+> **Version source of truth.** Do not maintain a hand-written dependency inventory — it duplicates the manifests and goes stale. The authoritative versions live in `package.json` / `pnpm-lock.yaml` (JS), `Directory.Packages.props` (central .NET pins), and `global.json` (.NET SDK). Query current state with `pnpm outdated -r` and `pnpm audit`. The runtime **Node** version is pinned once in `.nvmrc` (read by CI's `setup-node` and by local `nvm`/`fnm`); `engines.node` is the install-time floor, not a second pin to keep in sync.
+
+> **Transitive-advisory fixes** go through `pnpm` `overrides` in `pnpm-workspace.yaml`, each with a comment naming the advisory and the patched version — never by relaxing the audit gate. See the `dompurify` / `ws` / `protobufjs` entries for the pattern.
+
+> **Held-back upgrades (rationale, so they aren't blindly retried).** `package.json` can't carry comments, so non-obvious pins are recorded here:
+> - **`@sentry/nextjs` held at 10.52.0** — 10.59.0 pulls `@sentry/server-utils` with a `vite` peer that resolves against the dev-tree `vite`, dragging a **high** vite advisory into the prod tree and failing the audit gate (and it does not fix its target `@opentelemetry/core` advisory). Revisit once Sentry drops the vite peer or ships a patched transitive.
+> - **Deferred majors** (own PRs, each needs migration + testing): `eslint` 9→10, `typescript` 5→6, `vitest` 2→4, `@microsoft/signalr` 8→10 (worth aligning the client to the .NET 10 / SignalR 10 server).
 
 ## 10. Static analysis
 
