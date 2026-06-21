@@ -17,6 +17,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const locale = await resolveLocale(params);
   const { t } = createTranslator(locale);
+  const metaTitle = t('copyright.metaTitle');
   const description = t('copyright.metaDescription');
   const canonical = localizedHref('/copyright', locale);
   const image = {
@@ -24,7 +25,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alt: t('site.ogImageAlt'),
   };
   return {
-    title: t('copyright.title'),
+    // Self-contained title (already names PlayMe) → `absolute` so the root
+    // layout's "— PlayMe" suffix template isn't appended on top. The bare
+    // "Copyright — PlayMe" was thin for an indexable, sitemapped page.
+    title: { absolute: metaTitle },
     description,
     alternates: {
       canonical,
@@ -37,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       type: 'website',
       siteName: 'PlayMe',
-      title: t('copyright.title'),
+      title: metaTitle,
       description,
       url: canonical,
       locale: locale === 'ka' ? 'ka_GE' : 'en_US',
@@ -45,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: t('copyright.title'),
+      title: metaTitle,
       description,
       images: [image],
     },

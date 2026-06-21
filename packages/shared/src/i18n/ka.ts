@@ -35,6 +35,7 @@ export const ka: Record<EnKey, string> = {
 
   // --- Copyright page ---
   'copyright.title': 'საავტორო უფლებები',
+  'copyright.metaTitle': 'საავტორო უფლებები და ლიცენზია — PlayMe',
   'copyright.metaDescription':
     'ინფორმაცია PlayMe-ის საავტორო უფლებებისა და მფლობელობის შესახებ — უფასო პლატფორმა მეგობართან ონლაინ სათამაშოდ.',
   'copyright.notice': '© {year} PlayMe.ge. ყველა უფლება დაცულია.',
@@ -43,6 +44,7 @@ export const ka: Record<EnKey, string> = {
 
   // --- About page ---
   'about.title': 'საიტის შესახებ',
+  'about.metaTitle': 'PlayMe-ის შესახებ — ითამაშე ონლაინ მეგობართან',
   'about.metaDescription':
     'PlayMe.ge-ის შესახებ — პირადი სასწავლო პროექტი მეგობართან ონლაინ სათამაშოდ, შექმნილი ხელოვნურ ინტელექტთან ერთად.',
   'about.intro':
