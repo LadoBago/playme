@@ -13,3 +13,7 @@ overrides:
   # GHSA-g5v3-... — protobufjs DoS via unbounded Any expansion. Reaches the web
   # bundle through posthog-js → OpenTelemetry OTLP transformer (^7.x); 7.6.1+ patches.
   "protobufjs@<7.6.1": "^7.6.4"
+  # Multiple DOMPurify advisories (IN_PLACE bypass, ALLOWED_ATTR/TAGS pollution,
+  # SAFE_FOR_TEMPLATES bypass). Ships to the browser via posthog-js (^3.3.2);
+  # 3.4.11 patches the cluster.
+  "dompurify@<3.4.11": "^3.4.11"
