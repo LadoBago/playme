@@ -14,7 +14,7 @@ export const en = {
   // Landing-page <h1>. The visible wordmark is aria-hidden, so this is the
   // heading's whole accessible name; it also puts a real keyword phrase in
   // the highest-authority page's H1 (the wordmark text stays crawlable).
-  'site.homeH1': 'PlayMe — play board & strategy games online with a friend',
+  'site.homeH1': 'Play board & strategy games online with a friend — PlayMe',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'Play board & strategy games online with a friend, no signup.',
   // Homepage-specific meta/OG description. Distinct from `site.tagline`
@@ -58,7 +58,7 @@ export const en = {
   // First-person: this is a personal learning project, so the voice is the
   // author's own. Each bullet is a bold lead-in (`*.label`) plus body text.
   'about.title': 'About',
-  'about.metaTitle': 'About PlayMe — Play Board & Strategy Games Online',
+  'about.metaTitle': 'About PlayMe — the project and how it was built',
   'about.metaDescription':
     'About PlayMe.ge — a personal learning project for playing two-player board and strategy games online with a friend, built with AI pair-programming.',
   'about.intro':

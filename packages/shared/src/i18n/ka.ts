@@ -11,7 +11,7 @@ export const ka: Record<EnKey, string> = {
   'site.titleShort': 'PlayMe — ითამაშე ონლაინ მეგობართან',
   // მთავარი გვერდის <h1> — wordmark aria-hidden-ია, ასე რომ ეს არის
   // სათაურის სრული accessible name და H1-ში საკვანძო ფრაზასაც ამატებს.
-  'site.homeH1': 'PlayMe — ითამაშე ონლაინ მეგობართან',
+  'site.homeH1': 'ითამაშე ონლაინ მეგობართან — PlayMe',
   'site.titleSuffix': '— PlayMe',
   'site.tagline': 'ითამაშე ონლაინ მეგობართან, რეგისტრაციის გარეშე.',
   'site.homeMetaDescription':
@@ -44,7 +44,7 @@ export const ka: Record<EnKey, string> = {
 
   // --- About page ---
   'about.title': 'საიტის შესახებ',
-  'about.metaTitle': 'PlayMe-ის შესახებ — ითამაშე ონლაინ მეგობართან',
+  'about.metaTitle': 'PlayMe-ის შესახებ — პროექტი და როგორ შეიქმნა',
   'about.metaDescription':
     'PlayMe.ge-ის შესახებ — პირადი სასწავლო პროექტი მეგობართან ონლაინ სათამაშოდ, შექმნილი ხელოვნურ ინტელექტთან ერთად.',
   'about.intro':
