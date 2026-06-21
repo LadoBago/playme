@@ -47,6 +47,7 @@ export const en = {
 
   // --- Copyright page ---
   'copyright.title': 'Copyright',
+  'copyright.metaTitle': 'Copyright & licensing — PlayMe',
   'copyright.metaDescription':
     'Copyright and ownership information for PlayMe, a free platform for playing casual games online with a friend.',
   'copyright.notice': '© {year} PlayMe.ge. All rights reserved.',
