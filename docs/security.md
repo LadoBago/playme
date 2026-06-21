@@ -127,6 +127,11 @@ Audit headers with `securityheaders.com` before each release; target **A+**.
 > **Held-back upgrades (rationale, so they aren't blindly retried).** `package.json` can't carry comments, so non-obvious pins are recorded here:
 > - **`@sentry/nextjs` held at 10.52.0** — 10.59.0 pulls `@sentry/server-utils` with a `vite` peer that resolves against the dev-tree `vite`, dragging a **high** vite advisory into the prod tree and failing the audit gate (and it does not fix its target `@opentelemetry/core` advisory). Revisit once Sentry drops the vite peer or ships a patched transitive.
 > - **Deferred majors** (own PRs, each needs migration + testing): `eslint` 9→10, `typescript` 5→6, `vitest` 2→4, `@microsoft/signalr` 8→10 (worth aligning the client to the .NET 10 / SignalR 10 server).
+>
+> NuGet (pinned in `Directory.Packages.props`):
+> - **`FluentAssertions` held at 6.12.2 — do not bump.** 7.0+ moved to a paid commercial (Xceed) license; 6.x is the last Apache-2.0 release. Migrating off it (e.g. to `Shouldly` or xUnit asserts) is the only path forward, and a separate decision — never a routine bump.
+> - **Deferred .NET majors** (own PRs, each needs testing): `StackExchange.Redis` 2→3 (state store **and** SignalR backplane — verify under load), `Serilog.AspNetCore` 9→10, `Serilog.Sinks.File` 6→7, `Microsoft.NET.Test.Sdk` 17→18, `xunit.runner.visualstudio` 2→3.
+> - **`OpenTelemetry.Instrumentation.AspNetCore`** trails the core OTel SDK (1.15.2 latest vs 1.16.0 SDK); the lag is expected and forward-compatible, not a held-back upgrade.
 
 ## 10. Static analysis
 
