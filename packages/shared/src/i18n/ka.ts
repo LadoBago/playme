@@ -44,7 +44,7 @@ export const ka: Record<EnKey, string> = {
 
   // --- About page ---
   'about.title': 'საიტის შესახებ',
-  'about.metaTitle': 'PlayMe-ის შესახებ — პროექტი და როგორ შეიქმნა',
+  'about.metaTitle': 'PlayMe-ის შესახებ — პროექტი და როგორ შევქმენი',
   'about.metaDescription':
     'PlayMe.ge-ის შესახებ — პირადი სასწავლო პროექტი მეგობართან ონლაინ სათამაშოდ, შექმნილი ხელოვნურ ინტელექტთან ერთად.',
   'about.intro':
