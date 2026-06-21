@@ -58,7 +58,7 @@ export const en = {
   // First-person: this is a personal learning project, so the voice is the
   // author's own. Each bullet is a bold lead-in (`*.label`) plus body text.
   'about.title': 'About',
-  'about.metaTitle': 'About PlayMe — the project and how it was built',
+  'about.metaTitle': 'About PlayMe — the project and how I built it',
   'about.metaDescription':
     'About PlayMe.ge — a personal learning project for playing two-player board and strategy games online with a friend, built with AI pair-programming.',
   'about.intro':
