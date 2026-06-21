@@ -17,6 +17,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const locale = await resolveLocale(params);
   const { t } = createTranslator(locale);
+  const metaTitle = t('about.metaTitle');
   const description = t('about.metaDescription');
   const canonical = localizedHref('/about', locale);
   const image = {
@@ -24,7 +25,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alt: t('site.ogImageAlt'),
   };
   return {
-    title: t('about.title'),
+    // Self-contained title (already names PlayMe) → `absolute` so the root
+    // layout's "— PlayMe" suffix template isn't appended on top. The bare
+    // "About — PlayMe" fell under search engines' ~15-char title minimum.
+    title: { absolute: metaTitle },
     description,
     alternates: {
       canonical,
@@ -37,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       type: 'website',
       siteName: 'PlayMe',
-      title: t('about.title'),
+      title: metaTitle,
       description,
       url: canonical,
       locale: locale === 'ka' ? 'ka_GE' : 'en_US',
@@ -45,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: t('about.title'),
+      title: metaTitle,
       description,
       images: [image],
     },
