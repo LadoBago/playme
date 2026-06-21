@@ -7,16 +7,16 @@ export const en = {
   // --- Site chrome ---
   // Keyword-first: the descriptive phrase leads so it survives SERP
   // truncation, and the (generic, contested) brand is demoted to the tail.
-  'site.title': 'Play casual games online with a friend, no signup — PlayMe',
+  'site.title': 'Play board & strategy games online with a friend — PlayMe',
   // Shorter brand form used by surfaces with limited space (e.g. the PWA
   // manifest `name`, shown on install prompts and the home screen).
-  'site.titleShort': 'PlayMe — Play casual games online with a friend',
+  'site.titleShort': 'PlayMe — Play board & strategy games online with a friend',
   // Landing-page <h1>. The visible wordmark is aria-hidden, so this is the
   // heading's whole accessible name; it also puts a real keyword phrase in
   // the highest-authority page's H1 (the wordmark text stays crawlable).
-  'site.homeH1': 'PlayMe — play casual games online with a friend',
+  'site.homeH1': 'PlayMe — play board & strategy games online with a friend',
   'site.titleSuffix': '— PlayMe',
-  'site.tagline': 'Play casual games online with a friend, no signup.',
+  'site.tagline': 'Play board & strategy games online with a friend, no signup.',
   // Homepage-specific meta/OG description. Distinct from `site.tagline`
   // (which stays the site-wide OG fallback and the per-room default) so
   // the landing page's search snippet reads on its own terms.
@@ -26,7 +26,7 @@ export const en = {
   // hero subtitle, where the descriptive tagline (above) is too long.
   // Brand kit voice: short, punchy, board-game flavored.
   'site.brandTagline': 'Your move.',
-  'site.ogImageAlt': 'PlayMe — play casual games online with a friend, no signup.',
+  'site.ogImageAlt': 'PlayMe — play board & strategy games online with a friend, no signup.',
   'site.howItWorks.title': 'How PlayMe works',
   'site.howItWorks.step1.title': 'Pick a game',
   'site.howItWorks.step1.body':
@@ -49,18 +49,18 @@ export const en = {
   'copyright.title': 'Copyright',
   'copyright.metaTitle': 'Copyright & licensing — PlayMe',
   'copyright.metaDescription':
-    'Copyright and ownership information for PlayMe, a free platform for playing casual games online with a friend.',
+    'Copyright and ownership information for PlayMe, a free platform for playing board and strategy games online with a friend.',
   'copyright.notice': '© {year} PlayMe.ge. All rights reserved.',
   'copyright.body':
-    'PlayMe.ge is a free, anonymous platform for playing casual two-player games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi, Sea Battle) are in the public domain; only this site’s implementation and presentation are covered.',
+    'PlayMe.ge is a free, anonymous platform for playing two-player board and strategy games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here (Tic-Tac-Toe, Connect 4, Reversi, Sea Battle) are in the public domain; only this site’s implementation and presentation are covered.',
 
   // --- About page ---
   // First-person: this is a personal learning project, so the voice is the
   // author's own. Each bullet is a bold lead-in (`*.label`) plus body text.
   'about.title': 'About',
-  'about.metaTitle': 'About PlayMe — Play Casual Games Online with a Friend',
+  'about.metaTitle': 'About PlayMe — Play Board & Strategy Games Online',
   'about.metaDescription':
-    'About PlayMe.ge — a personal learning project for playing casual two-player games online with a friend, built with AI pair-programming.',
+    'About PlayMe.ge — a personal learning project for playing two-player board and strategy games online with a friend, built with AI pair-programming.',
   'about.intro':
     'PlayMe.ge is a personal project: a platform for playing online with a friend — no signup, just share a link and play a variety of board and strategy games.',
   'about.why.label': 'What I built it for',
