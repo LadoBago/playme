@@ -11,7 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@microsoft/signalr": "^8.0.7",
+    "@microsoft/signalr": "^10.0.0",
     "ws": "^8.21.0"
   },
   "devDependencies": {
