@@ -126,7 +126,7 @@ Audit headers with `securityheaders.com` before each release; target **A+**.
 
 > **Held-back upgrades (rationale, so they aren't blindly retried).** `package.json` can't carry comments, so non-obvious pins are recorded here:
 > - **`@sentry/nextjs` held at 10.52.0** — 10.59.0 pulls `@sentry/server-utils` with a `vite` peer that resolves against the dev-tree `vite`, dragging a **high** vite advisory into the prod tree and failing the audit gate (and it does not fix its target `@opentelemetry/core` advisory). Revisit once Sentry drops the vite peer or ships a patched transitive.
-> - **Deferred majors** (own PRs, each needs migration + testing): `eslint` 9→10, `typescript` 5→6, `vitest` 2→4, `@microsoft/signalr` 8→10 (worth aligning the client to the .NET 10 / SignalR 10 server).
+> - **Deferred majors** (own PRs, each needs migration + testing): `eslint` 9→10, `typescript` 5→6, `vitest` 2→4.
 >
 > NuGet (pinned in `Directory.Packages.props`):
 > - **`FluentAssertions` held at 6.12.2 — do not bump.** 7.0+ moved to a paid commercial (Xceed) license; 6.x is the last Apache-2.0 release. Migrating off it (e.g. to `Shouldly` or xUnit asserts) is the only path forward, and a separate decision — never a routine bump.
