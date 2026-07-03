@@ -111,10 +111,11 @@ apps/api/
 │   ├── PlayMe.Application/     # refs Domain
 │   ├── PlayMe.Infrastructure/  # refs Application (+ Domain transitively)
 │   └── PlayMe.Api/             # refs Application + Infrastructure
-└── tests/                      # mirrors src/ (Domain.Tests, Application.Tests, ...)
+├── tests/                      # mirrors src/ (Domain.Tests, Application.Tests, ...)
+└── PlayMe.slnx                 # solution in the XML .slnx format — no legacy .sln
 ```
 
-There is deliberately **no `.sln` file** — `dotnet restore/build/format` accept the `apps/api` directory (they walk it for projects), and `dotnet run` takes the full project path (see CLAUDE.md §5).
+The solution file is **`PlayMe.slnx`** (the XML solution format), which is what CI restores (`dotnet restore PlayMe.slnx`). `dotnet run` still needs the full *project* path — a solution doesn't satisfy `--project` (see CLAUDE.md §5).
 
 Enforce the dependency rule via project references — if `Domain.csproj` ever has a `<ProjectReference>` other than nothing, that's a bug.
 

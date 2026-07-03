@@ -124,9 +124,10 @@ docker compose -f infra/docker-compose.yml up redis       # local Redis
 
 > **`dotnet run` needs the full project path.** `apps/api/` is a multi-project layout
 > (`src/PlayMe.Api`, `src/PlayMe.Application`, `src/PlayMe.Domain`, `src/PlayMe.Infrastructure`,
-> `tests/...`) with no top-level `.csproj` or `.sln`, so `--project apps/api` fails with
-> *"Couldn't find a project to run."* The other `dotnet` verbs (`restore`, `build`, `format`)
-> accept the directory because they walk it for projects — `run` doesn't.
+> `tests/...`) whose solution file is `PlayMe.slnx` (the XML solution format — no top-level
+> `.csproj` or legacy `.sln`), so `--project apps/api` fails with *"Couldn't find a project
+> to run."* — `--project` needs a project, not a solution. The other `dotnet` verbs
+> (`restore`, `build`, `format`) accept the directory — `run` doesn't.
 > Local API binds **`http://localhost:5080`** per `apps/api/src/PlayMe.Api/Properties/launchSettings.json` —
 > there is no HTTPS profile and no port 5001.
 
