@@ -725,7 +725,7 @@ function parseCliArgs(): Args {
   const { values } = parseArgs({
     args: rawArgs,
     options: {
-      target: { type: 'string', default: 'http://localhost:5000' },
+      target: { type: 'string', default: 'http://localhost:5080' },
       mode: { type: 'string', default: 'burst' },
       rooms: { type: 'string', default: '50' },
       'ramp-per-min': { type: 'string', default: '4' },
@@ -745,7 +745,7 @@ function parseCliArgs(): Args {
   const thinkMinMs = parsePositiveInt(values['think-min-ms'], 1_000);
   const thinkMaxMs = Math.max(thinkMinMs, parsePositiveInt(values['think-max-ms'], 4_000));
   return {
-    target: values.target ?? 'http://localhost:5000',
+    target: values.target ?? 'http://localhost:5080',
     mode: values.mode === 'sustained' ? 'sustained' : 'burst',
     rooms: parsePositiveInt(values.rooms, 50),
     rampPerMin: parsePositiveInt(values['ramp-per-min'], 4),
