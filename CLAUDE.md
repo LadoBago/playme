@@ -55,10 +55,10 @@ Hard rules:
 │   ├── api/         # ASP.NET Core Web API (.NET 10)
 │   └── web/         # Next.js (App Router) — SSR + SEO + PWA
 ├── packages/
-│   ├── shared/      # TS types, Zod schemas, generated API client, SignalR wrapper, i18n
+│   ├── shared/      # TS types, Zod schemas, API client, SignalR wrapper, i18n
 │   └── config/      # eslint, tsconfig, prettier base configs
 ├── infra/           # Redis docker-compose, Dockerfiles, deploy configs
-├── tools/           # codegen scripts (OpenAPI → TS client)
+├── tools/           # (planned — not created yet) codegen scripts (OpenAPI → TS client)
 ├── docs/            # detailed specs (read on demand)
 ├── pnpm-workspace.yaml
 ├── turbo.json
@@ -124,9 +124,10 @@ docker compose -f infra/docker-compose.yml up redis       # local Redis
 
 > **`dotnet run` needs the full project path.** `apps/api/` is a multi-project layout
 > (`src/PlayMe.Api`, `src/PlayMe.Application`, `src/PlayMe.Domain`, `src/PlayMe.Infrastructure`,
-> `tests/...`) with no top-level `.csproj` or `.sln`, so `--project apps/api` fails with
-> *"Couldn't find a project to run."* The other `dotnet` verbs (`restore`, `build`, `format`)
-> accept the directory because they walk it for projects — `run` doesn't.
+> `tests/...`) whose solution file is `PlayMe.slnx` (the XML solution format — no top-level
+> `.csproj` or legacy `.sln`), so `--project apps/api` fails with *"Couldn't find a project
+> to run."* — `--project` needs a project, not a solution. The other `dotnet` verbs
+> (`restore`, `build`, `format`) accept the directory — `run` doesn't.
 > Local API binds **`http://localhost:5080`** per `apps/api/src/PlayMe.Api/Properties/launchSettings.json` —
 > there is no HTTPS profile and no port 5001.
 
@@ -154,7 +155,8 @@ dotnet format apps/api
 
 ### Codegen
 ```bash
-pnpm gen:api    # regenerates the TS API client from the API's OpenAPI doc
+pnpm gen:api    # STUB — prints a TODO. The TS API client (packages/shared/src/api/types.ts)
+                # is hand-maintained until the OpenAPI codegen is wired (tools/gen-api, planned).
 ```
 
 **Always run** `pnpm typecheck` and `pnpm lint` before declaring a frontend change done. **For backend, run** `dotnet build` and `dotnet format --verify-no-changes`.
@@ -231,7 +233,7 @@ If a SOLID violation is necessary, call it out in the PR description with a one-
 
 - Runs `pnpm typecheck` + `pnpm lint` after non-trivial TS edits.
 - Runs `dotnet build` after non-trivial C# edits.
-- Updates / adds Zod schemas in `packages/shared` when API contracts change; regenerates the TS API client (`pnpm gen:api`).
+- Updates / adds Zod schemas in `packages/shared` when API contracts change; hand-syncs the TS API client (`packages/shared/src/api/types.ts` — `pnpm gen:api` is still a stub).
 - Adds/updates i18n keys in **both** `ka.json` and `en.json` when introducing new UI text.
 - Treats the **server as source of truth** for game state and clock. Never adds client-side game logic that could disagree.
 - When touching the platform layer (rooms, clock, reconnect, rematch), verifies every game module still behaves correctly.
@@ -240,7 +242,7 @@ If a SOLID violation is necessary, call it out in the PR description with a one-
 - Walks SOLID before merging (see §6).
 - New / changed public page → full SEO surface (metadata, canonical, OG, Twitter, robots, hreflang, sitemap entry). Treat a page without metadata as incomplete.
 - Updates `sitemap.ts` whenever a new public, indexable route is added or removed.
-- Validates every external input: Zod on web, FluentValidation on API. No exceptions.
+- Validates every external input: Zod on web, handler-internal checks on the API (domain value objects + per-game parsers — see [`docs/security.md`](docs/security.md) §3; there is no FluentValidation dependency). No exceptions.
 - Authorizes every Hub method + controller action by session token + room role (see [`docs/security.md`](docs/security.md) §4).
 - Uses cryptographic RNG (`RandomNumberGenerator` in C#, `crypto.getRandomValues` on web) for tokens, room codes, signed values. Never `Math.random()`, `Guid.NewGuid()`, or `DateTime`-derived values.
 - After security-relevant changes (auth, CORS, headers, rate limits, dependency bumps): `pnpm audit --prod` + `dotnet list package --vulnerable --include-transitive`; recheck headers via `securityheaders.com`.
@@ -281,7 +283,7 @@ The test: **could this code work unchanged if we removed every game except chess
 - Don't put business logic, validation, or rules in controllers or hubs. They translate I/O; handlers in `Application/` decide.
 - Don't call `DateTime.UtcNow` (or `DateTimeOffset.UtcNow`) inside `Domain` or `Application`. Inject `IClock` and use it.
 - Don't add Azure SignalR Service, Application Insights, or other paid services without discussion — the v1 cost model is explicit.
-- Don't bypass the generated API client by hand-rolling `fetch` calls in features.
+- Don't bypass the shared API client (`packages/shared/src/api/`) by hand-rolling `fetch` calls in features.
 - Don't add `any`, disable strict mode, or suppress lint rules to make code compile.
 - Don't pause the chess clock on disconnect — the design is that the clock keeps running during reconnect grace.
 - Don't add a periodic `ClockTick` broadcast. By design the server is **event-driven only**: every state-mutating event carries a `ClockSnapshotDto` and the web client interpolates locally at ~10 Hz. The `ClockTick` event name is reserved for a possible future drift-correction sweep; do not implement it without a concrete drift symptom (see [`docs/state.md`](docs/state.md) §2.2).
@@ -298,7 +300,7 @@ The test: **could this code work unchanged if we removed every game except chess
 | Concern | Location |
 |---|---|
 | Shared TS types & Zod schemas | `packages/shared/src/` |
-| Generated API client | `packages/shared/src/api/` (do not edit by hand) |
+| API client (hand-maintained until `gen:api` is wired) | `packages/shared/src/api/` — keep `types.ts` in lockstep with the C# DTOs |
 | SignalR client wrapper | `packages/shared/src/realtime/` |
 | Translation catalogs | `packages/shared/src/i18n/{ka,en}.ts` (game rules live under the `games.*.rules` keys) |
 | Web routes | `apps/web/app/` |
@@ -316,13 +318,13 @@ The test: **could this code work unchanged if we removed every game except chess
 | Redis repositories (port impls) | `apps/api/src/PlayMe.Infrastructure/Redis/` |
 | Sentry / OTel / Serilog wiring | `apps/api/src/PlayMe.Infrastructure/Telemetry/` |
 | Security headers (web) | `apps/web/next.config.js` (`headers()`) |
-| Security headers (API) | `apps/api/src/PlayMe.Api/Middleware/SecurityHeaders.cs` |
+| Security headers (API) | `apps/api/src/PlayMe.Api/Middleware/SecurityHeadersMiddleware.cs` |
 | CORS config | `apps/api/src/PlayMe.Api/DependencyInjection/AddApi.cs` |
-| Rate-limiting policies | `apps/api/src/PlayMe.Api/RateLimiting/` |
+| Rate-limiting policies | per-IP: `apps/api/src/PlayMe.Api/RateLimiting/`; per-session/per-code: `apps/api/src/PlayMe.Application/RateLimiting/` |
 | Token / room-code generation | `apps/api/src/PlayMe.Infrastructure/Security/` |
-| FluentValidation validators | `apps/api/src/PlayMe.Application/Validation/` |
+| Input validation (handler-internal, no FluentValidation) | `Application/` handlers + `Domain/Platform/` value objects (see [`docs/security.md`](docs/security.md) §3) |
 | Dockerfile (API) | `infra/api.Dockerfile` |
 | Local Redis compose | `infra/docker-compose.yml` |
-| OpenAPI → TS codegen | `tools/gen-api/` |
+| OpenAPI → TS codegen | `tools/gen-api/` (planned — `pnpm gen:api` is a stub; client is hand-maintained) |
 | Editor config | `/.editorconfig` (root) |
 | ESLint / Prettier base | `packages/config/` |

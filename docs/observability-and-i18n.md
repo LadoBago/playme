@@ -4,7 +4,7 @@
 
 ### 1.1 Errors — Sentry
 
-- Frontend (`apps/web`) wires Sentry via `@sentry/nextjs`. Source maps uploaded on deploy.
+- Frontend (`apps/web`) wires Sentry via `@sentry/nextjs`. Source-map upload is **not configured in-repo** — if it happens, it's via Vercel project settings; verify before relying on symbolicated production stack traces.
 - Backend (`apps/api`) wires Sentry via `Sentry.AspNetCore`. Releases tagged with the deployed commit SHA.
 - Sentry retention is platform-controlled (Sentry free tier ≈ 30 days). Don't try to configure it from code.
 - **Noise filters (keep Sentry signal-rich).** Two classes of expected-by-design exception are dropped in `Program.cs` so they don't bury real faults:
@@ -62,7 +62,7 @@ The mapping `ErrorCode.<EnumValue>` ↔ `errors.<category>.<camelCase>` is deter
 
 | Category | Example codes | Domain |
 |---|---|---|
-| `errors.validation.*` | `displayName`, `move` | input validation (FluentValidation / Zod) |
+| `errors.validation.*` | `displayName`, `move` | input validation (handler-internal on the API / Zod on the web) |
 | `errors.config.*` | `invalidTimeLimit`, `invalidGameId` | room-creation configuration |
 | `errors.join.*` | `sideNotAllowed`, `sidePickRequired`, `invalidSide` | challenger join flow |
 | `errors.room.*` | `notFound`, `expired`, `closed`, `alreadyJoined`, `busy`, `notJoinable` | room state errors |
