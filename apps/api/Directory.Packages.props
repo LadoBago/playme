@@ -6,6 +6,10 @@
   <ItemGroup>
     <!-- ASP.NET Core / SignalR -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+    <!-- Transitive pin (CentralPackageTransitivePinningEnabled): AspNetCore.OpenApi
+         pulls Microsoft.OpenApi 2.0.0, flagged by GHSA-v5pm-xwqc-g5wc (circular
+         schema references terminate parsing). 2.7.5 patches it on the 2.x line. -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
     <!-- Transitive pin (CentralPackageTransitivePinningEnabled): SignalR pulls
          MessagePack 2.5.187, flagged by GHSA-hv8m-jj95-wg3x (LZ4 decompression
          AccessViolationException). 2.5.301 patches it on the 2.x line. -->
