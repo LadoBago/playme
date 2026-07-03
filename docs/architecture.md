@@ -44,7 +44,7 @@ Detailed architecture spec for PlayMe. Covers Clean Architecture layers, project
 │   ├── shared/      # TS types, Zod schemas, generated API client, SignalR wrapper, i18n keys
 │   └── config/      # eslint, tsconfig, prettier base configs
 ├── infra/           # Redis docker-compose, Dockerfiles, deploy configs
-├── tools/           # codegen scripts (OpenAPI → TS client), maintenance utilities
+├── tools/           # (planned — not created yet) codegen scripts (OpenAPI → TS client); see §4
 ├── docs/            # detailed specs (this folder)
 ├── pnpm-workspace.yaml
 ├── turbo.json
@@ -95,7 +95,7 @@ Rules that follow from the dependency direction:
 
 - **DI** via the built-in container. Composition lives in `Api/DependencyInjection/` extension methods (one per layer: `AddDomain()`, `AddApplication()`, `AddInfrastructure()`, `AddApi()`). Do not introduce MediatR / Autofac / etc. without discussion.
 - **DTOs** are the contract surface (records). Never expose `Domain` entities directly through controllers or hubs.
-- **One SignalR hub: `RoomHub`** at `/hubs/room`, under `apps/api/src/PlayMe.Api/Hubs/RoomHub.cs`. Single hub, not split — all real-time operations (join, move, resign, rematch offer/accept/reject, exit) are room-scoped and share the same session. Hub methods are thin: parse input, validate via FluentValidation, delegate to an `Application` handler, return/broadcast a DTO. **No game rules in hubs, ever.** If the class grows large, split it via C# partial classes — never via additional Hub types.
+- **One SignalR hub: `RoomHub`** at `/hubs/room`, under `apps/api/src/PlayMe.Api/Hubs/RoomHub.cs`. Single hub, not split — all real-time operations (join, move, resign, rematch offer/accept/reject, exit) are room-scoped and share the same session. Hub methods are thin: parse input, delegate to an `Application` handler (which runs the handler-internal validation from [`security.md`](security.md) §3), return/broadcast a DTO. **No game rules in hubs, ever.** If the class grows large, split it via C# partial classes — never via additional Hub types.
 - **Redis access** is encapsulated in `Infrastructure/Redis/` via a typed repository per concern (room repo, clock repo, etc.). The `IRoomRepository`-style interface lives in `Application/`; the Redis implementation lives in `Infrastructure/`. No raw `IConnectionMultiplexer` use in `Application` or `Domain`.
 - **External services** (Sentry, PostHog, OpenTelemetry exporters) are wrapped behind interfaces in `Application/` and implemented in `Infrastructure/`. The rest of the code never imports their SDKs directly.
 - **Time** is injected as `IClock` (`Application/Abstractions/IClock.cs`) with a `SystemClock` implementation in `Infrastructure/`. Domain logic that depends on time (the chess clock) takes `IClock` as a dependency. Never call `DateTime.UtcNow` in `Domain` or `Application`.
@@ -111,9 +111,10 @@ apps/api/
 │   ├── PlayMe.Application/     # refs Domain
 │   ├── PlayMe.Infrastructure/  # refs Application (+ Domain transitively)
 │   └── PlayMe.Api/             # refs Application + Infrastructure
-├── tests/                      # mirrors src/ (Domain.Tests, Application.Tests, ...)
-└── PlayMe.sln
+└── tests/                      # mirrors src/ (Domain.Tests, Application.Tests, ...)
 ```
+
+There is deliberately **no `.sln` file** — `dotnet restore/build/format` accept the `apps/api` directory (they walk it for projects), and `dotnet run` takes the full project path (see CLAUDE.md §5).
 
 Enforce the dependency rule via project references — if `Domain.csproj` ever has a `<ProjectReference>` other than nothing, that's a bug.
 
@@ -139,8 +140,8 @@ When adding a new Hub method: append a row here, then implement.
 
 - **TypeScript types** for game state, moves, room state, clock state.
 - **Zod schemas** for validating any external input (route params, env vars, server-pushed messages).
-- **Generated API client** from the API's OpenAPI document (`tools/gen-api`).
+- **API client** mirroring the API's DTOs. Currently **hand-maintained** — `src/api/types.ts` is marked `@manually-maintained` and kept in sync by hand; the OpenAPI codegen (`pnpm gen:api` / `tools/gen-api`) is planned but still a stub.
 - **SignalR client wrapper** — typed wrapper around `@microsoft/signalr` with reconnect logic.
 - **i18n catalogs** for `ka` and `en`. Translation keys are defined here so future mobile reuses them.
 - **No React, Next.js, or React Native imports** allowed in `packages/shared`. Pure TS only.
-- **DTO source of truth.** DTO shapes are owned by **C# records in `PlayMe.Application/`**. The generated TS client (`pnpm gen:api` consuming the API's OpenAPI document) is the canonical mirror for the web. Zod schemas in `packages/shared/src/schemas/` validate inputs at runtime (URL params, forms, server-pushed SignalR messages). CLAUDE.md describes *field-level contracts inline* only when the API surface is decision-worthy (e.g. the join body in [`frontend.md`](frontend.md) §1). Literal record definitions belong in code. **Do not transcribe DTO schemas into docs** — they go stale instantly.
+- **DTO source of truth.** DTO shapes are owned by **C# records in `PlayMe.Application/`**. The TS client in `packages/shared/src/api/` is the canonical mirror for the web — hand-synced today, to be regenerated via `pnpm gen:api` once the codegen is wired. Zod schemas in `packages/shared/src/api/schemas.ts` and `packages/shared/src/realtime/schemas.ts` validate inputs at runtime (URL params, forms, server-pushed SignalR messages). CLAUDE.md describes *field-level contracts inline* only when the API surface is decision-worthy (e.g. the join body in [`frontend.md`](frontend.md) §1). Literal record definitions belong in code. **Do not transcribe DTO schemas into docs** — they go stale instantly.
