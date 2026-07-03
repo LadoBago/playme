@@ -62,7 +62,7 @@ The default command equates to:
 
 ```bash
 pnpm --filter @playme/loadtest start -- \
-  --target http://localhost:5000 \
+  --target http://localhost:5080 \
   --rooms 50 \
   --ramp-per-min 4
 ```
@@ -77,7 +77,7 @@ pnpm --filter @playme/loadtest start -- --rooms 5 --ramp-per-min 4
 
 ```
 ────── Load test summary ──────
-Target:          http://localhost:5000
+Target:          http://localhost:5080
 Rooms requested: 50  (ramp 5/min)
 Rooms completed: 50 ok, 0 failed
 Total moves:     312
