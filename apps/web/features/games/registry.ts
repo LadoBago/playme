@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic';
 import type { GameModule } from './types';
+import { checkersSideLabel } from './checkers/side-label';
 import { connect4SideLabel } from './connect4/side-label';
 import { reversiSideLabel } from './reversi/side-label';
 import { seabattleSideLabel } from './seabattle/side-label';
@@ -12,11 +13,11 @@ import { tictactoeSideLabel } from './tictactoe/side-label';
  * vocabulary ("x"/"o", "red"/"yellow", "dark"/"light") stays inside the
  * module: the platform only ever sees the `GameModule` shape.
  *
- * Views (and Sea Battle's TurnStatusExtra, which shares the view module's
- * parsing code) load through `next/dynamic`, so a room ships only the
- * active game's renderer instead of all four. Side labels stay eager:
- * the match header resolves them synchronously on first paint, and they
- * are a few lines each.
+ * Views (and the Sea Battle / Checkers TurnStatusExtra, which share their
+ * view module's parsing code) load through `next/dynamic`, so a room
+ * ships only the active game's renderer instead of all five. Side labels
+ * stay eager: the match header resolves them synchronously on first
+ * paint, and they are a few lines each.
  */
 const MODULES = new Map<string, GameModule>([
   [
@@ -47,6 +48,16 @@ const MODULES = new Map<string, GameModule>([
       getSideLabel: seabattleSideLabel,
       TurnStatusExtra: dynamic(() =>
         import('./seabattle/view').then((m) => m.SeaBattleTurnStatus),
+      ),
+    },
+  ],
+  [
+    'checkers',
+    {
+      View: dynamic(() => import('./checkers/view').then((m) => m.CheckersView)),
+      getSideLabel: checkersSideLabel,
+      TurnStatusExtra: dynamic(() =>
+        import('./checkers/view').then((m) => m.CheckersTurnStatus),
       ),
     },
   ],

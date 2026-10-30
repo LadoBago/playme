@@ -2265,3 +2265,272 @@ button.sb__cell:disabled {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ── Checkers (Russian draughts) ──────────────────────────────────────
+ * Two-tap click model (piece, then destination) on a contiguous 8×8
+ * checkerboard; play happens on the dark squares. Like Reversi, piece
+ * colours are stable across themes (a physical piece doesn't follow the
+ * OS theme) while the board wood tones have light/dark variants so the
+ * squares read against the page in both. Kings carry a crown glyph, not
+ * a colour change, so men and kings are distinguishable without hue.
+ * Every highlight (movable piece, destination, capture landing) comes
+ * from the server's `legalMoves` — the renderer owns no rules.
+ * Single source of truth for the cell size (Safari otherwise loops on
+ * grid + cell aspect-ratio, same problem Connect 4 hit).
+ */
+.ck {
+  --ck-cell: clamp(30px, calc((100vw - 3rem - 8px) / 8), 56px);
+  --ck-light: #ecd9b4;
+  --ck-dark: #a2673b;
+  --ck-frame: #6e4525;
+  --ck-piece-white: #f4ecdc;
+  --ck-piece-white-rim: #b4a689;
+  --ck-piece-black: #221d19;
+  --ck-piece-black-rim: #4a403a;
+  width: calc(8 * var(--ck-cell) + 8px);
+  max-width: 100%;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:root[data-theme='dark'] .ck {
+  --ck-light: #6b5440;
+  --ck-dark: #3a2719;
+  --ck-frame: #1f140d;
+  --ck-piece-black-rim: rgba(244, 236, 228, 0.42);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .ck {
+    --ck-light: #6b5440;
+    --ck-dark: #3a2719;
+    --ck-frame: #1f140d;
+    --ck-piece-black-rim: rgba(244, 236, 228, 0.42);
+  }
+}
+
+.ck__grid {
+  display: grid;
+  grid-template-columns: repeat(8, var(--ck-cell));
+  border: 4px solid var(--ck-frame);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ARIA row wrapper — see .board__row. */
+.ck__row {
+  display: contents;
+}
+
+.ck__cell {
+  position: relative;
+  width: var(--ck-cell);
+  height: var(--ck-cell);
+  border: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  color: inherit;
+}
+
+button.ck__cell:disabled {
+  opacity: 1; /* pieces must stay fully legible on a disabled square */
+}
+
+.ck__cell--light {
+  background: var(--ck-light);
+}
+
+.ck__cell--dark {
+  background: var(--ck-dark);
+}
+
+.ck__cell--movable,
+.ck__cell--target {
+  cursor: pointer;
+}
+
+/* A piece that may move: thin accent ring inside the square. The selected
+ * piece gets a heavier ring and lifts slightly. */
+.ck__cell--movable {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.ck__cell--selected {
+  box-shadow: 0 0 0 3px var(--accent) inset;
+}
+
+.ck__cell--selected .ck__piece {
+  transform: translateY(-6%) scale(1.04);
+}
+
+/* Destination marker: an accent dot; a capture landing shows a ring
+ * instead so the two kinds of destination differ by shape. */
+.ck__cell--target::after {
+  content: '';
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.ck__cell--capture::after {
+  width: 60%;
+  height: 60%;
+  background: transparent;
+  border: 3px solid var(--accent);
+  opacity: 0.75;
+}
+
+.ck__cell--target:hover::after {
+  opacity: 1;
+}
+
+/* Mid-chain: jumped pieces stay on the board until the chain ends
+ * (Turkish strike) and render faded so it's clear they're gone. */
+.ck__cell--pending .ck__piece {
+  opacity: 0.4;
+}
+
+.ck__cell--last {
+  --last-move-ring: var(--accent-2);
+  outline: 3px solid var(--last-move-ring);
+  outline-offset: -3px;
+  animation: lastMovePulse 1.4s ease-out;
+}
+
+.ck__cell--last-from {
+  box-shadow: 0 0 0 2px var(--accent-2) inset;
+  opacity: 1;
+}
+
+.ck__grid--ended .ck__cell {
+  cursor: default;
+}
+
+.ck__piece {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 120ms ease;
+}
+
+.ck__piece--white {
+  background: var(--ck-piece-white);
+  border: 1px solid var(--ck-piece-white-rim);
+  color: #5a4a30;
+}
+
+.ck__piece--black {
+  background: var(--ck-piece-black);
+  border: 1px solid var(--ck-piece-black-rim);
+  color: #e9dcc4;
+}
+
+.ck__crown {
+  width: 58%;
+  height: 58%;
+  fill: currentColor;
+}
+
+/* Inline chain annotation beside the platform turn pill. */
+.ck__status {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ck__counters {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.ck__counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ck__counter::before {
+  content: '';
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+}
+
+.ck__counter--white::before {
+  background: var(--ck-piece-white);
+  border: 1px solid var(--ck-piece-white-rim);
+}
+
+.ck__counter--black::before {
+  background: var(--ck-piece-black);
+  border: 1px solid var(--ck-piece-black-rim);
+}
+
+.ck__counter--winner {
+  font-weight: 700;
+}
+
+.ck__counter--winner::after {
+  content: '♛';
+  color: var(--win-stroke);
+}
+
+.ck__draw-reason {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+/* Landing-card preview tokens — same piece colours as the live board. */
+.game-card__preview-disc--ck-white {
+  background: #f4ecdc;
+  border: 1px solid #b4a689;
+}
+
+.game-card__preview-disc--ck-black {
+  background: #221d19;
+  border: 1px solid #4a403a;
+}
+
+.game-card__preview-disc--ck-king {
+  position: relative;
+}
+
+.game-card__preview-disc--ck-king::after {
+  content: '';
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+:root[data-theme='dark'] .game-card__preview-disc--ck-black {
+  border-color: rgba(244, 236, 228, 0.42);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) .game-card__preview-disc--ck-black {
+    border-color: rgba(244, 236, 228, 0.42);
+  }
+}

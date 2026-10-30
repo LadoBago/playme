@@ -258,6 +258,34 @@ export const ka: Record<EnKey, string> = {
   'games.seabattle.feedback.miss': 'ასცდა…',
   'games.seabattle.setup.committing': 'დასტურდება…',
 
+  // --- შაში (Checkers) — მოდულის ლექსიკა ---
+  'games.checkers.name': 'შაში',
+  'games.checkers.metaTitle': 'შაში ონლაინ — რუსული შაში (Checkers / Draughts) | PlayMe',
+  'games.checkers.metaDescription':
+    'ითამაშე შაში ონლაინ მეგობართან 8×8 დაფაზე — რუსული წესებით: დამკა მთელ დიაგონალზე დადის, აყვანა სავალდებულოა, ქვა უკანაც იყვანს. რეგისტრაციის გარეშე, უბრალოდ გაუზიარე ბმული.',
+  'games.checkers.shortDescription':
+    'გადაახტი მოწინააღმდეგის ქვებს და აიყვანე. ვინც მოწინააღმდეგეს ყველა ქვას წაართმევს ან სვლის საშუალებას არ დაუტოვებს — იგებს.',
+  'games.checkers.rules':
+    'ორი მოთამაშე რიგრიგობით დადის 8×8 დაფის მუქ უჯრებზე; თითოეულს 12 ქვა აქვს, იწყებენ თეთრები. უბრალო ქვა დიაგონალზე ერთი უჯრით წინ დადის, იყვანს კი მოწინააღმდეგის მეზობელ ქვაზე გადახტომით — როგორც წინ, ისე უკან. ბოლო ხაზამდე მისული ქვა დამკა ხდება: დამკა დიაგონალზე ნებისმიერი მანძილით მოძრაობს და შორიდანაც იყვანს. აყვანა სავალდებულოა; თუ რამდენიმე ვარიანტი გაქვს, ირჩევ თავისუფლად. თუ იმავე ქვას აყვანის გაგრძელება შეუძლია, უნდა გააგრძელო — ჯაჭვის შუაში გაჩერება ან სხვა ქვით სვლა არ შეიძლება. აყვანილი ქვები დაფაზე რჩება ჯაჭვის დასრულებამდე და ერთი ქვის ორჯერ გადახტომა არ შეიძლება. თუ ქვა აყვანისას ბოლო ხაზზე გავიდა და დამკად გაგრძელება შეუძლია, იმავე სვლაშივე აგრძელებს. იგებს ის, ვის მოწინააღმდეგესაც ქვები აღარ დარჩა ან სვლა ვეღარ გააკეთა. ფრეა, თუ ერთი და იგივე პოზიცია მესამედ განმეორდა, ან ორივე მხარემ ზედიზედ 15-15 სვლა მხოლოდ დამკებით, აყვანის გარეშე გააკეთა.',
+  'games.checkers.sideWhite': 'თეთრი (პირველი სვლა)',
+  'games.checkers.sideBlack': 'შავი',
+  'games.checkers.shortSideWhite': 'თეთრებით',
+  'games.checkers.shortSideBlack': 'შავებით',
+  'games.checkers.board.label': 'შაშის დაფა',
+  'games.checkers.cell.manWhite': 'თეთრი ქვა, მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.manBlack': 'შავი ქვა, მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.kingWhite': 'თეთრი დამკა, მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.kingBlack': 'შავი დამკა, მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.empty': 'ცარიელი უჯრა, მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.target': 'სვლა უჯრაზე: მწკრივი {row}, სვეტი {col}',
+  'games.checkers.cell.capture': 'აყვანა, დაშვება უჯრაზე: მწკრივი {row}, სვეტი {col}',
+  'games.checkers.score.white': '{count} თეთრი',
+  'games.checkers.score.black': '{count} შავი',
+  'games.checkers.chain.self': 'აყვანა უნდა გააგრძელო!',
+  'games.checkers.chain.opponent': 'მოწინააღმდეგე აყვანას აგრძელებს…',
+  'games.checkers.draw.repetition': 'ფრე — პოზიცია მესამედ განმეორდა.',
+  'games.checkers.draw.kingMoves': 'ფრე — 15-15 სვლა მხოლოდ დამკებით, აყვანის გარეშე.',
+
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'დააყენე PlayMe როგორც აპლიკაცია',
   'pwa.install.cta': 'დაყენება',
@@ -303,6 +331,10 @@ export const ka: Record<EnKey, string> = {
   'errors.move.mustBracket': 'უნდა მოაქცე მინიმუმ ერთი მოწინააღმდეგის დისკი შენებს შორის.',
   'errors.move.openingMustBeCentral': 'საწყისი სვლები ცენტრალურ ოთხ უჯრაში სრულდება.',
   'errors.move.alreadyShot': 'ამ უჯრაზე უკვე ისროლე.',
+  'errors.move.notYourPiece': 'ეს შენი ქვა არ არის.',
+  'errors.move.illegalMove': 'ამ ქვას იქ ვერ გადაიყვან.',
+  'errors.move.captureMandatory': 'აყვანა სავალდებულოა — ჯერ მოწინააღმდეგის ქვა აიყვანე.',
+  'errors.move.mustContinueCapture': 'აყვანა იმავე ქვით უნდა გააგრძელო.',
   'errors.move.notYourTurn': 'შენი ჯერი არ არის.',
   'errors.move.matchNotInProgress': 'მატჩი უკვე დასრულდა.',
   'errors.session.unauthorized': 'შენი სესია არასწორია. გახსენი ბმული თავიდან.',

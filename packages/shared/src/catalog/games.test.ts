@@ -42,6 +42,16 @@ describe('findGame', () => {
     expect(entry?.defaultHostSide).toBe('first');
   });
 
+  it('finds Checkers by its id with white/black sides on an 8×8 board', () => {
+    const entry = findGame('checkers');
+    expect(entry).toBeDefined();
+    expect(entry?.rows).toBe(8);
+    expect(entry?.cols).toBe(8);
+    expect(entry?.preview).toHaveLength(64);
+    expect(entry?.sides.map((s) => s.id)).toEqual(['white', 'black']);
+    expect(entry?.defaultHostSide).toBe('white');
+  });
+
   it('returns undefined for an unknown slug', () => {
     expect(findGame('does-not-exist')).toBeUndefined();
   });
