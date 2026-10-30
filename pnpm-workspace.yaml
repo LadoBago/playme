@@ -15,5 +15,21 @@ overrides:
   "protobufjs@<7.6.1": "^7.6.4"
   # Multiple DOMPurify advisories (IN_PLACE bypass, ALLOWED_ATTR/TAGS pollution,
   # SAFE_FOR_TEMPLATES bypass). Ships to the browser via posthog-js (^3.3.2);
-  # 3.4.11 patches the cluster.
-  "dompurify@<3.4.11": "^3.4.11"
+  # 3.4.17 patches the cluster.
+  "dompurify@<3.4.17": "^3.4.17"
+  # brace-expansion DoS cluster (GHSA-3jxr-9vmj-r5cp, -mh99-v99m-4gvg,
+  # -rgw5-rvv9-x895, -6j4f-fj2g-mc7p, -qhr7-859c-m2p7). Two majors reach us:
+  # 1.x via eslint → minimatch, 5.x via @sentry/bundler-plugins → glob → minimatch.
+  "brace-expansion@<1.1.20": "^1.1.20"
+  "brace-expansion@>=3.0.0 <5.0.11": "^5.0.11"
+  # GHSA-c83g-rgw3-j3cx / GHSA-73wf-gq98-2v4g — browserslist unbounded memory
+  # growth + prototype write. Reaches us via @sentry/bundler-plugins → @babel/core.
+  "browserslist@<4.28.7": "^4.28.7"
+  # fast-uri host-confusion / SSRF cluster (GHSA-v2hh-gcrm-f6hx and six more).
+  # Reaches us via @sentry/bundler-plugins → webpack → schema-utils → ajv.
+  "fast-uri@>=3.0.0 <3.1.7": "^3.1.7"
+  # js-yaml quadratic-CPU cluster (GHSA-52cp-r559-cp3m, -5p4m-2wfm-xmqj,
+  # -2883-xcg3-v3hh). Reaches us via eslint → @eslint/eslintrc.
+  "js-yaml@>=4.0.0 <4.3.2": "^4.3.2"
+  # GHSA-68fv-2mgg-jv7q — source-map-js. Reaches us via next → postcss.
+  "source-map-js@<1.2.2": "^1.2.2"
