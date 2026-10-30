@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PlayMe.Domain.Games.Checkers;
 using PlayMe.Domain.Games.Connect4;
 using PlayMe.Domain.Games.Reversi;
 using PlayMe.Domain.Games.SeaBattle;
@@ -20,6 +21,7 @@ public static class DomainServiceCollectionExtensions
         services.AddSingleton<IGameModule, Connect4GameModule>();
         services.AddSingleton<IGameModule, ReversiGameModule>();
         services.AddSingleton<IGameModule, SeaBattleGameModule>();
+        services.AddSingleton<IGameModule, CheckersGameModule>();
         return services;
     }
 }

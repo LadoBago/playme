@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
+using PlayMe.Domain.Games.Checkers;
 using PlayMe.Domain.Games.Connect4;
 using PlayMe.Domain.Games.Reversi;
 using PlayMe.Domain.Games.TicTacToe;
@@ -10,7 +11,7 @@ namespace PlayMe.Application.Tests;
 
 /// <summary>
 /// Pins the Sprint 9 platform seam: modules without configurable options
-/// (Connect 4, Reversi) accept null and reject anything else; the
+/// (Connect 4, Reversi, Checkers) accept null and reject anything else; the
 /// <see cref="Room"/> aggregate stores the supplied options immutably on
 /// the aggregate without inspection. The unified <c>tictactoe</c> module's
 /// own option-shape validation (boardSize ∈ {3,6,9}) lives in
@@ -23,6 +24,7 @@ public sealed class GameOptionsSeamTests
     {
         new object[] { (IGameModule)new Connect4GameModule() },
         new object[] { (IGameModule)new ReversiGameModule() },
+        new object[] { (IGameModule)new CheckersGameModule() },
     };
 
     [Theory]

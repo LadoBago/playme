@@ -55,4 +55,4 @@ Cross-cutting doc touches land inside the listed PRs, not after ([`sprint-10-sea
 
 ## Status
 
-**Planned.** Opened 2026-10-31.
+**In progress.** Opened 2026-10-31. PR1 (docs) merged as #202; PR2 (domain module + parser + tests) merged next, still unreachable from the web; PR3 (renderer + catalog entry) pending.
