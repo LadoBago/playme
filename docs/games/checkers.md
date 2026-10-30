@@ -1,6 +1,6 @@
 # Checkers (`checkers`)
 
-> **Status: planned — not yet implemented.** Sprint plan: [`roadmap/sprint-11-checkers.md`](../roadmap/sprint-11-checkers.md). This file is the canonical rules spec the implementation must match; see [`platform.md`](../platform.md) §2 for the catalog and the rules every module shares.
+> **Status: server module implemented (Sprint 11 PR2) — not yet in the catalog; web renderer pending (PR3).** Sprint plan: [`roadmap/sprint-11-checkers.md`](../roadmap/sprint-11-checkers.md). This file is the canonical rules spec the implementation must match; see [`platform.md`](../platform.md) §2 for the catalog and the rules every module shares.
 
 **Russian draughts** (шашки) — the ruleset played across Georgia and the post-Soviet space, matching the convention set by Sea Battle. **Not** English/American checkers (no backward captures, non-flying kings) and **not** International 10×10 draughts (majority-capture rule). A future Anglo-American variant, if wanted, is a `gameOptions` knob on this module per the Sprint 9 pattern, not a sibling module. Display names: ka **„შაში"**, en **"Checkers"**.
 

@@ -17,6 +17,7 @@ using PlayMe.Application.Commands.Resign;
 using PlayMe.Application.Commands.SendEmote;
 using PlayMe.Application.Commands.SubmitMove;
 using PlayMe.Application.Commands.SubmitSetup;
+using PlayMe.Application.Games.Checkers;
 using PlayMe.Application.Games.Connect4;
 using PlayMe.Application.Games.Reversi;
 using PlayMe.Application.Games.SeaBattle;
@@ -63,6 +64,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IGameMoveParser, Connect4MoveParser>();
         services.AddSingleton<IGameMoveParser, ReversiMoveParser>();
         services.AddSingleton<IGameMoveParser, SeaBattleMoveParser>();
+        services.AddSingleton<IGameMoveParser, CheckersMoveParser>();
 
         return services;
     }
