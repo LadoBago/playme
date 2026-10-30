@@ -10,6 +10,7 @@ Live at [playme.ge](https://playme.ge).
 - Connect 4
 - Reversi
 - Sea Battle (ჩაძირობანა)
+- Checkers (შაში — Russian draughts)
 
 Each game is a self-contained module. No accounts, no queue, no leaderboards — invite-link matchmaking only. Languages: Georgian (default) and English.
 

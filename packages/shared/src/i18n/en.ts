@@ -278,6 +278,34 @@ export const en = {
   'games.seabattle.feedback.miss': 'Miss.',
   'games.seabattle.setup.committing': 'Confirming…',
 
+  // --- Checkers (Russian draughts) — per-module vocab ---
+  'games.checkers.name': 'Checkers',
+  'games.checkers.metaTitle': 'Checkers (Russian draughts) online — play with a friend | PlayMe',
+  'games.checkers.metaDescription':
+    'Play Checkers online with a friend on an 8×8 board — Russian draughts rules: flying kings, mandatory captures, backward jumps. No signup, just share a link.',
+  'games.checkers.shortDescription':
+    'Jump over your opponent’s pieces to capture them. Take them all, or leave them no move, and you win.',
+  'games.checkers.rules':
+    'Two players alternate on the dark squares of an 8×8 board with twelve pieces each; white moves first. A man moves one square diagonally forward and captures by jumping over an adjacent enemy piece — forward or backward — onto the empty square beyond. A man that reaches the far rank becomes a king; a king moves any distance along a diagonal and captures from a distance. Capturing is mandatory; when several captures are available you choose freely. If the same piece can capture again it must continue — you may not stop mid-chain or switch pieces. Jumped pieces stay on the board until the chain ends and cannot be jumped twice. A man that promotes mid-chain continues as a king in the same turn. You win when your opponent has no pieces left or no legal move. The game is drawn when the same position occurs for the third time, or after fifteen consecutive king-only moves by each side without a capture.',
+  'games.checkers.sideWhite': 'White (moves first)',
+  'games.checkers.sideBlack': 'Black',
+  'games.checkers.shortSideWhite': 'White',
+  'games.checkers.shortSideBlack': 'Black',
+  'games.checkers.board.label': 'Checkers board',
+  'games.checkers.cell.manWhite': 'White man at row {row}, column {col}',
+  'games.checkers.cell.manBlack': 'Black man at row {row}, column {col}',
+  'games.checkers.cell.kingWhite': 'White king at row {row}, column {col}',
+  'games.checkers.cell.kingBlack': 'Black king at row {row}, column {col}',
+  'games.checkers.cell.empty': 'Empty square row {row}, column {col}',
+  'games.checkers.cell.target': 'Move to row {row}, column {col}',
+  'games.checkers.cell.capture': 'Capture, landing on row {row}, column {col}',
+  'games.checkers.score.white': '{count} white',
+  'games.checkers.score.black': '{count} black',
+  'games.checkers.chain.self': 'Keep capturing!',
+  'games.checkers.chain.opponent': 'Opponent is mid-capture…',
+  'games.checkers.draw.repetition': 'Draw — the same position occurred three times.',
+  'games.checkers.draw.kingMoves': 'Draw — fifteen king-only moves each without a capture.',
+
   // --- PWA install prompt (Sprint 6) ---
   'pwa.install.title': 'Install PlayMe as an app',
   'pwa.install.cta': 'Install',
@@ -332,6 +360,10 @@ export const en = {
     "You can only place where you'd flip at least one of the opponent's discs.",
   'errors.move.openingMustBeCentral': 'Opening moves go in the central four squares.',
   'errors.move.alreadyShot': "You've already fired at that cell.",
+  'errors.move.notYourPiece': "That isn't your piece.",
+  'errors.move.illegalMove': "That piece can't move there.",
+  'errors.move.captureMandatory': 'Capturing is mandatory — take the opponent’s piece first.',
+  'errors.move.mustContinueCapture': 'You must keep capturing with the same piece.',
   'errors.move.notYourTurn': "It's not your turn.",
   'errors.move.matchNotInProgress': 'The match has already ended.',
   'errors.session.unauthorized': 'Your session is invalid. Open the room link again.',

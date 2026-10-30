@@ -186,5 +186,15 @@ function PreviewToken({ gameId, side }: { gameId: string; side: string | null })
     if (side === 'm') return <span className="game-card__preview-sb game-card__preview-sb--miss" />;
     return null;
   }
+  if (gameId === 'checkers') {
+    // Module cell tokens: 'white' | 'black' | 'white-king' | 'black-king'.
+    const colour = side.startsWith('white') ? 'white' : 'black';
+    const king = side.endsWith('-king');
+    return (
+      <span
+        className={`game-card__preview-disc game-card__preview-disc--ck-${colour}${king ? ' game-card__preview-disc--ck-king' : ''}`}
+      />
+    );
+  }
   return null;
 }

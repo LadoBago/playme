@@ -163,6 +163,46 @@ export const GAME_CATALOG: readonly GameCatalogEntry[] = [
       null, null, 'h', null, null, null, 's', 's', null, 'm',
     ],
   },
+  // Sprint 11: Checkers (შაში) — Russian draughts, the first game with piece
+  // movement. Men step/capture on the dark squares, kings fly; captures are
+  // mandatory and chain (docs/games/checkers.md). White moves first.
+  // Preview tokens are the module's own cell tokens: 'white' / 'black' men,
+  // 'white-king' / 'black-king' kings.
+  {
+    id: 'checkers',
+    slug: 'checkers',
+    nameKey: 'games.checkers.name',
+    shortDescriptionKey: 'games.checkers.shortDescription',
+    rulesKey: 'games.checkers.rules',
+    metaTitleKey: 'games.checkers.metaTitle',
+    metaDescriptionKey: 'games.checkers.metaDescription',
+    sides: [
+      { id: 'white', labelKey: 'games.checkers.sideWhite' },
+      { id: 'black', labelKey: 'games.checkers.sideBlack' },
+    ],
+    defaultHostSide: 'white',
+    rows: 8,
+    cols: 8,
+    // Mid-game position on the dark squares (row 0 = black's home rank):
+    // . b . b . . . b
+    // b . b . . . b .
+    // . b . . . b . .
+    // . . w . b . . .
+    // . . . w . . . W
+    // w . . . w . w .
+    // . w . w . . . w
+    // w . w . w . . .
+    preview: [
+      null, 'black', null, 'black', null, null, null, 'black',
+      'black', null, 'black', null, null, null, 'black', null,
+      null, 'black', null, null, null, 'black', null, null,
+      null, null, 'white', null, 'black', null, null, null,
+      null, null, null, 'white', null, null, null, 'white-king',
+      'white', null, null, null, 'white', null, 'white', null,
+      null, 'white', null, 'white', null, null, null, 'white',
+      'white', null, 'white', null, 'white', null, null, null,
+    ],
+  },
 ];
 
 export function findGame(slugOrId: string): GameCatalogEntry | undefined {
