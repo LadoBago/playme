@@ -61,6 +61,6 @@ Cross-cutting doc touches land inside the listed PRs, not after ([`sprint-10-sea
 |---:|---|---|
 | 202 | docs | This plan + [`games/checkers.md`](../games/checkers.md) canonical spec (re-opened from #200, which had been based on the wrong branch) |
 | 203 | module | `checkers` domain module + `CheckersMoveParser` + 36 tests; zero platform diff |
-| PR3 | web | Renderer, shared catalog entry, i18n (ka/en), landing preview, cross-cutting doc touches |
+| 204 | web | Renderer, shared catalog entry, i18n (ka/en), landing preview, cross-cutting doc touches |
 
 Deviation from the plan: the chain feedback ("keep capturing" / "opponent is mid-capture") sits beside the platform turn pill via `GameModule.TurnStatusExtra`, the Sea Battle precedent, rather than on a line under the board. Georgian king term shipped as „დამკა" pending native confirmation.
