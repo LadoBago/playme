@@ -5,6 +5,9 @@
   "description": "Shared TypeScript types, Zod schemas, generated API client, SignalR wrapper, and i18n catalogs.",
   "license": "UNLICENSED",
   "type": "module",
+  "sideEffects": [
+    "./src/api/schemas.ts"
+  ],
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
