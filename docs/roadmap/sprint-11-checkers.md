@@ -64,3 +64,9 @@ Cross-cutting doc touches land inside the listed PRs, not after ([`sprint-10-sea
 | 204 | web | Renderer, shared catalog entry, i18n (ka/en), landing preview, cross-cutting doc touches |
 
 Deviation from the plan: the chain feedback ("keep capturing" / "opponent is mid-capture") sits beside the platform turn pill via `GameModule.TurnStatusExtra`, the Sea Battle precedent, rather than on a line under the board. Georgian king term shipped as „დამკა" pending native confirmation.
+
+Follow-ups closed the same day:
+
+- **#205** — landing-card previews redrawn as a ruled grid (checkers preview gets its light/dark squares from the live board's `--ck-*` tokens).
+- **#206** — native-speaker pass on the Georgian text: the rules paragraph was rewritten; the other 25 `games.checkers.*` strings were confirmed as-is, so „დამკა" (king), „ქვა" (piece) and „აყვანა" / „აყვანების ჯაჭვი" (capture / capture chain) are the settled vocabulary.
+- **Lighthouse** (desktop preset, production `playme.ge`, 2026-10-31): `/play/checkers` ka light **100/100/100/100**, ka dark **100/100/100/100**, en light **100/100/100/100**, en dark **100/100/100/100** (perf/a11y/BP/SEO). LCP ≈ 0.6 s, CLS 0, TBT 0 ms. The only non-passing diagnostic is `bf-cache`, which Lighthouse itself marks "not actionable": the page and its API calls are served `Cache-Control: no-store`, which is intentional for room/session traffic.
