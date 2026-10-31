@@ -156,14 +156,22 @@ function BoardPreview({
   return (
     <div
       aria-hidden
-      className="game-card__preview"
+      className={`game-card__preview game-card__preview--${gameId}`}
       style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
     >
-      {cells.map((side, i) => (
-        <div key={i} className="game-card__preview-cell">
-          <PreviewToken gameId={gameId} side={side} />
-        </div>
-      ))}
+      {cells.map((side, i) => {
+        // Checkerboard parity: (row + col) odd = dark square. Only the
+        // checkers modifier styles it; other games ignore the class.
+        const dark = (Math.floor(i / cols) + (i % cols)) % 2 === 1;
+        return (
+          <div
+            key={i}
+            className={`game-card__preview-cell${dark ? ' game-card__preview-cell--dark' : ''}`}
+          >
+            <PreviewToken gameId={gameId} side={side} />
+          </div>
+        );
+      })}
     </div>
   );
 }
