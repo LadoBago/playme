@@ -654,21 +654,52 @@ textarea {
   text-decoration: none;
 }
 
+/* Drawn as a lattice rather than a tray of rounded tiles: a 1px gap
+ * exposes the container background as shared gridlines, so adjacent
+ * cells read as one ruled board. The cell fill is layered over an opaque
+ * base so the translucent --highlight tint doesn't also pick up the
+ * gridline colour underneath. */
 .game-card__preview {
   display: grid;
-  gap: 3px;
+  gap: 1px;
   width: 96px;
   margin: 0 auto 0.5rem;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .game-card__preview-cell {
-  background: var(--highlight);
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  background:
+    linear-gradient(var(--highlight), var(--highlight)),
+    var(--bg-elevated);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Tic-tac-toe is conventionally drawn as a bare `#` — inner lines only. */
+.game-card__preview--tictactoe {
+  border: 0;
+  border-radius: 0;
+}
+
+/* Checkers has no gridlines; the squares themselves alternate. Tokens are
+ * shared with the live board (see `.ck`). */
+.game-card__preview--checkers {
+  gap: 0;
+  background: none;
+  border-color: var(--ck-frame);
+}
+
+.game-card__preview--checkers .game-card__preview-cell {
+  background: var(--ck-light);
+}
+
+.game-card__preview--checkers .game-card__preview-cell--dark {
+  background: var(--ck-dark);
 }
 
 .game-card__preview-glyph {
@@ -2278,8 +2309,8 @@ button.sb__cell:disabled {
  * Single source of truth for the cell size (Safari otherwise loops on
  * grid + cell aspect-ratio, same problem Connect 4 hit).
  */
-.ck {
-  --ck-cell: clamp(30px, calc((100vw - 3rem - 8px) / 8), 56px);
+.ck,
+.game-card__preview--checkers {
   --ck-light: #ecd9b4;
   --ck-dark: #a2673b;
   --ck-frame: #6e4525;
@@ -2287,6 +2318,10 @@ button.sb__cell:disabled {
   --ck-piece-white-rim: #b4a689;
   --ck-piece-black: #221d19;
   --ck-piece-black-rim: #4a403a;
+}
+
+.ck {
+  --ck-cell: clamp(30px, calc((100vw - 3rem - 8px) / 8), 56px);
   width: calc(8 * var(--ck-cell) + 8px);
   max-width: 100%;
   margin-inline: auto;
@@ -2296,7 +2331,8 @@ button.sb__cell:disabled {
   gap: 0.5rem;
 }
 
-:root[data-theme='dark'] .ck {
+:root[data-theme='dark'] .ck,
+:root[data-theme='dark'] .game-card__preview--checkers {
   --ck-light: #6b5440;
   --ck-dark: #3a2719;
   --ck-frame: #1f140d;
@@ -2304,7 +2340,8 @@ button.sb__cell:disabled {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']):not([data-theme='dark']) .ck {
+  :root:not([data-theme='light']):not([data-theme='dark']) .ck,
+  :root:not([data-theme='light']):not([data-theme='dark']) .game-card__preview--checkers {
     --ck-light: #6b5440;
     --ck-dark: #3a2719;
     --ck-frame: #1f140d;
