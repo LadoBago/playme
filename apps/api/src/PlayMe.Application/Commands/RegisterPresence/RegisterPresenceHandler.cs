@@ -1,4 +1,5 @@
 using PlayMe.Application.Abstractions;
+using PlayMe.Application.Bots;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Domain.Platform;
@@ -15,6 +16,7 @@ public sealed class RegisterPresenceHandler
     private readonly IPostMatchExitGraceScheduler _postMatchGraces;
     private readonly IRoomExpiryScheduler _expiry;
     private readonly ISetupDeadlineScheduler _setupDeadlines;
+    private readonly BotTurnPlanner _botTurns;
 
     public RegisterPresenceHandler(
         IRoomRepository rooms,
@@ -24,7 +26,8 @@ public sealed class RegisterPresenceHandler
         IDisconnectGraceScheduler graces,
         IPostMatchExitGraceScheduler postMatchGraces,
         IRoomExpiryScheduler expiry,
-        ISetupDeadlineScheduler setupDeadlines)
+        ISetupDeadlineScheduler setupDeadlines,
+        BotTurnPlanner botTurns)
     {
         _rooms = rooms;
         _games = games;
@@ -34,6 +37,7 @@ public sealed class RegisterPresenceHandler
         _postMatchGraces = postMatchGraces;
         _expiry = expiry;
         _setupDeadlines = setupDeadlines;
+        _botTurns = botTurns;
     }
 
     public async Task<AppResult<RegisterPresenceResult>> HandleAsync(
@@ -131,6 +135,10 @@ public sealed class RegisterPresenceHandler
                     // room_expired for a room that actually made it to
                     // gameplay (or setup).
                     await _expiry.CancelAsync(code, room.GameId, ct);
+
+                    // Bot rooms (Sprint 12 seam D): the bot may owe its
+                    // setup, or the first move. No-op for human rooms.
+                    await _botTurns.ScheduleIfPendingAsync(room, now, ct);
                 }
 
                 var reconnected = wasLive && !wasConnected;

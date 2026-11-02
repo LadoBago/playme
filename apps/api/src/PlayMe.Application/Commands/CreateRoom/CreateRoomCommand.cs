@@ -22,4 +22,6 @@ public sealed record CreateRoomCommand(
     string GameId,
     SideSelectionMode SideSelectionMode,
     string? HostSide,
-    JsonElement? GameOptions = null);
+    JsonElement? GameOptions = null,
+    PlayerKind Opponent = PlayerKind.Human,
+    BotLevel? BotLevel = null);

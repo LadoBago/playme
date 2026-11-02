@@ -31,15 +31,8 @@ public sealed class SubmitMoveHandlerClockTests
         var room = RoomFactory.InProgress(clock.UtcNow, Budget);
         rooms.Seed(room);
 
-        var handler = new SubmitMoveHandler(
-            rooms,
-            new SingleGameRegistry(),
-            clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            new RecordingRateLimiter(),
-            new RecordingAnalyticsClient());
+        var handler = TestHandlers.SubmitMove(
+            rooms, new SingleGameRegistry(), clock, timeouts);
 
         clock.Advance(TimeSpan.FromSeconds(8));
 
@@ -73,15 +66,8 @@ public sealed class SubmitMoveHandlerClockTests
         var timeouts = new RecordingTimeoutScheduler();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new SubmitMoveHandler(
-            rooms,
-            new SingleGameRegistry(),
-            clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            new RecordingRateLimiter(),
-            new RecordingAnalyticsClient());
+        var handler = TestHandlers.SubmitMove(
+            rooms, new SingleGameRegistry(), clock, timeouts);
 
         clock.Advance(Budget + TimeSpan.FromSeconds(1));
 
@@ -113,15 +99,8 @@ public sealed class SubmitMoveHandlerClockTests
         var timeouts = new RecordingTimeoutScheduler();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new SubmitMoveHandler(
-            rooms,
-            new SingleGameRegistry(),
-            clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            new RecordingRateLimiter(),
-            new RecordingAnalyticsClient());
+        var handler = TestHandlers.SubmitMove(
+            rooms, new SingleGameRegistry(), clock, timeouts);
 
         // Drive the match to a quick X win: X(0), O(3), X(1), O(4), X(2).
         var moves = new (string PlayerId, Role Role, int Cell)[]

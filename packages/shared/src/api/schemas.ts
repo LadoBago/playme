@@ -53,9 +53,16 @@ export const OutcomeSchema = z.object({
   losingSide: z.string().optional(),
 });
 
+export const PlayerKindSchema = z.enum(['human', 'bot']);
+
+export const BotLevelSchema = z.enum(['easy', 'medium', 'hard']);
+
 export const PlayerSchema = z.object({
   displayName: z.string(),
   side: z.string().optional(),
+  // Seat kind (Sprint 12 seam D). Optional so a payload from an API that
+  // predates the field still validates; readers treat absence as human.
+  kind: PlayerKindSchema.optional(),
 });
 
 export const ClockSnapshotSchema = z.object({
@@ -108,6 +115,8 @@ export const RoomSchema = z.object({
   // renderers parse and validate their own shape; the platform-level
   // schema only confirms it's a present-or-absent JSON value.
   gameOptions: z.unknown().optional(),
+  // Bot strength for a bot room (Sprint 12 seam D); absent otherwise.
+  botLevel: BotLevelSchema.optional(),
 });
 
 export const RoomSessionSchema = z.object({

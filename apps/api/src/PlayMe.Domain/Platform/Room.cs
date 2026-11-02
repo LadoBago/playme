@@ -50,6 +50,14 @@ public sealed class Room
     /// accept or reject (docs/platform.md §1 #10).</summary>
     public Role? RematchOffererRole { get; private set; }
 
+    /// <summary>Strength of the bot in the challenger seat (Sprint 12 seam
+    /// D; docs/bots.md). Null for human-vs-human rooms. Immutable for the
+    /// room's lifetime — rematches keep the same opponent.</summary>
+    public BotLevel? BotLevel { get; }
+
+    /// <summary>True when the challenger seat is occupied by a bot.</summary>
+    public bool HasBotChallenger => Challenger is { IsBot: true };
+
     private Room(
         RoomCode code,
         GameId gameId,
@@ -63,7 +71,8 @@ public sealed class Room
         bool challengerConnected,
         SeriesScore seriesScore,
         Role? rematchOffererRole,
-        JsonElement? gameOptions)
+        JsonElement? gameOptions,
+        BotLevel? botLevel)
     {
         Code = code;
         GameId = gameId;
@@ -78,6 +87,7 @@ public sealed class Room
         ChallengerConnected = challengerConnected;
         SeriesScore = seriesScore;
         RematchOffererRole = rematchOffererRole;
+        BotLevel = botLevel;
     }
 
     /// <summary>
@@ -114,7 +124,68 @@ public sealed class Room
             challengerConnected: false,
             seriesScore: SeriesScore.Zero,
             rematchOffererRole: null,
-            gameOptions: gameOptions);
+            gameOptions: gameOptions,
+            botLevel: null);
+    }
+
+    /// <summary>
+    /// Create a room whose challenger seat is filled by a bot at creation
+    /// (Sprint 12 seam D; docs/bots.md). There is no invite link and no
+    /// join: the bot is seated and marked connected immediately, so the
+    /// room leaves <see cref="RoomStatus.WaitingForOpponent"/> the moment
+    /// the host's own SignalR presence registers (<see cref="TryStartMatch"/>
+    /// is unchanged — both seats are simply already satisfied). The host's
+    /// side must be resolved: <see cref="SideSelectionMode.ChallengerPicks"/>
+    /// has no meaning without a human challenger and is rejected. The
+    /// handler has already verified the module supports a bot
+    /// (<see cref="IBotPlayer"/>, plus <see cref="IBotSetup"/> for setup
+    /// games); the aggregate only needs <paramref name="module"/> for the
+    /// opposite-side lookup.
+    /// </summary>
+    public static Room CreateWithBot(
+        RoomCode code,
+        GameId gameId,
+        SideSelectionMode sideSelectionMode,
+        Player host,
+        Player bot,
+        BotLevel botLevel,
+        IGameModule module,
+        DateTimeOffset createdAt,
+        JsonElement? gameOptions = null)
+    {
+        if (sideSelectionMode == SideSelectionMode.ChallengerPicks)
+        {
+            throw new DomainException("A bot room cannot use ChallengerPicks side selection.");
+        }
+        ValidateHostSideForMode(sideSelectionMode, host.Side);
+        if (host.IsBot)
+        {
+            throw new DomainException("The host seat is always human.");
+        }
+        if (!bot.IsBot)
+        {
+            throw new DomainException("The bot seat must be a PlayerKind.Bot player.");
+        }
+        if (!Enum.IsDefined(botLevel))
+        {
+            throw new DomainException($"Unknown bot level {botLevel}.");
+        }
+
+        return new Room(
+            code,
+            gameId,
+            sideSelectionMode,
+            createdAt,
+            host,
+            challenger: bot with { Side = module.OtherSide(host.Side!) },
+            status: RoomStatus.WaitingForOpponent,
+            currentMatch: null,
+            hostConnected: false,
+            challengerConnected: true,
+            seriesScore: SeriesScore.Zero,
+            rematchOffererRole: null,
+            gameOptions: gameOptions,
+            botLevel: botLevel);
     }
 
     /// <summary>
@@ -134,10 +205,11 @@ public sealed class Room
         bool challengerConnected,
         SeriesScore seriesScore,
         Role? rematchOffererRole,
-        JsonElement? gameOptions = null) =>
+        JsonElement? gameOptions = null,
+        BotLevel? botLevel = null) =>
         new(code, gameId, sideSelectionMode, createdAt, host, challenger,
             status, currentMatch, hostConnected, challengerConnected, seriesScore,
-            rematchOffererRole, gameOptions);
+            rematchOffererRole, gameOptions, botLevel);
 
     /// <summary>
     /// Register the challenger via the join-onboarding endpoint
@@ -159,7 +231,9 @@ public sealed class Room
 
         if (Challenger is not null)
         {
-            throw new DomainException("Challenger seat is already filled.");
+            throw new DomainException(HasBotChallenger
+                ? "A bot room has no invite link; the challenger seat is the bot."
+                : "Challenger seat is already filled.");
         }
 
         var resolvedChallengerSide = ResolveChallengerSide(challengerPickedSide, module);
@@ -176,13 +250,16 @@ public sealed class Room
         }
     }
 
-    /// <summary>Mark a role's SignalR presence as disconnected.</summary>
+    /// <summary>Mark a role's SignalR presence as disconnected. A bot
+    /// challenger has no connection to lose — the call is a no-op for it,
+    /// which is what keeps the disconnect-grace path from ever targeting
+    /// the bot (Sprint 12 seam D).</summary>
     public void MarkDisconnected(Role role)
     {
         switch (role)
         {
             case Role.Host: HostConnected = false; break;
-            case Role.Challenger: ChallengerConnected = false; break;
+            case Role.Challenger when !HasBotChallenger: ChallengerConnected = false; break;
         }
     }
 

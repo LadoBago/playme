@@ -21,6 +21,8 @@ public static class PlatformErrors
     public const string ConfigInvalidSideSelectionMode = "errors.config.invalidSideSelectionMode";
     public const string ConfigInvalidHostSide = "errors.config.invalidHostSide";
     public const string ConfigInvalidGameOptions = "errors.config.invalidGameOptions";
+    public const string ConfigBotNotSupported = "errors.config.botNotSupported";
+    public const string ConfigInvalidBotLevel = "errors.config.invalidBotLevel";
 
     // --- Join flow ---
     public const string JoinSideNotAllowed = "errors.join.sideNotAllowed";
@@ -53,6 +55,12 @@ public static class PlatformErrors
     //     Domain/Platform/Emote.cs; an unknown id is a client/contract
     //     violation, so it surfaces rather than being dropped silently. ---
     public const string EmoteUnknown = "errors.emote.unknown";
+
+    // --- Bot opponent (Sprint 12 seam D). Not user-facing: returned by
+    //     the server-originated bot handlers to the sweeper when a module
+    //     breaks the docs/bots.md contract, so the fault is logged rather
+    //     than swallowed. ---
+    public const string BotModuleFault = "errors.bot.moduleFault";
 
     // --- Session / authorization ---
     public const string SessionUnauthorized = "errors.session.unauthorized";

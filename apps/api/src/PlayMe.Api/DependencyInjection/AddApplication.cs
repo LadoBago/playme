@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using PlayMe.Application.Abstractions;
+using PlayMe.Application.Bots;
 using PlayMe.Application.Commands.AcceptRematch;
 using PlayMe.Application.Commands.AdjudicateDisconnectGrace;
 using PlayMe.Application.Commands.AdjudicatePostMatchExitGrace;
@@ -10,6 +11,8 @@ using PlayMe.Application.Commands.CreateRoom;
 using PlayMe.Application.Commands.ExitRoom;
 using PlayMe.Application.Commands.JoinRoom;
 using PlayMe.Application.Commands.OfferRematch;
+using PlayMe.Application.Commands.PlayBotMove;
+using PlayMe.Application.Commands.PlayBotSetup;
 using PlayMe.Application.Commands.RegisterPresence;
 using PlayMe.Application.Commands.RejectRematch;
 using PlayMe.Application.Commands.ReleasePresence;
@@ -22,7 +25,9 @@ using PlayMe.Application.Games.Connect4;
 using PlayMe.Application.Games.Reversi;
 using PlayMe.Application.Games.SeaBattle;
 using PlayMe.Application.Games.TicTacToe;
+using PlayMe.Application.Moves;
 using PlayMe.Application.Queries.GetRoom;
+using PlayMe.Application.Setup;
 using PlayMe.Application.Time;
 
 namespace PlayMe.Api.DependencyInjection;
@@ -55,6 +60,15 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<AdjudicateDisconnectGraceHandler>();
         services.AddScoped<AdjudicatePostMatchExitGraceHandler>();
         services.AddScoped<AdjudicateRoomExpiryHandler>();
+
+        // Bot opponents (Sprint 12 seam D): server-originated handlers
+        // dispatched by the bot-turn sweeper, never by the Hub, plus the
+        // pipeline tails shared with the human handlers.
+        services.AddScoped<PlayBotMoveHandler>();
+        services.AddScoped<PlayBotSetupHandler>();
+        services.AddScoped<AcceptedMoveCommitter>();
+        services.AddScoped<SetupCommitter>();
+        services.AddScoped<BotTurnPlanner>();
 
         // Pure-compute clock facade. Singleton — stateless.
         services.AddSingleton<IClockService, ClockService>();

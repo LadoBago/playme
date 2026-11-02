@@ -30,9 +30,22 @@ export interface OutcomeDto {
   losingSide?: string;
 }
 
+/** Who occupies a seat (Sprint 12 seam D). The host is always `human`. */
+export type PlayerKind = 'human' | 'bot';
+
+/** Strength of a bot opponent, chosen by the host at room creation. */
+export type BotLevel = 'easy' | 'medium' | 'hard';
+
 export interface PlayerDto {
   displayName: string;
   side?: string;
+  /**
+   * Seat kind (Sprint 12 seam D). For a `bot` the `displayName` is a
+   * placeholder — render the bot from this field through an i18n key.
+   * Absent on payloads from an API that predates the field; treat as
+   * `human`.
+   */
+  kind?: PlayerKind;
 }
 
 /**
@@ -110,6 +123,11 @@ export interface RoomDto {
    * Null / undefined for games without options.
    */
   gameOptions?: unknown;
+  /**
+   * Strength of the bot in the challenger seat (Sprint 12 seam D).
+   * Absent for human-vs-human rooms.
+   */
+  botLevel?: BotLevel;
 }
 
 /**

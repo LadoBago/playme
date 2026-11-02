@@ -1,4 +1,5 @@
 using PlayMe.Application.Abstractions;
+using PlayMe.Application.Bots;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Application.RateLimiting;
@@ -19,6 +20,7 @@ public sealed class AcceptRematchHandler
     private readonly ITimeoutScheduler _timeouts;
     private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRateLimiter _rateLimiter;
+    private readonly BotTurnPlanner _botTurns;
 
     public AcceptRematchHandler(
         IRoomRepository rooms,
@@ -26,7 +28,8 @@ public sealed class AcceptRematchHandler
         IClock clock,
         ITimeoutScheduler timeouts,
         ISetupDeadlineScheduler setupDeadlines,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        BotTurnPlanner botTurns)
     {
         _rooms = rooms;
         _games = games;
@@ -34,6 +37,7 @@ public sealed class AcceptRematchHandler
         _timeouts = timeouts;
         _setupDeadlines = setupDeadlines;
         _rateLimiter = rateLimiter;
+        _botTurns = botTurns;
     }
 
     public async Task<AppResult<AcceptRematchResult>> HandleAsync(
@@ -101,6 +105,7 @@ public sealed class AcceptRematchHandler
                             room.CurrentMatch.Clock.ActivePlayerDeadline(),
                             ct);
                     }
+                    await _botTurns.ScheduleIfPendingAsync(room, now, ct);
                 }
 
                 return AppResult<AcceptRematchResult>.Ok(new AcceptRematchResult(

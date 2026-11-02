@@ -1,4 +1,5 @@
 using PlayMe.Application.Abstractions;
+using PlayMe.Application.Bots;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Application.RateLimiting;
@@ -17,6 +18,9 @@ namespace PlayMe.Application.Commands.OfferRematch;
 ///   <c>MatchStarted</c>.</item>
 ///   <item>Anything else (including a duplicate offer from the same caller)
 ///   → <c>RematchInvalidState</c>.</item>
+///   <item>In a bot room (Sprint 12 seam D) the bot accepts on the spot:
+///   the host's offer resolves as <see cref="RematchOfferResult.ImplicitlyAccepted"/>
+///   in the same call, sides swap, a fresh match starts.</item>
 /// </list>
 /// </summary>
 public sealed class OfferRematchHandler
@@ -27,6 +31,7 @@ public sealed class OfferRematchHandler
     private readonly ITimeoutScheduler _timeouts;
     private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRateLimiter _rateLimiter;
+    private readonly BotTurnPlanner _botTurns;
 
     public OfferRematchHandler(
         IRoomRepository rooms,
@@ -34,7 +39,8 @@ public sealed class OfferRematchHandler
         IClock clock,
         ITimeoutScheduler timeouts,
         ISetupDeadlineScheduler setupDeadlines,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        BotTurnPlanner botTurns)
     {
         _rooms = rooms;
         _games = games;
@@ -42,6 +48,7 @@ public sealed class OfferRematchHandler
         _timeouts = timeouts;
         _setupDeadlines = setupDeadlines;
         _rateLimiter = rateLimiter;
+        _botTurns = botTurns;
     }
 
     public async Task<AppResult<OfferRematchHandlerResult>> HandleAsync(
@@ -84,6 +91,15 @@ public sealed class OfferRematchHandler
                     return AppResult<OfferRematchHandlerResult>.Fail(PlatformErrors.RematchInvalidState);
                 }
 
+                // The bot never declines (Sprint 12 seam D): accept the
+                // host's offer right here so the caller sees one
+                // MatchStarted instead of an offer that hangs.
+                if (effect == RematchOfferResult.OfferRecorded && room.HasBotChallenger)
+                {
+                    room.AcceptRematch(Role.Challenger, module, now);
+                    effect = RematchOfferResult.ImplicitlyAccepted;
+                }
+
                 await _rooms.SaveAsync(room, ct);
 
                 // Implicit accept transitioned the room into a fresh match —
@@ -104,6 +120,7 @@ public sealed class OfferRematchHandler
                             room.CurrentMatch.Clock.ActivePlayerDeadline(),
                             ct);
                     }
+                    await _botTurns.ScheduleIfPendingAsync(room, now, ct);
                 }
 
                 return AppResult<OfferRematchHandlerResult>.Ok(new OfferRematchHandlerResult(

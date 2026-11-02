@@ -31,15 +31,8 @@ public sealed class SubmitMoveHandlerRateLimitTests
         var rateLimiter = new RecordingRateLimiter { AllowNext = false };
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new SubmitMoveHandler(
-            rooms,
-            new SingleGameRegistry(),
-            clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            rateLimiter,
-            new RecordingAnalyticsClient());
+        var handler = TestHandlers.SubmitMove(
+            rooms, new SingleGameRegistry(), clock, timeouts, rateLimiter: rateLimiter);
 
         var result = await handler.HandleAsync(
             new SubmitMoveCommand(
@@ -69,15 +62,8 @@ public sealed class SubmitMoveHandlerRateLimitTests
         var rateLimiter = new RecordingRateLimiter();
         rooms.Seed(RoomFactory.InProgress(clock.UtcNow, Budget));
 
-        var handler = new SubmitMoveHandler(
-            rooms,
-            new SingleGameRegistry(),
-            clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            rateLimiter,
-            new RecordingAnalyticsClient());
+        var handler = TestHandlers.SubmitMove(
+            rooms, new SingleGameRegistry(), clock, timeouts, rateLimiter: rateLimiter);
 
         await handler.HandleAsync(
             new SubmitMoveCommand(

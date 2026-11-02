@@ -33,10 +33,11 @@ public static class RoomMapper
         CreatedAt: room.CreatedAt,
         Score: new ScoreDto(room.SeriesScore.Host, room.SeriesScore.Challenger, room.SeriesScore.Draws),
         RematchOffererRole: room.RematchOffererRole,
-        GameOptions: room.GameOptions);
+        GameOptions: room.GameOptions,
+        BotLevel: room.BotLevel);
 
     public static PlayerDto ToPlayerDto(Player player) =>
-        new(player.DisplayName.Value, player.Side);
+        new(player.DisplayName.Value, player.Side, player.Kind);
 
     public static MatchDto ToMatchDto(Match match, DateTimeOffset now, IGameModuleRegistry games)
     {

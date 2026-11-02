@@ -51,6 +51,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
+
+        // Bot-turn scheduling (Sprint 12 seam D): the Redis-backed
+        // scheduler + sweeper land in PR3; until then bot turns are
+        // accepted and dropped. Bot rooms are not creatable from the API
+        // yet (the controller does not expose the opponent kind), so
+        // nothing observable depends on this.
+        services.AddSingleton<IBotTurnScheduler, NoOpBotTurnScheduler>();
         services.AddSingleton<IRateLimiter, RedisRateLimiter>();
 
         // Sprint 2 PR #2: Redis-backed sorted-set schedulers + BackgroundService
