@@ -19,7 +19,7 @@ namespace PlayMe.Domain.Games.TicTacToe;
 /// (CLAUDE.md §7 "Platform thinness").
 /// </para>
 /// </summary>
-public sealed class TicTacToeGameModule : IGameModule
+public sealed class TicTacToeGameModule : IGameModule, IBotPlayer
 {
     public static readonly GameId GameId = new("tictactoe");
 
@@ -147,6 +147,24 @@ public sealed class TicTacToeGameModule : IGameModule
         }
 
         return MoveResult.Accept(newState);
+    }
+
+    /// <summary>
+    /// Bot opponent (Sprint 12 PR5; docs/bots.md). Delegates to
+    /// <see cref="TicTacToeBot"/> so the rules above stay about rules.
+    /// </summary>
+    public GameMove ChooseMove(IGameState state, string side, BotLevel level, IRandomSource rng)
+    {
+        if (state is not TicTacToeState board)
+        {
+            throw new ArgumentException(
+                $"Expected {nameof(TicTacToeState)}, got {state.GetType().Name}.", nameof(state));
+        }
+        if (side != TicTacToeSides.X && side != TicTacToeSides.O)
+        {
+            throw new ArgumentException($"Unknown side '{side}'.", nameof(side));
+        }
+        return TicTacToeBot.Choose(board, side, level, rng);
     }
 
     public string Serialize(IGameState state)
