@@ -136,9 +136,12 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
     setError(null);
     setSubmitting(true);
 
+    // Against a bot nobody else ever reads the name, so it is optional
+    // there; the server still requires one, hence the localized default.
+    const name = displayName.trim() || (isBotRoom ? t('configure.displayName.default') : '');
     const client = new PlaymeClient({ baseUrl: browserApiBase });
     const result = await client.createRoom({
-      hostDisplayName: displayName.trim(),
+      hostDisplayName: name,
       gameId,
       sideSelectionMode: sideMode,
       hostSide: sideMode === 'hostPicksSpecific' ? hostSide : undefined,
@@ -209,9 +212,11 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={t('configure.displayName.placeholder')}
+            placeholder={t(
+              isBotRoom ? 'configure.displayName.placeholderOptional' : 'configure.displayName.placeholder',
+            )}
             maxLength={24}
-            required
+            required={!isBotRoom}
             autoComplete="off"
           />
         </div>
@@ -340,7 +345,7 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
         <button
           type="submit"
           className="button-primary"
-          disabled={submitting || !displayName.trim()}
+          disabled={submitting || (!isBotRoom && !displayName.trim())}
           aria-busy={submitting}
         >
           {submitting ? (
