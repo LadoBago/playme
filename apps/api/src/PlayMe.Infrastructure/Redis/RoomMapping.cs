@@ -26,7 +26,8 @@ internal static class RoomMapping
         ChallengerConnected: room.ChallengerConnected,
         SeriesScore: ToSeriesScoreRecord(room.SeriesScore),
         RematchOffererRole: room.RematchOffererRole,
-        GameOptions: room.GameOptions);
+        GameOptions: room.GameOptions,
+        BotLevel: room.BotLevel);
 
     public static Room FromRecord(RoomRecord record, IGameModuleRegistry games) => Room.Rehydrate(
         code: record.Code,
@@ -43,7 +44,8 @@ internal static class RoomMapping
         hostConnected: record.HostConnected,
         challengerConnected: record.ChallengerConnected,
         seriesScore: FromSeriesScoreRecord(record.SeriesScore),
-        rematchOffererRole: record.RematchOffererRole);
+        rematchOffererRole: record.RematchOffererRole,
+        botLevel: record.BotLevel);
 
     private static SeriesScoreRecord ToSeriesScoreRecord(SeriesScore score) =>
         new(score.Host, score.Challenger, score.Draws);
@@ -54,10 +56,10 @@ internal static class RoomMapping
             : new SeriesScore(record.Host, record.Challenger, record.Draws);
 
     private static PlayerRecord ToPlayerRecord(Player player) =>
-        new(player.Id, player.DisplayName, player.Side);
+        new(player.Id, player.DisplayName, player.Side, player.Kind);
 
     private static Player FromPlayerRecord(PlayerRecord record) =>
-        new(record.Id, record.DisplayName, record.Side);
+        new(record.Id, record.DisplayName, record.Side, record.Kind);
 
     private static MatchRecord ToMatchRecord(Match match, IGameModule module) => new(
         GameId: match.GameId,

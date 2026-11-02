@@ -20,4 +20,10 @@ public static class RateLimitingPolicies
     /// edge ceiling for <c>/r/&lt;code&gt;</c> enumeration.
     /// </summary>
     public const string RoomsGet = "rooms-get";
+
+    /// <summary>
+    /// <c>GET /api/games</c> (Sprint 12 seam D): anonymous, cheap, read
+    /// once per create-form visit. Same budget as <see cref="RoomsGet"/>.
+    /// </summary>
+    public const string GamesList = "games-list";
 }

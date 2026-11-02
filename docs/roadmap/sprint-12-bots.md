@@ -67,4 +67,4 @@ The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: 
 
 ## Status
 
-**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) in review.
+**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) merged 2026-11-03 as #212. PR3 (Redis scheduler + sweeper, persistence, notifier broadcasts, `GET /api/games`) in review — with it a bot room is creatable through `POST /api/rooms` and plays end-to-end; the create form stays human-only until PR4.

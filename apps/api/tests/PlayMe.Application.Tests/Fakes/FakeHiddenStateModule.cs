@@ -59,6 +59,8 @@ public sealed class StubModuleRegistry : IGameModuleRegistry
         _parser = parser;
     }
 
+    public IReadOnlyCollection<GameId> GameIds => new[] { _module.Id };
+
     public bool IsRegistered(GameId id) => id == _module.Id;
 
     public IGameModule GetModule(GameId id)

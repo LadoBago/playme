@@ -26,6 +26,7 @@ public sealed class GameModuleRegistry : IGameModuleRegistry
 
         _modules = modules.ToDictionary(m => m.Id);
         _parsers = parsers.ToDictionary(p => p.GameId);
+        GameIds = _modules.Keys.ToList();
 
         // Surface configuration mistakes at startup, not on the first move:
         // every registered module must have a matching move parser.
@@ -38,6 +39,8 @@ public sealed class GameModuleRegistry : IGameModuleRegistry
             }
         }
     }
+
+    public IReadOnlyCollection<GameId> GameIds { get; }
 
     public bool IsRegistered(GameId id) => _modules.ContainsKey(id);
 

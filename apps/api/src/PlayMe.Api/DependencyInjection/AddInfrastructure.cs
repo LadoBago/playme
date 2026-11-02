@@ -51,13 +51,6 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPlayerIdGenerator, PlayerIdGenerator>();
         services.AddSingleton<IRandom, SystemRandom>();
         services.AddSingleton<IGameModuleRegistry, GameModuleRegistry>();
-
-        // Bot-turn scheduling (Sprint 12 seam D): the Redis-backed
-        // scheduler + sweeper land in PR3; until then bot turns are
-        // accepted and dropped. Bot rooms are not creatable from the API
-        // yet (the controller does not expose the opponent kind), so
-        // nothing observable depends on this.
-        services.AddSingleton<IBotTurnScheduler, NoOpBotTurnScheduler>();
         services.AddSingleton<IRateLimiter, RedisRateLimiter>();
 
         // Sprint 2 PR #2: Redis-backed sorted-set schedulers + BackgroundService
@@ -70,16 +63,19 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPostMatchExitGraceScheduler, RedisPostMatchExitGraceScheduler>();
         services.AddSingleton<IRoomExpiryScheduler, RedisRoomExpiryScheduler>();
         services.AddSingleton<ISetupDeadlineScheduler, RedisSetupDeadlineScheduler>();
+        services.AddSingleton<IBotTurnScheduler, RedisBotTurnScheduler>();
         services.AddSingleton<RedisTimeoutSweeperService>();
         services.AddSingleton<RedisDisconnectGraceSweeperService>();
         services.AddSingleton<RedisPostMatchExitGraceSweeperService>();
         services.AddSingleton<RedisRoomExpirySweeperService>();
         services.AddSingleton<RedisSetupDeadlineSweeperService>();
+        services.AddSingleton<RedisBotTurnSweeperService>();
         services.AddHostedService(sp => sp.GetRequiredService<RedisTimeoutSweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisDisconnectGraceSweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisPostMatchExitGraceSweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisRoomExpirySweeperService>());
         services.AddHostedService(sp => sp.GetRequiredService<RedisSetupDeadlineSweeperService>());
+        services.AddHostedService(sp => sp.GetRequiredService<RedisBotTurnSweeperService>());
 
         // Sprint 7: server-side product analytics (docs/observability-and-i18n.md
         // §1.2). Authoritative outcomes — match_ended, room_expired — fire from

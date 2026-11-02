@@ -1,7 +1,7 @@
 import type { ZodType } from 'zod';
 
-import { ProblemDetailsSchema, RoomSchema } from './schemas';
-import type { CreateRoomRequest, JoinRoomRequestBody, RoomDto } from './types';
+import { GameCatalogSchema, ProblemDetailsSchema, RoomSchema } from './schemas';
+import type { CreateRoomRequest, GameCatalogEntryDto, JoinRoomRequestBody, RoomDto } from './types';
 
 /**
  * Typed result wrapper. The API surfaces an i18n key on failure
@@ -50,6 +50,15 @@ export class PlaymeClient {
       RoomSchema,
       init,
     );
+  }
+
+  /**
+   * Server-derived game capabilities (Sprint 12 seam D), e.g. which games
+   * offer a bot opponent. Anonymous; safe to call during SSR.
+   */
+  async getGames(init: RequestInit = {}): Promise<ApiResult<GameCatalogEntryDto[]>> {
+    const res = await this._fetch(`${this._baseUrl}/api/games`, init);
+    return this._readResponse<GameCatalogEntryDto[]>(res, GameCatalogSchema);
   }
 
   async getRoom(code: string, init: RequestInit = {}): Promise<ApiResult<RoomDto>> {

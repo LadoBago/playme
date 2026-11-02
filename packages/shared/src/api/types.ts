@@ -169,6 +169,25 @@ export interface CreateRoomRequest {
    * of raw JSON (see CreateRoomCommandValidator on the API).
    */
   gameOptions?: unknown;
+  /**
+   * Who fills the challenger seat (Sprint 12 seam D). `bot` creates a
+   * solo room with no invite link; the server rejects it for a game
+   * whose module has no bot (see `GameCatalogEntryDto.supportsBot`).
+   * Defaults to `human`.
+   */
+  opponent?: PlayerKind;
+  /** Required when `opponent` is `bot`, forbidden otherwise. */
+  botLevel?: BotLevel;
+}
+
+/**
+ * One row of `GET /api/games`: capabilities only the server can answer
+ * (Sprint 12 seam D). Names, rules and artwork stay in the static web
+ * catalog.
+ */
+export interface GameCatalogEntryDto {
+  id: string;
+  supportsBot: boolean;
 }
 
 export interface JoinRoomRequestBody {

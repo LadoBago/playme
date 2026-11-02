@@ -30,4 +30,7 @@ public sealed class IpRateLimitingOptions
 
     /// <summary>Permits per minute for <c>GET /api/rooms/{code}</c>.</summary>
     public int RoomsGetPermitLimit { get; set; } = 120;
+
+    /// <summary>Per-IP budget per minute for <c>GET /api/games</c>.</summary>
+    public int GamesListPermitLimit { get; set; } = 120;
 }

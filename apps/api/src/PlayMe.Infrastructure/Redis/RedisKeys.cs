@@ -65,6 +65,17 @@ internal static class RedisKeys
     public const string SetupDeadlines = $"{Prefix}setup_deadlines";
 
     /// <summary>
+    /// Sorted set: score = unix-ms due time, value = roomCode (Sprint 12
+    /// seam D). One entry per bot room — written by <c>BotTurnPlanner</c>
+    /// at every point the side-to-move (or the pending setup) becomes the
+    /// bot's, at now + <c>PlatformConstants.BotThinkDelay</c>. The sweeper
+    /// dispatches the bot handler and removes the entry only if its score
+    /// is still the one it read, so a re-schedule made during processing
+    /// survives. Never cancelled: a stale entry is a no-op at fire time.
+    /// </summary>
+    public const string BotTurns = $"{Prefix}bot_turns";
+
+    /// <summary>
     /// Per-session rate-limit sliding-window sorted set
     /// (docs/security.md §5). One key per policy × subject; each member
     /// is a single recent acquisition timestamp.
