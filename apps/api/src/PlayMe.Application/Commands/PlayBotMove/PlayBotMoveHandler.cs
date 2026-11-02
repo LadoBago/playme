@@ -78,11 +78,12 @@ public sealed partial class PlayBotMoveHandler
         var module = _games.GetModule(snapshot.GameId);
         if (module is not IBotPlayer bot)
         {
-            // A bot room exists only for bot-capable modules (CreateRoom
-            // checks); reaching here means the catalog changed under a
-            // live room. Nothing sane to do but leave the match alone.
-            LogModuleNotBotCapable(_logger, snapshot.GameId.Value);
-            return AppResult<PlayBotMoveResult>.Fail(PlatformErrors.BotModuleFault);
+            // The room was created by an instance whose module has a bot;
+            // this instance's build does not (a rolling deploy in
+            // progress). Not a fault: report it as such so the sweeper
+            // leaves the entry for an instance that can serve it.
+            LogModuleNotBotCapableHere(_logger, snapshot.GameId.Value);
+            return AppResult<PlayBotMoveResult>.Fail(PlatformErrors.BotNotCapableHere);
         }
 
         var thinkingMatch = snapshot.CurrentMatch!;
@@ -180,9 +181,9 @@ public sealed partial class PlayBotMoveHandler
             TimedOut: false,
             Forfeited: false));
 
-    [LoggerMessage(Level = LogLevel.Error,
-        Message = "Bot room for game {GameId} but the module is not an IBotPlayer; leaving the match alone")]
-    private static partial void LogModuleNotBotCapable(ILogger logger, string gameId);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Bot room for game {GameId} but this instance's module has no IBotPlayer; leaving the turn for an instance that does")]
+    private static partial void LogModuleNotBotCapableHere(ILogger logger, string gameId);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "IBotPlayer.ChooseMove threw for game {GameId}; the bot will forfeit")]

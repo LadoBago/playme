@@ -34,7 +34,9 @@ namespace PlayMe.Infrastructure.Scheduling;
 /// re-validate the bot's turn under it, so two instances sweeping the
 /// same entry both run the module but only the first commit lands; the
 /// second is discarded as stale. A crash mid-process leaves the entry
-/// in place for the next sweep.
+/// in place for the next sweep. An instance whose build has no bot for
+/// the room's game (mid rolling deploy) also leaves the entry, for an
+/// instance that does.
 /// </para>
 /// </summary>
 public sealed partial class RedisBotTurnSweeperService : BackgroundService
@@ -177,7 +179,7 @@ public sealed partial class RedisBotTurnSweeperService : BackgroundService
 
         if (!result.Succeeded)
         {
-            if (result.Error == PlatformErrors.RoomBusy) return true;
+            if (ShouldRetry(result.Error!)) return true;
             LogDispatchFailed(_logger, "move", result.Error!);
             return false;
         }
@@ -204,7 +206,7 @@ public sealed partial class RedisBotTurnSweeperService : BackgroundService
 
         if (!result.Succeeded)
         {
-            if (result.Error == PlatformErrors.RoomBusy) return true;
+            if (ShouldRetry(result.Error!)) return true;
             LogDispatchFailed(_logger, "setup", result.Error!);
             return false;
         }
@@ -223,6 +225,15 @@ public sealed partial class RedisBotTurnSweeperService : BackgroundService
         }
         return false;
     }
+
+    /// <summary>
+    /// Errors that mean "not now, not here" rather than "never": the room
+    /// lock is held, or this instance's build has no bot for the game (a
+    /// rolling deploy in progress — docs/roadmap/sprint-12-bots.md). The
+    /// entry stays for a later sweep or another instance.
+    /// </summary>
+    private static bool ShouldRetry(string error) =>
+        error is PlatformErrors.RoomBusy or PlatformErrors.BotNotCapableHere;
 
     [LoggerMessage(
         EventId = 2500,

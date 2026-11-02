@@ -69,8 +69,10 @@ public sealed partial class PlayBotSetupHandler
         var module = _games.GetModule(snapshot.GameId);
         if (module is not ISetupGame setupGame || module is not IBotSetup botSetup)
         {
-            LogModuleNotBotSetupCapable(_logger, snapshot.GameId.Value);
-            return AppResult<PlayBotSetupResult>.Fail(PlatformErrors.BotModuleFault);
+            // Same rolling-deploy case as PlayBotMoveHandler: not a fault,
+            // leave the entry for an instance whose build has the bot.
+            LogModuleNotBotSetupCapableHere(_logger, snapshot.GameId.Value);
+            return AppResult<PlayBotSetupResult>.Fail(PlatformErrors.BotNotCapableHere);
         }
 
         var botSide = snapshot.Challenger!.Side!;
@@ -132,9 +134,9 @@ public sealed partial class PlayBotSetupHandler
             Applied: false,
             MatchStarted: false));
 
-    [LoggerMessage(Level = LogLevel.Error,
-        Message = "Bot setup due for game {GameId} but the module is not ISetupGame + IBotSetup")]
-    private static partial void LogModuleNotBotSetupCapable(ILogger logger, string gameId);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Bot setup due for game {GameId} but this instance's module is not ISetupGame + IBotSetup; leaving it for an instance that is")]
+    private static partial void LogModuleNotBotSetupCapableHere(ILogger logger, string gameId);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "IBotSetup.ChooseSetup threw for game {GameId}; the bot stays uncommitted")]
