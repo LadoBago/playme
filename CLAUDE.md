@@ -10,7 +10,7 @@ Context Claude Code needs to work effectively in **PlayMe**. Detailed specs live
 
 Hard rules:
 
-- **No accounts.** Anonymous; display name only. **Two players** per match, exactly. **Real-time only** over SignalR. **Invite-link matchmaking only** — no queue, no friends list, no leaderboards.
+- **No accounts.** Anonymous; display name only. **Two players** per match, exactly. **Real-time only** over SignalR. **Invite-link matchmaking only** — no queue, no friends list, no leaderboards. The one exception is a **bot room** (Sprint 12, planned): the host plays a server-side bot that fills the challenger seat at creation, so there is no invite link and no join — every other rule holds unchanged. A module opts in by implementing `IBotPlayer` (see [`docs/bots.md`](docs/bots.md)).
 - **Catalog:** Tic-Tac-Toe (configurable board size: 3×3 / 6×6 / 9×9), Connect 4, Reversi, Sea Battle (ჩაძირობანა — first hidden-information game), Checkers (შაში — Russian draughts, first game with piece movement). Each game is a **self-contained module** — no shared rules engine across games. The unified `tictactoe` module (Sprint 9) carries a per-room `gameOptions: { boardSize }` blob through the platform layer opaquely; platform code never inspects the shape. Sea Battle (Sprint 10) opts into the platform capabilities `IHiddenStateGame` (per-viewer projection) and `ISetupGame` (unclocked setup phase) and retains turns via `MoveResult.KeepTurn`; Checkers (Sprint 11) reuses `KeepTurn` for multi-capture chains and publishes its legal moves in the state so the renderer owns no rules — all module choices, not platform special cases.
 - **Languages at launch:** Georgian (`ka`, default) and English (`en`).
 - **Client surface in v1: web only** (responsive Next.js + PWA). Native mobile is deferred to v2 — `packages/shared` is structured to be consumed by RN later.
@@ -77,6 +77,7 @@ Hard rules:
 | [`docs/frontend.md`](docs/frontend.md) | Web pages, SEO (metadata, hreflang, sitemap, JSON-LD, Core Web Vitals), theming, PWA |
 | [`docs/platform.md`](docs/platform.md) | Platform invariants (clock, reconnect grace, rematch, side selection, scoreboard), game-module catalog, cross-game UX, domain vocabulary |
 | [`docs/games/<game>.md`](docs/games/) | Canonical per-game rules and module specs (one file per game module) |
+| [`docs/bots.md`](docs/bots.md) | Writing a bot opponent for one game module — the `IBotPlayer` / `IBotSetup` contract, guarantees in both directions, the one-PR-per-game rule and its test checklist |
 | [`docs/state.md`](docs/state.md) | Redis key schema, room lifecycle / state machine, clock model, timeout sweeper, server-emitted events |
 | [`docs/security.md`](docs/security.md) | Threat model, secrets, input validation, room/player identity & auth, rate limits, headers, CORS |
 | [`docs/observability-and-i18n.md`](docs/observability-and-i18n.md) | Sentry, PostHog, Serilog, OTel, i18n catalogs, error code naming |
