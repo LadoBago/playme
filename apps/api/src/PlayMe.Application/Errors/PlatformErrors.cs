@@ -62,6 +62,12 @@ public static class PlatformErrors
     //     than swallowed. ---
     public const string BotModuleFault = "errors.bot.moduleFault";
 
+    // --- The room's module has no bot on *this* instance. Expected for a
+    //     few seconds during a rolling deploy that adds a bot to a game:
+    //     the sweeper leaves the entry for an instance that can serve it
+    //     instead of dropping it (docs/roadmap/sprint-12-bots.md). ---
+    public const string BotNotCapableHere = "errors.bot.notCapableHere";
+
     // --- Session / authorization ---
     public const string SessionUnauthorized = "errors.session.unauthorized";
 
