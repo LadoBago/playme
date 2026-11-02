@@ -50,6 +50,9 @@ const TABS: readonly { value: Opponent; labelKey: I18nKey }[] = [
 
 const BOT_LEVELS: readonly BotLevel[] = ['easy', 'medium', 'hard'];
 
+/** Sentinel for the bot tab's "Your side" group; never a real side id. */
+const RANDOM_SIDE = '__random';
+
 /**
  * Allowed board sizes for the unified Tic-Tac-Toe module (Sprint 9 PR1b).
  * Matches the server-side `TicTacToeGameModule.AllowedBoardSizes`. The
@@ -91,11 +94,19 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
 
   const isUnifiedTicTacToe = gameId === 'tictactoe';
   const isBotRoom = supportsBot && opponent === 'bot';
-  // "Let my friend pick" has no meaning without a friend; the server
-  // rejects it for a bot room, so the bot tab does not offer it.
-  const sideModeOptions = isBotRoom
-    ? SIDE_MODE_OPTIONS.filter((o) => o.value !== 'challengerPicks')
-    : SIDE_MODE_OPTIONS;
+  // The bot tab has no "how to assign sides" question: there is no friend
+  // to let pick, so "Your side" simply offers the two sides plus Random,
+  // mapped onto the same two server modes the friend tab uses.
+  const botSideChoice: string = sideMode === 'random' ? RANDOM_SIDE : hostSide;
+
+  function chooseBotSide(choice: string) {
+    if (choice === RANDOM_SIDE) {
+      setSideMode('random');
+    } else {
+      setSideMode('hostPicksSpecific');
+      setHostSide(choice);
+    }
+  }
 
   function selectTab(next: Opponent) {
     setOpponent(next);
@@ -251,28 +262,51 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
           </div>
         ) : null}
 
-        <div>
-          <span className="label">{t('configure.sideMode.label')}</span>
-          <div className="radio-group" role="radiogroup">
-            {sideModeOptions.map((opt) => (
-              <label
-                key={opt.value}
-                className={`radio-pill ${sideMode === opt.value ? 'radio-pill--active' : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="sideMode"
-                  value={opt.value}
-                  checked={sideMode === opt.value}
-                  onChange={() => setSideMode(opt.value)}
-                />
-                {t(opt.labelKey)}
-              </label>
-            ))}
+        {isBotRoom ? (
+          <div>
+            <span className="label">{t('configure.hostSide.label')}</span>
+            <div className="radio-group" role="radiogroup">
+              {[...sides.map((s) => ({ id: s.id, label: s.label })), { id: RANDOM_SIDE, label: t('configure.sideMode.random') }].map((s) => (
+                <label
+                  key={s.id}
+                  className={`radio-pill ${botSideChoice === s.id ? 'radio-pill--active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="botSide"
+                    value={s.id}
+                    checked={botSideChoice === s.id}
+                    onChange={() => chooseBotSide(s.id)}
+                  />
+                  {s.label}
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <span className="label">{t('configure.sideMode.label')}</span>
+            <div className="radio-group" role="radiogroup">
+              {SIDE_MODE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`radio-pill ${sideMode === opt.value ? 'radio-pill--active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="sideMode"
+                    value={opt.value}
+                    checked={sideMode === opt.value}
+                    onChange={() => setSideMode(opt.value)}
+                  />
+                  {t(opt.labelKey)}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {sideMode === 'hostPicksSpecific' ? (
+        {!isBotRoom && sideMode === 'hostPicksSpecific' ? (
           <div>
             <span className="label">{t('configure.hostSide.label')}</span>
             <div className="radio-group" role="radiogroup">
