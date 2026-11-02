@@ -16,7 +16,7 @@ namespace PlayMe.Domain.Games.Connect4;
 /// per-module — the platform never inspects any of it (CLAUDE.md §7
 /// "Platform thinness").
 /// </summary>
-public sealed class Connect4GameModule : IGameModule
+public sealed class Connect4GameModule : IGameModule, IBotPlayer
 {
     public static readonly GameId GameId = new("connect4");
 
@@ -107,6 +107,24 @@ public sealed class Connect4GameModule : IGameModule
         }
 
         return MoveResult.Accept(newState);
+    }
+
+    /// <summary>
+    /// Bot opponent (Sprint 12 PR6; docs/bots.md). Delegates to
+    /// <see cref="Connect4Bot"/> so the rules above stay about rules.
+    /// </summary>
+    public GameMove ChooseMove(IGameState state, string side, BotLevel level, IRandomSource rng)
+    {
+        if (state is not Connect4State board)
+        {
+            throw new ArgumentException(
+                $"Expected {nameof(Connect4State)}, got {state.GetType().Name}.", nameof(state));
+        }
+        if (side != Connect4Sides.Red && side != Connect4Sides.Yellow)
+        {
+            throw new ArgumentException($"Unknown side '{side}'.", nameof(side));
+        }
+        return Connect4Bot.Choose(board, side, level, rng);
     }
 
     public string Serialize(IGameState state)

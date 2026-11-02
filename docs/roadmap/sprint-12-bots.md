@@ -59,6 +59,10 @@ PR5–PR9 are independent: they can land in any order, in parallel, and each one
 
 The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: any later platform change must keep it green, which protects every game bot without the platform knowing which exist.
 
+## Follow-ups found while shipping the game bots
+
+- **Mixed-version instances drop bot turns (found in PR6).** Two API builds sharing one Redis — an old one without a game's bot and a new one with it — both sweep `playme:bot_turns`. When the old instance wins the race its `PlayBotMoveHandler` reports `BotModuleFault` ("module is not an IBotPlayer") and the sweeper removes the entry, so the bot never moves and loses on time. Production runs one instance, but a rolling deploy has exactly this overlap for a few seconds whenever a game gains a bot. Fix (small platform PR): have the handler return a distinct "not capable on this instance" result and let the sweeper leave the entry for the instance that can serve it, keeping the drop only for genuine module faults. Locally: never run two API builds against the same Redis while testing bots.
+
 ## Exit criteria
 
 - Slice 1: a bot room against the fake module plays end-to-end in tests through start, `KeepTurn`, timeout of the human, resign, rematch with side swap, setup with projection, and the stale-move and illegal-return paths; the create toggle is visible but disabled for all five games in production.
@@ -67,4 +71,4 @@ The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: 
 
 ## Status
 
-**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) merged 2026-11-03 as #212. PR3 (Redis scheduler + sweeper, persistence, notifier broadcasts, `GET /api/games`) merged 2026-11-03 as #213. PR4 (web) merged 2026-11-03 as #214 — Slice 1 complete. PR5 (`tictactoe` bot: 3×3 full search, 6×6 / 9×9 alpha-beta depth 3 with a neighbourhood filter) in review; first game to light up the toggle and the first end-to-end run of the seam.
+**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) merged 2026-11-03 as #212. PR3 (Redis scheduler + sweeper, persistence, notifier broadcasts, `GET /api/games`) merged 2026-11-03 as #213. PR4 (web) merged 2026-11-03 as #214 — Slice 1 complete. PR5 (`tictactoe` bot) merged 2026-11-03 as #215 — first game live against the bot, end-to-end run of the seam confirmed. PR6 (`connect4` bot: centre-first alpha-beta, depth 4 / 8) in review.

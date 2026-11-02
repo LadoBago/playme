@@ -16,3 +16,15 @@ Canonical rules spec for the `connect4` module — see [`platform.md`](../platfo
 ## Piece rendering (accessibility)
 
 Red and yellow are perceptually close for the most common forms of color-blindness (deuteranopia / protanopia, ~5% of male players), so the two sides must be distinguishable without relying on hue alone. Render **red as a solid disc** and **yellow as a ring (donut)** — same outer circle, yellow has a transparent inner hole. This preserves Connect 4's "stacked discs" visual identity, keeps both sides symmetric in shape, and remains legible in monochrome, high-contrast mode, screenshots, and at small mobile sizes. The win-line highlight should glow around both shapes equally. Do **not** distinguish the two players by changing the outer shape (e.g. circle vs. triangle) — that breaks the gravity/stacking intuition that defines Connect 4.
+
+## Bot
+
+The module implements `IBotPlayer` (Sprint 12; [`bots.md`](../bots.md)). Every level first takes an immediate win and otherwise blocks an immediate loss; beyond that:
+
+- **Easy** — a random legal column.
+- **Medium** — alpha-beta search to depth 4.
+- **Hard** — alpha-beta search to depth 8.
+
+Columns are searched centre-first (3, 2, 4, 1, 5, 0, 6), which is the strongest ordering for pruning and doubles as the tie-break; the rng only picks among root moves with equal scores. The heuristic sums, over all 69 windows of four cells, a weight growing with the number of own discs in an uncontested window (1 / 10 / 100), minus the same for the opponent. Depth is fixed, never a timer, so a given board, side, level and seed always produce the same column.
+
+Measured think time (Sprint 12 PR6, Apple-silicon laptop, release build, after warm-up): Hard ≈ 50–75 ms per move from the empty board and open early positions, Medium ≈ 1 ms. Well inside the 1000 ms production target of [`bots.md`](../bots.md) §2.2.
