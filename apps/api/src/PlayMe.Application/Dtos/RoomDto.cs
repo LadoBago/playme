@@ -14,6 +14,11 @@ namespace PlayMe.Application.Dtos;
 /// join-info response to render game-specific configuration (e.g. board
 /// size) before committing to join. Null for games without options.
 /// </para>
+/// <para>
+/// <see cref="BotLevel"/> (Sprint 12 seam D) is the strength of the bot in
+/// the challenger seat; null for human-vs-human rooms. The seat itself is
+/// recognisable from <c>Challenger.Kind</c>.
+/// </para>
 /// </summary>
 public sealed record RoomDto(
     RoomCode Code,
@@ -28,4 +33,5 @@ public sealed record RoomDto(
     DateTimeOffset CreatedAt,
     ScoreDto Score,
     Role? RematchOffererRole,
-    JsonElement? GameOptions = null);
+    JsonElement? GameOptions = null,
+    BotLevel? BotLevel = null);

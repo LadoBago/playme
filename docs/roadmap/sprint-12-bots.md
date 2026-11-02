@@ -67,4 +67,4 @@ The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: 
 
 ## Status
 
-**Planned.** PR1 in review.
+**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) in review.

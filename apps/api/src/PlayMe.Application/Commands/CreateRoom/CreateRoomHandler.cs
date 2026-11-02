@@ -11,6 +11,12 @@ namespace PlayMe.Application.Commands.CreateRoom;
 /// generates an opaque room code + host player id with the cryptographic
 /// RNGs per §5.4; persists the room via <see cref="IRoomRepository.CreateAsync"/>
 /// (retries on the astronomically unlikely code collision).
+///
+/// A bot room (<see cref="PlayerKind.Bot"/> opponent, Sprint 12 seam D)
+/// additionally requires a bot-capable module — derived from the
+/// capability check, never declared — a defined <see cref="BotLevel"/>,
+/// and a side-selection mode other than <see cref="SideSelectionMode.ChallengerPicks"/>;
+/// the bot is seated at creation with its own crypto-random player id.
 /// </summary>
 public sealed class CreateRoomHandler
 {
@@ -91,6 +97,35 @@ public sealed class CreateRoomHandler
             return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidSideSelectionMode);
         }
 
+        if (!Enum.IsDefined(cmd.Opponent))
+        {
+            return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigBotNotSupported);
+        }
+        var botRoom = cmd.Opponent == PlayerKind.Bot;
+        if (botRoom)
+        {
+            if (!SupportsBot(module))
+            {
+                return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigBotNotSupported);
+            }
+            if (cmd.BotLevel is not { } requestedLevel || !Enum.IsDefined(requestedLevel))
+            {
+                return AppResult<CreateRoomResult>.Fail(PlatformErrors.ConfigInvalidBotLevel);
+            }
+            if (cmd.SideSelectionMode == SideSelectionMode.ChallengerPicks)
+            {
+                return AppResult<CreateRoomResult>.Fail(
+                    PlatformErrors.ConfigInvalidSideSelectionMode,
+                    "A bot room cannot let the challenger pick a side.");
+            }
+        }
+        else if (cmd.BotLevel is not null)
+        {
+            return AppResult<CreateRoomResult>.Fail(
+                PlatformErrors.ConfigInvalidBotLevel,
+                "Bot level is only meaningful for a bot opponent.");
+        }
+
         var sideResult = ResolveHostSide(cmd.SideSelectionMode, cmd.HostSide, module);
         if (!sideResult.Succeeded)
         {
@@ -109,13 +144,28 @@ public sealed class CreateRoomHandler
         Room? created = null;
         for (var attempt = 0; attempt < CodeCollisionRetryLimit; attempt++)
         {
-            var candidate = Room.Create(
-                code: _codes.NewCode(),
-                gameId: gameId,
-                gameOptions: cmd.GameOptions,
-                sideSelectionMode: cmd.SideSelectionMode,
-                host: host,
-                createdAt: _clock.UtcNow);
+            var candidate = botRoom
+                ? Room.CreateWithBot(
+                    code: _codes.NewCode(),
+                    gameId: gameId,
+                    gameOptions: cmd.GameOptions,
+                    sideSelectionMode: cmd.SideSelectionMode,
+                    host: host,
+                    bot: new Player(
+                        _playerIds.NewPlayerId(),
+                        DisplayName.Create(PlatformConstants.BotDisplayName),
+                        Side: null,
+                        PlayerKind.Bot),
+                    botLevel: cmd.BotLevel!.Value,
+                    module: module,
+                    createdAt: _clock.UtcNow)
+                : Room.Create(
+                    code: _codes.NewCode(),
+                    gameId: gameId,
+                    gameOptions: cmd.GameOptions,
+                    sideSelectionMode: cmd.SideSelectionMode,
+                    host: host,
+                    createdAt: _clock.UtcNow);
 
             if (await _rooms.CreateAsync(candidate, ct))
             {
@@ -145,6 +195,14 @@ public sealed class CreateRoomHandler
         return AppResult<CreateRoomResult>.Ok(
             new CreateRoomResult(hostPlayerId, RoomMapper.ToDto(created, _clock.UtcNow, _games)));
     }
+
+    /// <summary>
+    /// Bot capability is derived from the module's interfaces, never from a
+    /// list (docs/bots.md §2): <see cref="IBotPlayer"/>, plus
+    /// <see cref="IBotSetup"/> when the game has a setup phase.
+    /// </summary>
+    public static bool SupportsBot(IGameModule module) =>
+        module is IBotPlayer && (module is not ISetupGame || module is IBotSetup);
 
     private AppResult<string?> ResolveHostSide(
         SideSelectionMode mode, string? requestedHostSide, IGameModule module)

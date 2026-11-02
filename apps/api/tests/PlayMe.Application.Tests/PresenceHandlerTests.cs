@@ -60,7 +60,8 @@ public sealed class PresenceHandlerTests
         rooms.Seed(seed);
 
         var handler = new RegisterPresenceHandler(
-            rooms, new SingleGameRegistry(), clock, timeouts, graces, postMatchGraces, expiry, new RecordingSetupDeadlineScheduler());
+            rooms, new SingleGameRegistry(), clock, timeouts, graces, postMatchGraces, expiry,
+            new RecordingSetupDeadlineScheduler(), TestHandlers.BotTurns());
 
         // Host connects — match doesn't start yet (challenger still offline).
         var hostResult = await handler.HandleAsync(
@@ -203,7 +204,8 @@ public sealed class PresenceHandlerTests
             graces,
             postMatchGraces,
             new RecordingRoomExpiryScheduler(),
-            new RecordingSetupDeadlineScheduler());
+            new RecordingSetupDeadlineScheduler(),
+            TestHandlers.BotTurns());
         var result = await register.HandleAsync(
             new RegisterPresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),
@@ -257,7 +259,8 @@ public sealed class PresenceHandlerTests
             graces,
             postMatchGraces,
             new RecordingRoomExpiryScheduler(),
-            new RecordingSetupDeadlineScheduler());
+            new RecordingSetupDeadlineScheduler(),
+            TestHandlers.BotTurns());
         var result = await register.HandleAsync(
             new RegisterPresenceCommand(
                 RoomFactory.RoomCodeValue, RoomFactory.HostPlayerId, Role.Host),

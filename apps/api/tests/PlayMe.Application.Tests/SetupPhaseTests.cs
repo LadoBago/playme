@@ -76,10 +76,11 @@ public sealed class SetupPhaseTests
         }
 
         public SubmitSetupHandler SubmitSetup() =>
-            new(Rooms, Registry, Clock, Timeouts, SetupDeadlines, new RecordingRateLimiter());
+            TestHandlers.SubmitSetup(Rooms, Registry, Clock, Timeouts, SetupDeadlines);
 
         public RegisterPresenceHandler RegisterPresence() =>
-            new(Rooms, Registry, Clock, Timeouts, Graces, PostMatchGraces, Expiry, SetupDeadlines);
+            new(Rooms, Registry, Clock, Timeouts, Graces, PostMatchGraces, Expiry, SetupDeadlines,
+                TestHandlers.BotTurns());
 
         public ReleasePresenceHandler ReleasePresence() =>
             new(Rooms, Clock, Graces, PostMatchGraces, Registry);
@@ -339,9 +340,11 @@ public sealed class SetupPhaseTests
         await f.Rooms.SaveAsync(firstMatchRoom, CancellationToken.None);
 
         var offer = new OfferRematchHandler(
-            f.Rooms, f.Registry, f.Clock, f.Timeouts, f.SetupDeadlines, new RecordingRateLimiter());
+            f.Rooms, f.Registry, f.Clock, f.Timeouts, f.SetupDeadlines, new RecordingRateLimiter(),
+            TestHandlers.BotTurns());
         var accept = new AcceptRematchHandler(
-            f.Rooms, f.Registry, f.Clock, f.Timeouts, f.SetupDeadlines, new RecordingRateLimiter());
+            f.Rooms, f.Registry, f.Clock, f.Timeouts, f.SetupDeadlines, new RecordingRateLimiter(),
+            TestHandlers.BotTurns());
 
         (await offer.HandleAsync(
             new OfferRematchCommand(

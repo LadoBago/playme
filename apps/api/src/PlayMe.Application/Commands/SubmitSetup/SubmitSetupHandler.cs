@@ -2,19 +2,19 @@ using PlayMe.Application.Abstractions;
 using PlayMe.Application.Errors;
 using PlayMe.Application.Mapping;
 using PlayMe.Application.RateLimiting;
+using PlayMe.Application.Setup;
 using PlayMe.Domain.Platform;
 
 namespace PlayMe.Application.Commands.SubmitSetup;
 
 /// <summary>
-/// The setup-commit pipeline (Sprint 10 seam C; docs/games/seabattle.md).
-/// Inside the room's distributed lock: authorize the caller, verify the
-/// room is in <see cref="RoomStatus.SettingUp"/>, reject a double commit
-/// (one commit per side, final — a platform rule), then parse and validate
-/// the payload via the game module, apply it, and — when the module
-/// reports setup complete — transition the room to
-/// <see cref="RoomStatus.InProgress"/>: clock re-stamped to now, first
-/// no-move timeout scheduled, setup deadline cancelled.
+/// The setup-commit pipeline for a human caller (Sprint 10 seam C;
+/// docs/games/seabattle.md). Inside the room's distributed lock: authorize
+/// the caller, verify the room is in <see cref="RoomStatus.SettingUp"/>,
+/// reject a double commit (one commit per side, final — a platform rule),
+/// then parse and validate the payload via the game module. Applying it
+/// and starting play when setup completes is the <see cref="SetupCommitter"/>,
+/// shared with the bot path (Sprint 12 seam D).
 ///
 /// Fully game-agnostic: payload shape, validation, and reject vocabulary
 /// come from the module (CLAUDE.md §7 "Platform thinness"); the platform
@@ -25,24 +25,21 @@ public sealed class SubmitSetupHandler
     private readonly IRoomRepository _rooms;
     private readonly IGameModuleRegistry _games;
     private readonly IClock _clock;
-    private readonly ITimeoutScheduler _timeouts;
-    private readonly ISetupDeadlineScheduler _setupDeadlines;
     private readonly IRateLimiter _rateLimiter;
+    private readonly SetupCommitter _committer;
 
     public SubmitSetupHandler(
         IRoomRepository rooms,
         IGameModuleRegistry games,
         IClock clock,
-        ITimeoutScheduler timeouts,
-        ISetupDeadlineScheduler setupDeadlines,
-        IRateLimiter rateLimiter)
+        IRateLimiter rateLimiter,
+        SetupCommitter committer)
     {
         _rooms = rooms;
         _games = games;
         _clock = clock;
-        _timeouts = timeouts;
-        _setupDeadlines = setupDeadlines;
         _rateLimiter = rateLimiter;
+        _committer = committer;
     }
 
     public async Task<AppResult<SubmitSetupResult>> HandleAsync(
@@ -72,7 +69,7 @@ public sealed class SubmitSetupHandler
                 }
 
                 var stored = room.PlayerFor(cmd.CallerRole);
-                if (stored is null || stored.Id.Value != cmd.CallerPlayerId)
+                if (stored is null || stored.Id.Value != cmd.CallerPlayerId || stored.IsBot)
                 {
                     return AppResult<SubmitSetupResult>.Fail(PlatformErrors.SessionUnauthorized);
                 }
@@ -119,27 +116,9 @@ public sealed class SubmitSetupHandler
                     return AppResult<SubmitSetupResult>.Fail(rejectKey);
                 }
 
-                var newState = setupGame.ApplySetup(match.State, callerSide, parseResult.Value!);
-                match.ApplySetup(newState, cmd.CallerRole);
-
                 var now = _clock.UtcNow;
-                var matchStarted = setupGame.IsSetupComplete(match.State);
-                if (matchStarted)
-                {
-                    room.CompleteSetup(now);
-                    await _rooms.SaveAsync(room, ct);
-                    await _setupDeadlines.CancelAsync(code, ct);
-                    // The first mover's clock starts now (docs/platform.md
-                    // §1 #12) — schedule the first no-move timeout check.
-                    await _timeouts.ScheduleAsync(
-                        code,
-                        match.Clock.ActivePlayerDeadline(),
-                        ct);
-                }
-                else
-                {
-                    await _rooms.SaveAsync(room, ct);
-                }
+                var matchStarted = await _committer.CommitAsync(
+                    room, setupGame, callerSide, cmd.CallerRole, parseResult.Value!, now, ct);
 
                 return AppResult<SubmitSetupResult>.Ok(new SubmitSetupResult(
                     Room: RoomMapper.ToDto(room, now, _games),

@@ -52,15 +52,11 @@ public sealed class SubmitMoveHandlerKeepTurnTests
 
     private static SubmitMoveHandler Handler(
         FakeRoomRepository rooms, FakeClock clock, RecordingTimeoutScheduler timeouts) =>
-        new(
+        TestHandlers.SubmitMove(
             rooms,
             new StubModuleRegistry(new FakeKeepTurnModule(), new FakeKeepTurnMoveParser()),
             clock,
-            new ClockService(),
-            timeouts,
-            new RecordingGraceScheduler(),
-            new RecordingRateLimiter(),
-            new RecordingAnalyticsClient());
+            timeouts);
 
     private static SubmitMoveCommand Move(bool keepTurn, bool win = false) =>
         new(
