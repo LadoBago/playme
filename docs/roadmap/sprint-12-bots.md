@@ -67,4 +67,4 @@ The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: 
 
 ## Status
 
-**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) merged 2026-11-03 as #212. PR3 (Redis scheduler + sweeper, persistence, notifier broadcasts, `GET /api/games`) merged 2026-11-03 as #213. PR4 (web: opponent toggle + level picker gated on `supportsBot`, no share link / no join for bot rooms, bot HUD label, ka + en strings) in review. The toggle is live but renders for no game until a module implements `IBotPlayer` (PR5+).
+**In progress.** PR1 (the contract) merged 2026-11-03 as #211. PR2 (Domain + Application half of the platform slice, proven on `FakeBotGameModule`) merged 2026-11-03 as #212. PR3 (Redis scheduler + sweeper, persistence, notifier broadcasts, `GET /api/games`) merged 2026-11-03 as #213. PR4 (web) merged 2026-11-03 as #214 — Slice 1 complete. PR5 (`tictactoe` bot: 3×3 full search, 6×6 / 9×9 alpha-beta depth 3 with a neighbourhood filter) in review; first game to light up the toggle and the first end-to-end run of the seam.
