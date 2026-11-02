@@ -175,9 +175,9 @@ export interface CreateRoomRequest {
    * whose module has no bot (see `GameCatalogEntryDto.supportsBot`).
    * Defaults to `human`.
    */
-  opponent?: PlayerKind;
+  opponent?: PlayerKind | undefined;
   /** Required when `opponent` is `bot`, forbidden otherwise. */
-  botLevel?: BotLevel;
+  botLevel?: BotLevel | undefined;
 }
 
 /**

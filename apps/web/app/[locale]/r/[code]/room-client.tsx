@@ -618,6 +618,26 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   }
 
   if (authStatus === 'needsJoin') {
+    // A bot room has no invite link (Sprint 12 seam D): whoever lands here
+    // without the host's session cannot take the seat, so say so instead
+    // of offering a join form the server would reject.
+    if (room.challenger?.kind === 'bot') {
+      return (
+        <main
+          className="container stack"
+          style={{ textAlign: 'center', gap: '1rem' }}
+        >
+          <p style={{ color: 'var(--fg-muted)' }}>{t('room.solo.notJoinable')}</p>
+          <Link
+            href={localizedHref('/', locale)}
+            className="button-primary"
+            style={{ alignSelf: 'center', textDecoration: 'none' }}
+          >
+            {t('room.expired.cta')}
+          </Link>
+        </main>
+      );
+    }
     return (
       <div className="stack">
         <InviteSummary hostDisplayName={room.host.displayName} game={game} />
@@ -832,11 +852,17 @@ function MatchView({
     // the meantime so the wait isn't mysterious.
     const isChallenger = role === 'challenger';
     const waitingForHost = isChallenger && !room.hostConnected;
+    // A bot room leaves this state the moment the host's presence
+    // registers (Sprint 12 seam D), so the host sees a brief "starting"
+    // line and never a share link.
+    const isBotRoom = room.challenger?.kind === 'bot';
     const messageKey = isChallenger
       ? waitingForHost
         ? 'join.waitingForHost'
         : 'join.waitingForStart'
-      : 'join.waiting';
+      : isBotRoom
+        ? 'join.startingBot'
+        : 'join.waiting';
     // No server "cancel" exists for WaitingForOpponent (docs/state.md §2.4:
     // disconnects in this state are transparent; the room expires by TTL).
     // So the back-to-lobby affordance here is a plain navigation link —
@@ -852,7 +878,7 @@ function MatchView({
           <BackArrowIcon />
         </Link>
         <MatchHeader room={room} role={role} />
-        {isChallenger ? null : <ShareLink url={shareUrl} />}
+        {isChallenger || isBotRoom ? null : <ShareLink url={shareUrl} />}
         <p style={{ color: 'var(--fg-muted)' }}>{t(messageKey)}</p>
       </div>
     );
