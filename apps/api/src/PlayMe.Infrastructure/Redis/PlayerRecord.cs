@@ -9,4 +9,7 @@ namespace PlayMe.Infrastructure.Redis;
 internal sealed record PlayerRecord(
     PlayerId Id,
     DisplayName DisplayName,
-    string? Side);
+    string? Side,
+    // Sprint 12 seam D. Defaults to Human so rooms persisted before the
+    // field landed rehydrate unchanged.
+    PlayerKind Kind = PlayerKind.Human);

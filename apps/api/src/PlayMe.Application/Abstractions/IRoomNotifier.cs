@@ -7,10 +7,12 @@ namespace PlayMe.Application.Abstractions;
 /// Broadcast hook for server-emitted room events that originate
 /// <em>outside</em> a Hub method call — namely the BackgroundService
 /// sweepers in Infrastructure that adjudicate scheduled timeouts,
-/// disconnect-grace deadlines, and unjoined-room expiry. Implementation
-/// in the API layer wraps <c>IHubContext&lt;RoomHub&gt;</c>; defining
-/// the port here keeps Application/Infrastructure free of a direct
-/// SignalR dependency (CLAUDE.md §2.4 dependency rule).
+/// disconnect-grace deadlines, unjoined-room expiry, and (Sprint 12 seam
+/// D) the bot's own moves and setup commits. Implementation in the API
+/// layer wraps <c>IHubContext&lt;RoomHub&gt;</c>; defining the port here
+/// keeps Application/Infrastructure free of a direct SignalR dependency
+/// (CLAUDE.md §2.4 dependency rule). Every room-bearing broadcast applies
+/// the same per-viewer projection the Hub applies for hidden-state games.
 /// </summary>
 public interface IRoomNotifier
 {
@@ -46,6 +48,31 @@ public interface IRoomNotifier
     Task BroadcastOpponentExitedAsync(
         RoomCode code,
         Role exitedRole,
+        RoomDto room,
+        CancellationToken ct);
+
+    /// <summary>
+    /// Broadcast <c>MoveAccepted</c> after the bot's move committed
+    /// (Sprint 12 seam D). Same event and payload the Hub sends for a
+    /// human move, so the web client does not branch on who moved.
+    /// </summary>
+    Task BroadcastMoveAcceptedAsync(RoomCode code, RoomDto room, CancellationToken ct);
+
+    /// <summary>
+    /// Broadcast <c>MatchStarted</c> when the bot's setup commit completed
+    /// the setup phase (Sprint 12 seam D).
+    /// </summary>
+    Task BroadcastMatchStartedAsync(RoomCode code, RoomDto room, CancellationToken ct);
+
+    /// <summary>
+    /// Tell the other seat that <paramref name="committerRole"/> committed
+    /// its setup without completing the phase (Sprint 12 seam D). Delivered
+    /// to the opposite role only — never the payload, only readiness —
+    /// mirroring the Hub's <c>OpponentSetupCommitted</c>.
+    /// </summary>
+    Task BroadcastOpponentSetupCommittedAsync(
+        RoomCode code,
+        Role committerRole,
         RoomDto room,
         CancellationToken ct);
 }

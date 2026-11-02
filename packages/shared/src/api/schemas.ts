@@ -15,6 +15,7 @@ import { z } from 'zod';
 z.config({ jitless: true });
 import type {
   ClockSnapshotDto,
+  GameCatalogEntryDto,
   MatchDto,
   MoveDto,
   OutcomeDto,
@@ -119,6 +120,13 @@ export const RoomSchema = z.object({
   botLevel: BotLevelSchema.optional(),
 });
 
+export const GameCatalogEntrySchema = z.object({
+  id: z.string(),
+  supportsBot: z.boolean(),
+});
+
+export const GameCatalogSchema = z.array(GameCatalogEntrySchema);
+
 export const RoomSessionSchema = z.object({
   role: RoleSchema,
   room: RoomSchema,
@@ -141,6 +149,9 @@ export const ProblemDetailsSchema = z.object({
 // stops compiling.
 type _AssertOutcome = z.infer<typeof OutcomeSchema> extends OutcomeDto ? true : false;
 type _AssertPlayer = z.infer<typeof PlayerSchema> extends PlayerDto ? true : false;
+type _AssertGameCatalogEntry = z.infer<typeof GameCatalogEntrySchema> extends GameCatalogEntryDto
+  ? true
+  : false;
 type _AssertClock = z.infer<typeof ClockSnapshotSchema> extends ClockSnapshotDto ? true : false;
 type _AssertMatch = z.infer<typeof MatchSchema> extends MatchDto ? true : false;
 type _AssertScore = z.infer<typeof ScoreSchema> extends ScoreDto ? true : false;
@@ -155,6 +166,7 @@ type _AssertProblem = z.infer<typeof ProblemDetailsSchema> extends ProblemDetail
 export type _SchemaDriftGuards = [
   _AssertOutcome,
   _AssertPlayer,
+  _AssertGameCatalogEntry,
   _AssertClock,
   _AssertMatch,
   _AssertScore,

@@ -14,6 +14,11 @@ namespace PlayMe.Application.Abstractions;
 /// </summary>
 public interface IGameModuleRegistry
 {
+    /// <summary>Every registered game, in registration order. Read by the
+    /// catalog query so capability flags (Sprint 12 seam D) are derived
+    /// from the modules themselves, never from a list.</summary>
+    IReadOnlyCollection<GameId> GameIds { get; }
+
     /// <summary>True if the game id has a registered module + parser.</summary>
     bool IsRegistered(GameId id);
 

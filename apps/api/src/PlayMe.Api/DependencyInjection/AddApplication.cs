@@ -26,6 +26,7 @@ using PlayMe.Application.Games.Reversi;
 using PlayMe.Application.Games.SeaBattle;
 using PlayMe.Application.Games.TicTacToe;
 using PlayMe.Application.Moves;
+using PlayMe.Application.Queries.GetGameCatalog;
 using PlayMe.Application.Queries.GetRoom;
 using PlayMe.Application.Setup;
 using PlayMe.Application.Time;
@@ -45,6 +46,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<CreateRoomHandler>();
         services.AddScoped<JoinRoomHandler>();
         services.AddScoped<GetRoomHandler>();
+        services.AddScoped<GetGameCatalogHandler>();
         services.AddScoped<RegisterPresenceHandler>();
         services.AddScoped<ReleasePresenceHandler>();
         services.AddScoped<SubmitMoveHandler>();

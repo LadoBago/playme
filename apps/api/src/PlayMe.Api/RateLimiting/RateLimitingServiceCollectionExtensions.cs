@@ -77,6 +77,19 @@ public static class RateLimitingServiceCollectionExtensions
                         QueueLimit = 0,
                         AutoReplenishment = true,
                     }));
+
+            // GET /api/games (Sprint 12 seam D): static per deployment,
+            // anonymous; the limit only caps scraping noise.
+            options.AddPolicy(RateLimitingPolicies.GamesList,
+                ctx => RateLimitPartition.GetFixedWindowLimiter(
+                    PartitionKey(ctx),
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = Limits(ctx).GamesListPermitLimit,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true,
+                    }));
         });
 
         return services;

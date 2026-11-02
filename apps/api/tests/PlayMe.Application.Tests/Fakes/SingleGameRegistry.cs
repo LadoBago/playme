@@ -15,6 +15,8 @@ public sealed class SingleGameRegistry : IGameModuleRegistry
     private readonly TicTacToeGameModule _module = new();
     private readonly TicTacToeMoveParser _parser = new();
 
+    public IReadOnlyCollection<GameId> GameIds => new[] { _module.Id };
+
     public bool IsRegistered(GameId id) => id == _module.Id;
 
     public IGameModule GetModule(GameId id)

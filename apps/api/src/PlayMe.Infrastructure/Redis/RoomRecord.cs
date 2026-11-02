@@ -30,6 +30,9 @@ internal sealed record RoomRecord(
     // forward compat — rooms persisted before the seam landed come back
     // without this field, which is correct for the games that don't take
     // options.
-    JsonElement? GameOptions = null);
+    JsonElement? GameOptions = null,
+    // Bot strength for a bot room (Sprint 12 seam D); null for
+    // human-vs-human rooms and for rooms persisted before the field landed.
+    BotLevel? BotLevel = null);
 
 internal sealed record SeriesScoreRecord(int Host, int Challenger, int Draws);
