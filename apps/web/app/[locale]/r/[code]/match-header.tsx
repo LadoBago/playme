@@ -2,6 +2,7 @@
 
 import { type RoomDto, type Role } from '@playme/shared';
 import { findGameModule } from '@/features/games/registry';
+import { playerLabel } from '@/lib/player-label';
 import { useTranslator } from '@/lib/use-locale';
 import { SeriesScore } from './clock';
 
@@ -49,7 +50,7 @@ export function MatchHeader({ room, role, showScore = false }: MatchHeaderProps)
     <div className="match-meta">
       <PlayerCard
         roleLabel={t('match.you')}
-        name={myPlayer?.displayName ?? '?'}
+        name={playerLabel(myPlayer, room.botLevel, t) ?? '?'}
         sideLabel={mySideLabel}
       />
       {/* Middle cell: keeps the two names in the same grid columns as the two
@@ -60,9 +61,11 @@ export function MatchHeader({ room, role, showScore = false }: MatchHeaderProps)
       ) : (
         <span className="match-meta__gap" aria-hidden="true" />
       )}
+      {/* A bot seat renders from its kind via i18n, never from the stored
+          placeholder name (Sprint 12 seam D). */}
       <PlayerCard
         roleLabel={t('match.opponent')}
-        name={opponentPlayer?.displayName ?? '…'}
+        name={playerLabel(opponentPlayer, room.botLevel, t) ?? '…'}
         sideLabel={opponentSideLabel}
       />
     </div>

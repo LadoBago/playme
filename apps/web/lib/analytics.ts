@@ -85,7 +85,7 @@ export function initAnalytics(): void {
 // per docs/observability-and-i18n.md §1.2 so the catalog stays accurate
 // when a client disconnects before it can report.
 export type AnalyticsEvent =
-  | { name: 'room_created'; props: { gameId: string } }
+  | { name: 'room_created'; props: { gameId: string; opponent: 'human' | 'bot' } }
   | { name: 'room_joined'; props: { gameId: string } }
   | { name: 'match_started'; props: { gameId: string } }
   | { name: 'move_made'; props: { gameId: string } }
