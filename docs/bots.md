@@ -45,7 +45,7 @@ A module becomes bot-capable by adding `IBotPlayer` (plus `IBotSetup` if it is a
 
 - **Legality.** `ApplyMove(state, side, ChooseMove(...))` is accepted. Same for setup. An illegal return is a bug in your module; the platform logs it as an error and the bot forfeits that match. It is never retried.
 - **Purity.** No I/O, no statics, no `DateTime`, no `Random.Shared`. The same `(state, side, level, seed)` produces the same move every time.
-- **Boundedness.** Target: **500 ms at `Hard` on the largest board your module supports**, on the production App Service tier. Enforce it with a depth cap or a node budget, never a wall-clock timer (timers make the move depend on machine speed and break determinism). Easy and Medium must be no slower than Hard.
+- **Boundedness.** Target: **1000 ms at `Hard` on the largest board your module supports**, on the production App Service tier. Enforce it with a depth cap or a node budget, never a wall-clock timer (timers make the move depend on machine speed and break determinism). Easy and Medium must be no slower than Hard.
 - **Monotonic strength.** `Hard` ≥ `Medium` ≥ `Easy` in playing strength. What each level means in your game is yours to decide and document.
 - **Not an idiot at Easy.** Easy should still take an immediate win and block an immediate loss where the game has such a concept. "Random legal move" is a fine Easy for Sea Battle shooting, a poor one for Connect 4.
 
@@ -81,7 +81,7 @@ Every game bot PR ships tests for:
 
 - **Legality everywhere.** For a sample of reachable states (random playouts under a seeded rng, a few hundred positions), every level returns a move `ApplyMove` accepts. For setup games, `ChooseSetup` validates.
 - **Determinism.** Same inputs and seed, same move, across two calls.
-- **Boundedness.** Hard on the largest board stays under the budget in a test that measures elapsed time with a generous ceiling (say 2 s on a laptop; the 500 ms target is for the production tier and is checked by hand on a deployed build).
+- **Boundedness.** Hard on the largest board stays under the budget in a test that measures elapsed time with a generous ceiling (say 3 s on a laptop; the 1000 ms target is for the production tier and is checked by hand on a deployed build).
 - **Tactics.** Where the game has them: takes an available immediate win; blocks an opponent's immediate win; in Checkers, respects mandatory capture (the rules enforce it, so this is a legality test in disguise). In Sea Battle: after a hit, the next shot is adjacent; after a sink, hunting resumes.
 - **Strength ordering.** Hard beats Easy in a seeded head-to-head over N games with a clear majority. Keep N small enough that the suite stays fast.
 

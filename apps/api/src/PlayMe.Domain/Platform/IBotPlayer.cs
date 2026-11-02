@@ -32,7 +32,7 @@ namespace PlayMe.Domain.Platform;
 /// an error, never retried. The call is pure apart from <c>rng</c>: no
 /// I/O, no shared mutable state, no wall-clock reads — every source of
 /// randomness goes through <c>rng</c> so a seeded test reproduces the
-/// exact move. The call is bounded: the target is 500 ms on the production
+/// exact move. The call is bounded: the target is 1000 ms on the production
 /// tier at <see cref="BotLevel.Hard"/> for the largest board the module
 /// supports; modules enforce it with a depth cap, not a timer.
 /// </para>

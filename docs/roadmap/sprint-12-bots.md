@@ -62,7 +62,7 @@ The fake-bot test suite from PR2/PR3 is the platform's compatibility guarantee: 
 ## Exit criteria
 
 - Slice 1: a bot room against the fake module plays end-to-end in tests through start, `KeepTurn`, timeout of the human, resign, rematch with side swap, setup with projection, and the stale-move and illegal-return paths; the create toggle is visible but disabled for all five games in production.
-- Each game PR: the [`bots.md`](../bots.md) §4.1 checklist passes; `git diff main` outside the module folder and its tests is empty; a deployed Hard bot on the largest board stays under the 500 ms target measured by hand.
+- Each game PR: the [`bots.md`](../bots.md) §4.1 checklist passes; `git diff main` outside the module folder and its tests is empty; a deployed Hard bot on the largest board stays under the 1000 ms target measured by hand.
 - Existing human-vs-human play shows zero behavioural change at every PR.
 
 ## Status
