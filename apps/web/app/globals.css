@@ -1647,10 +1647,10 @@ textarea {
   justify-content: flex-end;
 }
 
-/* Post-match row that pairs a secondary back-to-lobby text link with the
- * primary rematch CTA — push the link to the left edge of the board and
- * keep the primary action on the right. With a single child (back-link
- * only, no rematch available) the link still sits at flex-start. */
+/* Band that seats the emote trigger at the left edge of the board and the
+ * action group at the right. The actions carry `margin-left: auto` (below)
+ * so they stay pinned right even when the emote slot renders nothing
+ * (bot rooms). */
 .match-controls--split {
   justify-content: space-between;
 }
@@ -1697,6 +1697,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  margin-left: auto;
 }
 
 /* Lets a crowded post-game band (emote + back + rematch) wrap on the

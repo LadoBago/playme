@@ -987,14 +987,16 @@ function MatchView({
       {matchInProgress ? (
         <div className="match-controls match-controls--split">
           {emotePicker}
-          <button
-            type="button"
-            className="button-danger-soft"
-            onClick={() => setConfirmResignOpen(true)}
-            disabled={resignPending}
-          >
-            {t('match.resign.button')}
-          </button>
+          <div className="match-controls__actions">
+            <button
+              type="button"
+              className="button-danger-soft"
+              onClick={() => setConfirmResignOpen(true)}
+              disabled={resignPending}
+            >
+              {t('match.resign.button')}
+            </button>
+          </div>
         </div>
       ) : null}
 
