@@ -50,6 +50,18 @@ describe('structured-data', () => {
     });
   });
 
+  it('buildVideoGameSchema adds SinglePlayer when the game has a bot', async () => {
+    const { buildVideoGameSchema } = await import('./structured-data');
+    const { t } = createTranslator('en');
+    const game = findGame('tictactoe');
+    if (!game) throw new Error('tictactoe missing from catalog');
+
+    expect(buildVideoGameSchema(game, t, 'en', true)).toMatchObject({
+      playMode: ['SinglePlayer', 'MultiPlayer'],
+      numberOfPlayers: { '@type': 'QuantitativeValue', value: 2 },
+    });
+  });
+
   it('buildBreadcrumbSchema trails Home → Game with absolute, locale-aware URLs', async () => {
     const { buildBreadcrumbSchema } = await import('./structured-data');
     const { t } = createTranslator('ka');
