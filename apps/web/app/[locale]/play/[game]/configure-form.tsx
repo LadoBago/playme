@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   PlaymeClient,
   type BotLevel,
@@ -9,6 +9,12 @@ import {
   type I18nKey,
   localizedHref,
 } from '@playme/shared';
+import {
+  readStoredDisplayName,
+  readStoredGamePrefs,
+  writeStoredDisplayName,
+  writeStoredGamePrefs,
+} from '@/features/preferences';
 import { browserApiBase } from '@/lib/api-base';
 import { track } from '@/lib/analytics';
 import { botLevelKey } from '@/lib/player-label';
@@ -68,6 +74,10 @@ function parseBoardSizeParam(value: string | null): TicTacToeBoardSize {
   return 3;
 }
 
+function isTicTacToeBoardSize(value: number | undefined): value is TicTacToeBoardSize {
+  return TICTACTOE_BOARD_SIZES.some((size) => size === value);
+}
+
 export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: ConfigureFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,6 +105,40 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
 
   const isUnifiedTicTacToe = gameId === 'tictactoe';
   const isBotRoom = supportsBot && opponent === 'bot';
+
+  // Prefill from the last visit. Runs after mount because the page is
+  // server-rendered and localStorage only exists in the browser; the
+  // defaults above are what SSR paints, then this swaps in what was
+  // remembered. Explicit URL state (`?vs=`, `?size=`) always wins over
+  // the stored choice so shared links keep working.
+  const hasVsParam = searchParams?.has(VS_PARAM) ?? false;
+  const hasSizeParam = searchParams?.has('size') ?? false;
+  useEffect(() => {
+    const storedName = readStoredDisplayName();
+    if (storedName) setDisplayName(storedName);
+
+    const prefs = readStoredGamePrefs(gameId);
+    const nextOpponent: Opponent =
+      hasVsParam || !supportsBot ? opponent : (prefs.opponent ?? opponent);
+    if (nextOpponent !== opponent) setOpponent(nextOpponent);
+    if (prefs.botLevel) setBotLevel(prefs.botLevel);
+    if (prefs.hostSide && sides.some((s) => s.id === prefs.hostSide)) {
+      setHostSide(prefs.hostSide);
+    }
+    if (prefs.sideMode) {
+      // The bot tab has no "let the challenger pick" option.
+      setSideMode(
+        nextOpponent === 'bot' && prefs.sideMode === 'challengerPicks'
+          ? 'hostPicksSpecific'
+          : prefs.sideMode,
+      );
+    }
+    if (isUnifiedTicTacToe && !hasSizeParam && isTicTacToeBoardSize(prefs.boardSize)) {
+      setBoardSize(prefs.boardSize);
+    }
+    // Mount-only by design: props and URL state are fixed for the page's
+    // lifetime, and re-running would clobber what the user has since typed.
+  }, []);
   // The bot tab has no "how to assign sides" question: there is no friend
   // to let pick, so "Your side" simply offers the two sides plus Random,
   // mapped onto the same two server modes the friend tab uses.
@@ -156,6 +200,18 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
       setSubmitting(false);
       return;
     }
+
+    // Remember for next time. The name is only written from the friend
+    // tab — the bot tab never asks for one, so it must not overwrite a
+    // name typed earlier.
+    if (!isBotRoom) writeStoredDisplayName(name);
+    writeStoredGamePrefs(gameId, {
+      opponent: isBotRoom ? 'bot' : 'friend',
+      botLevel,
+      sideMode,
+      hostSide,
+      ...(isUnifiedTicTacToe ? { boardSize } : {}),
+    });
 
     track({ name: 'room_created', props: { gameId, opponent: isBotRoom ? 'bot' : 'human' } });
     router.push(localizedHref(`/r/${result.value.code}`, locale));
