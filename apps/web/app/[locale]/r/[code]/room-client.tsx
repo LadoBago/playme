@@ -748,10 +748,13 @@ function MatchView({
 
   // Emotes (platform reaction): available during active play and on the
   // post-game / rematch screen; never during setup or before the opponent
-  // joins. The trigger sits in the controls band so it costs no board
-  // height; the opponent's incoming emote shows on their clock face.
+  // joins, and never against a bot (Sprint 12 seam D) — there is nobody on
+  // the other side to react. The trigger sits in the controls band so it
+  // costs no board height; the opponent's incoming emote shows on their
+  // clock face.
   const emotesAllowed =
     role != null &&
+    room.challenger?.kind !== 'bot' &&
     (room.status === 'inProgress' ||
       room.status === 'ended' ||
       room.status === 'awaitingRematch');
