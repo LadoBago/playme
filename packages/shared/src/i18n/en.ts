@@ -7,36 +7,36 @@ export const en = {
   // --- Site chrome ---
   // Keyword-first: the descriptive phrase leads so it survives SERP
   // truncation, and the (generic, contested) brand is demoted to the tail.
-  'site.title': 'Play board & strategy games online with a friend — PlayMe',
+  'site.title': 'Play board & strategy games online with a friend or a bot — PlayMe',
   // Shorter brand form used by surfaces with limited space (e.g. the PWA
   // manifest `name`, shown on install prompts and the home screen).
-  'site.titleShort': 'PlayMe — Play board & strategy games online with a friend',
+  'site.titleShort': 'PlayMe — Play board & strategy games online with a friend or a bot',
   // Landing-page <h1>. The visible wordmark is aria-hidden, so this is the
   // heading's whole accessible name; it also puts a real keyword phrase in
   // the highest-authority page's H1 (the wordmark text stays crawlable).
-  'site.homeH1': 'Play board & strategy games online with a friend — PlayMe',
+  'site.homeH1': 'Play board & strategy games online with a friend or a bot — PlayMe',
   'site.titleSuffix': '— PlayMe',
-  'site.tagline': 'Play board & strategy games online with a friend, no signup.',
+  'site.tagline': 'Play board & strategy games online with a friend or a bot, no signup.',
   // Homepage-specific meta/OG description. Distinct from `site.tagline`
   // (which stays the site-wide OG fallback and the per-room default) so
   // the landing page's search snippet reads on its own terms.
   'site.homeMetaDescription':
-    'Play 2-player board and strategy games online with a friend — no signup. Pick a game and share a link. Free to play.',
+    'Play board and strategy games online with a friend or against a bot — no signup. Pick a game, share a link or start against the bot right away. Free to play.',
   // Short brand tagline used as the OG image kicker and the landing
   // hero subtitle, where the descriptive tagline (above) is too long.
   // Brand kit voice: short, punchy, board-game flavored.
   'site.brandTagline': 'Your move.',
-  'site.ogImageAlt': 'PlayMe — play board & strategy games online with a friend, no signup.',
+  'site.ogImageAlt': 'PlayMe — play board & strategy games online with a friend or a bot, no signup.',
   'site.howItWorks.title': 'How PlayMe works',
   'site.howItWorks.step1.title': 'Pick a game',
   'site.howItWorks.step1.body':
     'Choose a game and configure your side. No account needed.',
   'site.howItWorks.step2.title': 'Share the link',
   'site.howItWorks.step2.body':
-    'You get a private room link. Send it to whoever you want to play with.',
+    'You get a private room link. Send it to whoever you want to play with — or skip the link and play the bot.',
   'site.howItWorks.step3.title': 'Play live',
   'site.howItWorks.step3.body':
-    'The first friend who opens your link joins. Take turns in real time.',
+    'The first friend who opens your link joins — the bot is ready at once. Take turns in real time.',
   'site.catalog.title': 'Choose a game',
 
   // --- Footer ---
@@ -49,10 +49,10 @@ export const en = {
   'copyright.title': 'Copyright',
   'copyright.metaTitle': 'Copyright & licensing — PlayMe',
   'copyright.metaDescription':
-    'Copyright and ownership information for PlayMe, a free platform for playing board and strategy games online with a friend.',
+    'Copyright and ownership information for PlayMe, a free platform for playing board and strategy games online with a friend or a bot.',
   'copyright.notice': '© {year} PlayMe.ge. All rights reserved.',
   'copyright.body':
-    'PlayMe.ge is a free, anonymous platform for playing two-player board and strategy games online with a friend — no signup, just share a link. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here are in the public domain; only this site’s implementation and presentation are covered.',
+    'PlayMe.ge is a free, anonymous platform for playing two-player board and strategy games online with a friend or against a bot — no signup, just share a link or start against the bot. The PlayMe.ge name, logo, site design, and source code are protected by copyright. The classic games offered here are in the public domain; only this site’s implementation and presentation are covered.',
 
   // --- About page ---
   // First-person: this is a personal learning project, so the voice is the
@@ -60,9 +60,9 @@ export const en = {
   'about.title': 'About',
   'about.metaTitle': 'About PlayMe — the project and how I built it',
   'about.metaDescription':
-    'About PlayMe.ge — a personal learning project for playing two-player board and strategy games online with a friend, built with AI pair-programming.',
+    'About PlayMe.ge — a personal learning project for playing two-player board and strategy games online with a friend or a bot, built with AI pair-programming.',
   'about.intro':
-    'PlayMe.ge is a personal project: a platform for playing online with a friend — no signup, just share a link and play a variety of board and strategy games.',
+    'PlayMe.ge is a personal project: a platform for playing a variety of board and strategy games online with a friend or a bot — no signup, just share a link or start against the bot.',
   'about.why.label': 'What I built it for',
   'about.why.body':
     'To explore the capabilities of AI — and for the fun of it. Not with abstract examples, but by building a real product.',
@@ -78,9 +78,9 @@ export const en = {
   // clean on-screen labels (`name` / `shortDescription`) don't, so the
   // visible UI stays uncluttered while search queries still match.
   'games.tictactoe.name': 'Tic-Tac-Toe',
-  'games.tictactoe.metaTitle': 'Tic-Tac-Toe online — play with a friend | PlayMe',
+  'games.tictactoe.metaTitle': 'Tic-Tac-Toe online — play with a friend or a bot | PlayMe',
   'games.tictactoe.metaDescription':
-    'Play Tic-Tac-Toe (noughts and crosses) online with a friend — 3×3, 6×6, or 9×9 board. No signup, just share a link.',
+    'Play Tic-Tac-Toe (noughts and crosses) online with a friend or against a bot at three levels — 3×3, 6×6, or 9×9 board. No signup, just share a link.',
   'games.tictactoe.shortDescription':
     'Pick a board size: 3×3, 6×6, or 9×9. First to align the target number of marks wins.',
   'games.tictactoe.rules':
@@ -91,9 +91,9 @@ export const en = {
   'games.tictactoe.shortSideO': 'O',
 
   'games.connect4.name': 'Connect 4',
-  'games.connect4.metaTitle': 'Connect 4 online — play with a friend | PlayMe',
+  'games.connect4.metaTitle': 'Connect 4 online — play with a friend or a bot | PlayMe',
   'games.connect4.metaDescription':
-    'Play Connect 4 (Four in a Row) online with a friend — drop discs and line up four first. No signup, just share a link.',
+    'Play Connect 4 (Four in a Row) online with a friend or against a bot at three levels — drop discs and line up four first. No signup, just share a link.',
   'games.connect4.shortDescription':
     'Drop discs into a 7×6 grid with gravity. First to line up four wins.',
   'games.connect4.rules':

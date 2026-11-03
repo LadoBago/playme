@@ -89,6 +89,8 @@ Every game bot PR ships tests for:
 
 Add a short **Bot** section to the module's `RULES.md` (or the game doc under `docs/games/`): one line per level saying what it does, e.g. "Easy: depth 2, random tie-break. Medium: depth 4. Hard: depth 7 with centre-column ordering." That is the only user-facing-adjacent text, and it is for maintainers; the web shows the level name only, from a platform i18n key.
 
+Once the bot PR has merged, open a **separate, small web PR** that updates the game's `games.<game>.metaTitle` / `metaDescription` in both catalogs (`packages/shared/src/i18n/{en,ka}.ts`) to say the game can also be played against a bot — copy the wording from `tictactoe` / `connect4`. Until then the game's public page keeps saying "play with a friend", which is the truth.
+
 ## 6. Suggested approaches
 
 Not prescriptions. Pick what gives a credible Hard inside the budget.
