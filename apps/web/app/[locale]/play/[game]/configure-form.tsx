@@ -75,8 +75,9 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
   const tabsId = useId();
   const tabRefs = useRef(new Map<Opponent, HTMLButtonElement>());
 
-  // Shared across both tabs: switching tabs must not lose the typed name
-  // or the chosen board size.
+  // Friend tab only — the bot tab has no name field (nobody else ever reads
+  // it). Kept across tab switches so a round trip through the bot tab does
+  // not lose what was typed.
   const [displayName, setDisplayName] = useState('');
   const [opponent, setOpponent] = useState<Opponent>(() =>
     supportsBot && searchParams?.get(VS_PARAM) === 'bot' ? 'bot' : 'friend',
@@ -136,9 +137,9 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
     setError(null);
     setSubmitting(true);
 
-    // Against a bot nobody else ever reads the name, so it is optional
-    // there; the server still requires one, hence the localized default.
-    const name = displayName.trim() || (isBotRoom ? t('configure.displayName.default') : '');
+    // The bot tab asks for no name — nobody else ever reads it — but the
+    // API contract still requires one, so it submits the localized default.
+    const name = isBotRoom ? t('configure.displayName.default') : displayName.trim();
     const client = new PlaymeClient({ baseUrl: browserApiBase });
     const result = await client.createRoom({
       hostDisplayName: name,
@@ -202,24 +203,24 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
           void submit();
         }}
       >
-        <div>
-          <label className="label" htmlFor="displayName">
-            {t('configure.displayName.label')}
-          </label>
-          <input
-            id="displayName"
-            className="input"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={t(
-              isBotRoom ? 'configure.displayName.placeholderOptional' : 'configure.displayName.placeholder',
-            )}
-            maxLength={24}
-            required={!isBotRoom}
-            autoComplete="off"
-          />
-        </div>
+        {isBotRoom ? null : (
+          <div>
+            <label className="label" htmlFor="displayName">
+              {t('configure.displayName.label')}
+            </label>
+            <input
+              id="displayName"
+              className="input"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={t('configure.displayName.placeholder')}
+              maxLength={24}
+              required
+              autoComplete="off"
+            />
+          </div>
+        )}
 
         {isBotRoom ? (
           <div>

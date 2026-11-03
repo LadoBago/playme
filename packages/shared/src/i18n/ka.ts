@@ -106,7 +106,6 @@ export const ka: Record<EnKey, string> = {
   'configure.title': 'ოთახის კონფიგურაცია',
   'configure.displayName.label': 'შენი სახელი',
   'configure.displayName.placeholder': 'როგორ მოგმართო?',
-  'configure.displayName.placeholderOptional': 'არასავალდებულო — დაგიძახებთ „მოთამაშეს“',
   'configure.displayName.default': 'მოთამაშე',
   'configure.sideMode.label': 'მხარეების მინიჭება',
   'configure.sideMode.hostPicksSpecific': 'მე ავირჩევ ჩემს მხარეს',

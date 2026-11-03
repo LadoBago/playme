@@ -120,7 +120,6 @@ export const en = {
   'configure.title': 'Configure room',
   'configure.displayName.label': 'Your name',
   'configure.displayName.placeholder': 'How should we call you?',
-  'configure.displayName.placeholderOptional': 'Optional — we’ll call you “Player”',
   'configure.displayName.default': 'Player',
   'configure.sideMode.label': 'How to assign sides',
   'configure.sideMode.hostPicksSpecific': "I'll pick my side",
