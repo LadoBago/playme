@@ -45,12 +45,15 @@ export function buildWebSiteSchema(t: Translate, locale: Locale): Record<string,
 /**
  * `VideoGame` node for a per-game configure page. PlayMe games are
  * two-player, real-time, browser-based — encoded here so the page can
- * qualify for game-specific result treatments.
+ * qualify for game-specific result treatments. `supportsBot` (from
+ * `GET /api/games`, Sprint 12 seam D) adds `SinglePlayer` to `playMode`:
+ * the seat count stays two, but one seat may be the server's bot.
  */
 export function buildVideoGameSchema(
   game: GameCatalogEntry,
   t: Translate,
   locale: Locale,
+  supportsBot = false,
 ): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
@@ -60,8 +63,9 @@ export function buildVideoGameSchema(
     description: t(game.metaDescriptionKey),
     inLanguage: schemaLanguage(locale),
     // Schema.org vocabulary (not localized UI): exactly two players,
-    // multiplayer, played in any web browser.
-    playMode: 'MultiPlayer',
+    // multiplayer (plus single-player when a bot can take a seat),
+    // played in any web browser.
+    playMode: supportsBot ? ['SinglePlayer', 'MultiPlayer'] : 'MultiPlayer',
     numberOfPlayers: {
       '@type': 'QuantitativeValue',
       value: 2,

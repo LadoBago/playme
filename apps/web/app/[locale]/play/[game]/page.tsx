@@ -102,7 +102,7 @@ export default async function ConfigurePage({ params }: PageProps) {
     <main className="container stack" style={{ gap: '2rem' }}>
       <JsonLd
         data={[
-          buildVideoGameSchema(game, t, locale),
+          buildVideoGameSchema(game, t, locale, supportsBot),
           buildBreadcrumbSchema(game, t, locale),
         ]}
       />
