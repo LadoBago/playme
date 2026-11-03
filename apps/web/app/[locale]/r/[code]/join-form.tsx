@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type I18nKey, type PlaymeClient, type RoomDto } from '@playme/shared';
+import { readStoredDisplayName, writeStoredDisplayName } from '@/features/preferences';
 import { track } from '@/lib/analytics';
 import { useTranslator } from '@/lib/use-locale';
 
@@ -21,6 +22,13 @@ export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
 
   const sidePickRequired = room.sideSelectionMode === 'challengerPicks';
 
+  // Prefill the name remembered from a previous room (after mount — this
+  // is a client component but the room page is still server-rendered).
+  useEffect(() => {
+    const stored = readStoredDisplayName();
+    if (stored) setDisplayName(stored);
+  }, []);
+
   async function submit() {
     setError(null);
     setSubmitting(true);
@@ -36,6 +44,7 @@ export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
       return;
     }
 
+    writeStoredDisplayName(displayName);
     track({ name: 'room_joined', props: { gameId: result.value.gameId } });
     onJoined(result.value);
   }
