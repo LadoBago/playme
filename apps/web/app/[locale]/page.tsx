@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
+import { BotBadge } from '@/features/bot/bot-badge';
 import { Wordmark } from '@/features/branding/wordmark';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
 import { JsonLd } from '@/features/seo/json-ld';
+import { fetchBotCapableGames } from '@/lib/bot-support';
 import { resolveLocale } from '@/lib/locale';
 import { buildWebSiteSchema } from '@/lib/structured-data';
 
@@ -57,6 +59,7 @@ export default async function HomePage({ params }: PageProps) {
   // Request-time render (the root layout pins `dynamic = 'force-dynamic'`
   // for the whole subtree) keeps the year current without a redeploy.
   const year = new Date().getFullYear();
+  const botGames = await fetchBotCapableGames();
 
   return (
     <main className="container stack" style={{ gap: '2.5rem' }}>
@@ -93,6 +96,7 @@ export default async function HomePage({ params }: PageProps) {
               href={localizedHref(`/play/${game.slug}`, locale)}
               className="game-card"
             >
+              {botGames.has(game.id) && <BotBadge label={t('site.catalog.botAvailable')} />}
               <BoardPreview
                 gameId={game.id}
                 cols={game.cols}

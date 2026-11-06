@@ -2,13 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
-  PlaymeClient,
   createTranslator,
   findGame,
   localeFromString,
   localizedHref,
 } from '@playme/shared';
-import { ssrApiBase } from '@/lib/api-base';
+import { fetchBotCapableGames } from '@/lib/bot-support';
 import { JsonLd } from '@/features/seo/json-ld';
 import { buildBreadcrumbSchema, buildVideoGameSchema } from '@/lib/structured-data';
 import { ConfigureForm } from './configure-form';
@@ -69,23 +68,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-/**
- * Server-derived capability for the configure form (Sprint 12 seam D):
- * whether this game's module offers a bot opponent. Cached for five
- * minutes — it only changes with a deploy — and degraded to `false` when
- * the API is unreachable, so the page still renders (as a human-only
- * form) during a build or an API outage.
- */
-async function fetchSupportsBot(gameId: string): Promise<boolean> {
-  try {
-    const client = new PlaymeClient({ baseUrl: ssrApiBase });
-    const res = await client.getGames({ next: { revalidate: 300 } });
-    return res.ok && res.value.some((g) => g.id === gameId && g.supportsBot);
-  } catch {
-    return false;
-  }
-}
-
 export default async function ConfigurePage({ params }: PageProps) {
   const { locale: localeRaw, game: slug } = await params;
   const locale = localeFromString(localeRaw);
@@ -93,7 +75,8 @@ export default async function ConfigurePage({ params }: PageProps) {
   const game = findGame(slug);
   if (!game) notFound();
 
-  const supportsBot = await fetchSupportsBot(game.id);
+  // Server-derived capability (Sprint 12 seam D) gating the bot tab.
+  const supportsBot = (await fetchBotCapableGames()).has(game.id);
   const { t } = createTranslator(locale);
   const name = t(game.nameKey);
   const rules = t(game.rulesKey);

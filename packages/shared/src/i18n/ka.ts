@@ -29,6 +29,7 @@ export const ka: Record<EnKey, string> = {
   'site.howItWorks.step3.body':
     'პირველი მეგობარი, რომელიც ბმულს გახსნის, შემოგიერთდება — ბოტი კი მაშინვე მზადაა. ითამაშეთ რიგრიგობით.',
   'site.catalog.title': 'აირჩიე თამაში',
+  'site.catalog.botAvailable': 'ბოტთან თამაშიც შეიძლება',
 
   // --- Footer ---
   'site.footer.copyright': '© {year} PlayMe.ge',
