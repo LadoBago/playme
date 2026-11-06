@@ -38,6 +38,7 @@ export const en = {
   'site.howItWorks.step3.body':
     'The first friend who opens your link joins — the bot is ready at once. Take turns in real time.',
   'site.catalog.title': 'Choose a game',
+  'site.catalog.botAvailable': 'Bot opponent available',
 
   // --- Footer ---
   // `{year}` is interpolated at render with the current year so the

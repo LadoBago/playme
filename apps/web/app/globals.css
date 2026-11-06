@@ -635,6 +635,7 @@ textarea {
 }
 
 .game-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -747,6 +748,18 @@ textarea {
 .game-card__desc {
   color: var(--fg-muted);
   font-size: 0.92rem;
+}
+
+/* "Has a bot opponent" marker, pinned to the card's corner so it costs
+ * no vertical space. Muted, not accent — it's information, not a second
+ * call to action (the whole card is already the link). */
+.game-card__bot {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--fg-muted);
 }
 
 .howitworks {
