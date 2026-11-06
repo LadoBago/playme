@@ -293,9 +293,9 @@ export const en = {
 
   // --- Checkers (Russian draughts) — per-module vocab ---
   'games.checkers.name': 'Checkers',
-  'games.checkers.metaTitle': 'Checkers (Russian draughts) online — play with a friend | PlayMe',
+  'games.checkers.metaTitle': 'Checkers (Russian draughts) online — play with a friend or a bot | PlayMe',
   'games.checkers.metaDescription':
-    'Play Checkers online with a friend on an 8×8 board — Russian draughts rules: flying kings, mandatory captures, backward jumps. No signup, just share a link.',
+    'Play Checkers online with a friend or against a bot at three levels on an 8×8 board — Russian draughts rules: flying kings, mandatory captures, backward jumps. No signup, just share a link.',
   'games.checkers.shortDescription':
     'Jump over your opponent’s pieces to capture them. Take them all, or leave them no move, and you win.',
   'games.checkers.rules':
