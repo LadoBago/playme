@@ -11,7 +11,7 @@
 | **Pieces** | 12 **men** per side; a man promotes to a **king** on the far rank |
 | **Default clock budget** | 10 min per side ([`platform.md`](../platform.md) §1 #3) |
 | **Game options** | none in v1 (`ValidateOptions` requires `null`) |
-| **Platform seams used** | `IGameModule` + `MoveResult.KeepTurn` (multi-capture chains). Perfect information — no `IHiddenStateGame`, no `ISetupGame` |
+| **Platform seams used** | `IGameModule` + `MoveResult.KeepTurn` (multi-capture chains) + `IBotPlayer` (Sprint 12). Perfect information — no `IHiddenStateGame`, no `ISetupGame` |
 
 ## Rules
 
@@ -35,6 +35,18 @@
 - **Draw by repetition:** the same position (board + side to move, evaluated at the end of a complete turn) occurs for the **third** time.
 - **Draw by king shuffling:** **15 consecutive moves by each side** (30 plies) in which only kings moved and nothing was captured. Any man move or capture resets the count.
 - The other codified Russian draw rules (three kings vs one on the long diagonal, specific endgame move limits) are **not** modelled in v1; a stuck endgame still resolves by the king-shuffling rule or on the clock. A draw offer is not available in v1 — it would need a platform-level handshake like rematch and is deferred ([`roadmap/open-questions.md`](../roadmap/open-questions.md)).
+
+## Bot
+
+The module implements `IBotPlayer` (Sprint 12 PR7; [`bots.md`](../bots.md)). The decision lives in `CheckersBot.cs`: negamax with alpha-beta over the module's **own move generator** (`LegalMovesFor`, exposed internally), so the bot can never disagree with the rules — mandatory capture, free choice among captures, the king landing rule and the Turkish strike all come from the same code the human's moves go through. A multi-capture chain is one decision, not several plies: while the mover keeps the turn the search recurses without flipping sign or spending depth. The search never cuts off at a node whose side-to-move must capture; it extends until the position is quiet (bounded, since every capture removes a piece).
+
+- **Easy** — depth 2, material only: takes what it can, keeps its pieces out of an immediate capture, otherwise plays at random.
+- **Medium** — depth 4 with the positional terms.
+- **Hard** — iterative deepening from depth 4 to 8 under a **node budget** (60 000 nodes): depth 4 always completes, each deeper iteration is discarded if the budget runs out mid-way, and the deepest completed iteration's move is played. Node counts depend on the position alone, so the budget bounds the work without making the move depend on machine speed (a flat depth 8 overran the target in open middlegames and king endgames).
+
+Evaluation: material (man 100, king 300) plus, for men, advancement toward promotion, a bonus for guarding the home rank and for holding the centre. Move ordering: captures of kings first, then promotions, then advancing and central moves; the rng only picks among root moves with equal scores. No transposition table or opening book.
+
+Measured think time (Sprint 12 PR7, Apple-silicon laptop, release build, after warm-up, Hard-vs-Hard playouts): Hard ≈ 35–45 ms per move on average, worst observed ≈ 90 ms; Medium ≈ 1–10 ms. Inside the 1000 ms production target of [`bots.md`](../bots.md) §2.2 with a wide margin for the slower App Service tier.
 
 ## Multi-capture chains on the wire
 

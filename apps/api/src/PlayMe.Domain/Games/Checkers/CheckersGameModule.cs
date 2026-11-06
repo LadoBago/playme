@@ -23,8 +23,14 @@ namespace PlayMe.Domain.Games.Checkers;
 /// when a turn ends, never mid-chain. The platform sees none of this
 /// vocabulary (CLAUDE.md §7 "Platform thinness").
 /// </para>
+///
+/// <para>
+/// Implements <see cref="IBotPlayer"/> (Sprint 12 PR7); the decision lives
+/// in <see cref="CheckersBot"/>, which searches over this class's own move
+/// generator.
+/// </para>
 /// </summary>
-public sealed class CheckersGameModule : IGameModule
+public sealed class CheckersGameModule : IGameModule, IBotPlayer
 {
     public static readonly GameId GameId = new("checkers");
 
@@ -258,21 +264,31 @@ public sealed class CheckersGameModule : IGameModule
     /// captures by the chaining piece. Otherwise: all captures if any piece
     /// has one (free choice, no majority rule), else all steps.
     /// </summary>
-    private static List<CheckersMoveInfo> LegalMovesFor(string?[] cells, string side, CheckersChain? chain)
+    private static List<CheckersMoveInfo> LegalMovesFor(string?[] cells, string side, CheckersChain? chain) =>
+        LegalMovesFor(cells, side, chain?.At, PendingMask(chain?.Captured));
+
+    /// <summary>
+    /// Same as <see cref="LegalMovesFor(string?[], string, CheckersChain?)"/>
+    /// with the open chain given as its landing square plus the pending
+    /// (jumped, not yet removed) mask. Internal so <see cref="CheckersBot"/>
+    /// searches with the module's own generator and can never disagree
+    /// with it; the mask is only read.
+    /// </summary>
+    internal static List<CheckersMoveInfo> LegalMovesFor(
+        string?[] cells, string side, CheckersCoordinate? chainAt, bool[] pending)
     {
-        if (chain is not null)
+        if (chainAt is { } at)
         {
-            return CapturesFrom(cells, chain.At, side, PendingMask(chain.Captured));
+            return CapturesFrom(cells, at, side, pending);
         }
 
-        var noPending = new bool[CheckersState.CellCount];
         var captures = new List<CheckersMoveInfo>();
         for (var row = 0; row < CheckersState.Size; row++)
         {
             for (var col = 0; col < CheckersState.Size; col++)
             {
                 if (CheckersPieces.SideOf(cells[CheckersState.IndexOf(row, col)]) != side) continue;
-                captures.AddRange(CapturesFrom(cells, new CheckersCoordinate(row, col), side, noPending));
+                captures.AddRange(CapturesFrom(cells, new CheckersCoordinate(row, col), side, pending));
             }
         }
         if (captures.Count > 0)
@@ -439,6 +455,22 @@ public sealed class CheckersGameModule : IGameModule
         return result;
     }
 
+    // --- Bot ---------------------------------------------------------------
+
+    /// <summary>
+    /// Bot opponent (Sprint 12 PR7; docs/bots.md). Delegates to
+    /// <see cref="CheckersBot"/> so the rules above stay about rules.
+    /// </summary>
+    public GameMove ChooseMove(IGameState state, string side, BotLevel level, IRandomSource rng)
+    {
+        var board = Cast(state);
+        if (side != CheckersSides.White && side != CheckersSides.Black)
+        {
+            throw new ArgumentException($"Unknown side '{side}'.", nameof(side));
+        }
+        return CheckersBot.Choose(board, side, level, rng);
+    }
+
     // --- Serialization -----------------------------------------------------
 
     public string Serialize(IGameState state)
@@ -530,7 +562,7 @@ public sealed class CheckersGameModule : IGameModule
 
     private static int FarRank(string side) => side == CheckersSides.White ? 0 : CheckersState.Size - 1;
 
-    private static string Promote(string piece, string side, int landingRow) =>
+    internal static string Promote(string piece, string side, int landingRow) =>
         !CheckersPieces.IsKing(piece) && landingRow == FarRank(side) ? CheckersPieces.KingOf(side) : piece;
 
     private static CheckersMoveInfo? Find(List<CheckersMoveInfo> moves, CheckersCoordinate from, CheckersCoordinate to)
