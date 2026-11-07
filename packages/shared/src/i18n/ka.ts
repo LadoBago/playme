@@ -37,6 +37,9 @@ export const ka: Record<EnKey, string> = {
   'resume.opponent': 'მოწინააღმდეგე: {opponent}',
   'resume.status.waiting': 'მეგობარს ველოდებით',
   'resume.status.settingUp': 'ფლოტის განლაგება',
+  // Configure-page guard: same card, different headline + a consequence line.
+  'resume.guard.title': 'შენი თამაში ჯერ არ დასრულებულა',
+  'resume.guard.body': 'ახალი თამაშის დაწყებით ძველი დაიკარგება.',
 
   // --- Footer ---
   'site.footer.copyright': '© {year} PlayMe.ge',

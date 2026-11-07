@@ -46,6 +46,9 @@ export const en = {
   'resume.opponent': 'vs {opponent}',
   'resume.status.waiting': 'waiting for your friend',
   'resume.status.settingUp': 'placing fleets',
+  // Configure-page guard: same card, different headline + a consequence line.
+  'resume.guard.title': 'You still have a game running',
+  'resume.guard.body': 'Starting a new game abandons it.',
 
   // --- Footer ---
   // `{year}` is interpolated at render with the current year so the

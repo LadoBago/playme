@@ -291,6 +291,12 @@ textarea {
   color: var(--fg-muted);
 }
 
+.resume-card__note {
+  font-size: 0.9rem;
+  color: var(--fg);
+  margin-top: 0.2rem;
+}
+
 .resume-card__cta {
   flex: 0 0 auto;
   padding: 0.5rem 1rem;

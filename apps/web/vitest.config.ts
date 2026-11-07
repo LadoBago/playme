@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 // Node env (no jsdom) is enough for the current scope — we test pure
@@ -11,6 +12,11 @@ import { defineConfig } from 'vitest/config';
 // fixtures; the file glob is scoped to source dirs to keep the loader
 // simple.
 export default defineConfig({
+  // Mirror the `@/` path alias from tsconfig so tested modules can keep the
+  // project's import style (CLAUDE.md §6: no deep relative imports).
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('.', import.meta.url)) },
+  },
   test: {
     environment: 'node',
     include: [
