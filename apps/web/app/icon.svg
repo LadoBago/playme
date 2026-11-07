@@ -1,15 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Solid brand background (fills full 512x512 — required for iOS, supports Android maskable crop) -->
-  <rect width="512" height="512" fill="#E54B1C"/>
+  <!-- Light brand background (the light-mode page background, fills the full 512x512 — required for iOS,
+       supports the Android maskable crop). A light tile keeps the orange cross legible
+       at favicon sizes, where a white cross on solid orange collapsed into a plain square. -->
+  <rect width="512" height="512" fill="#FFF4E6"/>
 
   <!-- Artwork centered inside the 80% safe-zone (a 410px circle, 51px inset on all sides).
-       Mark content occupies a ~280px square centered at (256, 256), well inside the safe-zone. -->
+       Mark content occupies a ~304px square centered at (256, 256), well inside the safe-zone.
+       Stroke is 32px so the cross still spans a full pixel at 16x16. -->
 
   <!-- Grid lines -->
-  <line x1="256" y1="116" x2="256" y2="396" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
-  <line x1="116" y1="256" x2="396" y2="256" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <line x1="256" y1="104" x2="256" y2="408" stroke="#E54B1C" stroke-width="32" stroke-linecap="round"/>
+  <line x1="104" y1="256" x2="408" y2="256" stroke="#E54B1C" stroke-width="32" stroke-linecap="round"/>
 
-  <!-- Two opposing tokens: white (player 1) top-left, amber (player 2) bottom-right -->
-  <circle cx="186" cy="186" r="44" fill="#FFFFFF"/>
-  <circle cx="326" cy="326" r="44" fill="#F59E0B"/>
+  <!-- Two opposing tokens: brand orange (player 1) top-left, amber (player 2) bottom-right -->
+  <circle cx="174" cy="174" r="50" fill="#E54B1C"/>
+  <circle cx="338" cy="338" r="50" fill="#F59E0B"/>
 </svg>
