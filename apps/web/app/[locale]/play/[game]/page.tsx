@@ -11,6 +11,7 @@ import { fetchBotCapableGames } from '@/lib/bot-support';
 import { JsonLd } from '@/features/seo/json-ld';
 import { buildBreadcrumbSchema, buildVideoGameSchema } from '@/lib/structured-data';
 import { ConfigureForm } from './configure-form';
+import { ActiveRoomNotice } from '@/features/resume';
 
 interface PageProps {
   params: Promise<{ locale: string; game: string }>;
@@ -121,6 +122,7 @@ export default async function ConfigurePage({ params }: PageProps) {
       <div className="configure-grid">
         <section className="card stack">
           <h2 style={{ fontSize: '1.1rem' }}>{t('configure.title')}</h2>
+          <ActiveRoomNotice />
           <ConfigureForm
             gameId={game.id}
             sides={game.sides.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
