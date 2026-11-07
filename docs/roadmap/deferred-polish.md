@@ -10,4 +10,6 @@ In-scope-for-v1 items that have been deliberately postponed but should be picked
 
 - **Setup-phase countdown in the UI.** The 2-minute setup deadline (seam C, `ISetupGame.SetupBudget`) is invisible to players — a dawdler gets forfeited with no warning. A client-only timer counting from screen-mount would *lie* after a refresh/reconnect (showing more time than the sweeper will grant), so the honest version needs the server to expose the deadline: stamp it on the `Match` when the room enters `SettingUp`, carry it in `SetupStateDto` (additive; omitted for setup-less games), count down from it in the setup screen. ~60 lines across Domain/DTO/web + tests. Decided 2026-06-04 to park rather than block the sprint.
 
+- **"You still have a game running" guard on the configure page.** The session cookie is single-slot per browser: creating a new room while one is `inProgress` silently overwrites it and the abandoned opponent wins after the grace. The landing card (`features/resume`) now remembers the active room client-side, so the configure form could read the same key and show a warning with a return link before the create button. Small, client-only; parked to keep the resume PR to one surface.
+
 When picking up an item, move it into the relevant sprint file or open a feature branch directly.

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { type I18nKey, type PlaymeClient, type RoomDto } from '@playme/shared';
 import { readStoredDisplayName, writeStoredDisplayName } from '@/features/preferences';
+import { writeActiveRoom } from '@/features/resume';
 import { track } from '@/lib/analytics';
 import { useTranslator } from '@/lib/use-locale';
 
@@ -45,6 +46,13 @@ export function JoinForm({ room, sides, client, onJoined }: JoinFormProps) {
     }
 
     writeStoredDisplayName(displayName);
+    // Mirror of the session cookie just minted (see configure-form.tsx).
+    writeActiveRoom({
+      code: result.value.code,
+      gameId: result.value.gameId,
+      role: 'challenger',
+      savedAt: Date.now(),
+    });
     track({ name: 'room_joined', props: { gameId: result.value.gameId } });
     onJoined(result.value);
   }

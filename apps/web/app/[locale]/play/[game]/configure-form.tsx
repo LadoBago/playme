@@ -15,6 +15,7 @@ import {
   writeStoredDisplayName,
   writeStoredGamePrefs,
 } from '@/features/preferences';
+import { writeActiveRoom } from '@/features/resume';
 import { browserApiBase } from '@/lib/api-base';
 import { track } from '@/lib/analytics';
 import { botLevelKey } from '@/lib/player-label';
@@ -213,6 +214,9 @@ export function ConfigureForm({ gameId, sides, defaultHostSide, supportsBot }: C
       ...(isUnifiedTicTacToe ? { boardSize } : {}),
     });
 
+    // Mirror of the session cookie just minted, so the landing page can
+    // offer a way back after an accidental tab close (features/resume).
+    writeActiveRoom({ code: result.value.code, gameId, role: 'host', savedAt: Date.now() });
     track({ name: 'room_created', props: { gameId, opponent: isBotRoom ? 'bot' : 'human' } });
     router.push(localizedHref(`/r/${result.value.code}`, locale));
   }

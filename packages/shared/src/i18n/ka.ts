@@ -31,6 +31,13 @@ export const ka: Record<EnKey, string> = {
   'site.catalog.title': 'აირჩიე თამაში',
   'site.catalog.botAvailable': 'ბოტთან თამაშიც შეიძლება',
 
+  // --- Landing "your game is still on" card (features/resume) ---
+  'resume.title': 'შენი თამაში გელოდება',
+  'resume.cta': 'თამაშში დაბრუნება',
+  'resume.opponent': 'მოწინააღმდეგე: {opponent}',
+  'resume.status.waiting': 'მეგობარს ველოდებით',
+  'resume.status.settingUp': 'ფლოტის განლაგება',
+
   // --- Footer ---
   'site.footer.copyright': '© {year} PlayMe.ge',
 
