@@ -488,11 +488,14 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
   // If the hub call fails for some other reason — bad state, rate limit —
   // we surface the error and stay; the user can retry. The Promise is
   // returned so MatchView can await before its router.push.
+  //
+  // The returned (Closed) room is deliberately NOT applied to state: the
+  // caller navigates away on success, and applying it would flash the
+  // "Opponent left" notice at the player who is themselves leaving.
   const handleExit = useCallback(async (): Promise<void> => {
     setError(null);
     try {
-      const updated = await hubRef.current?.exitRoom();
-      if (updated) setRoom(updated);
+      await hubRef.current?.exitRoom();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'errors.unknown';
       setError(t(message as I18nKey));
