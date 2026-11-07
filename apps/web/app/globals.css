@@ -258,6 +258,53 @@ textarea {
   outline-offset: 1px;
 }
 
+/* --- Landing "your game is still on" card (features/resume) ---
+ * Same slim banner shape as .install-prompt; the body wraps under the
+ * icon on narrow screens so the CTA never shrinks below tap size. */
+
+.resume-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+}
+
+.resume-card__icon {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.resume-card__body {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.resume-card__meta {
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+}
+
+.resume-card__cta {
+  flex: 0 0 auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .resume-card__cta {
+    flex-basis: 100%;
+  }
+}
+
 /* --- Top-right toolbar (Sprint 6) ---
  * Wraps the locale + theme toggles in a single fixed container so the
  * two flow next to each other; individual toggles stay layout-agnostic

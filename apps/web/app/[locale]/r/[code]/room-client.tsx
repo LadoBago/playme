@@ -17,6 +17,7 @@ import {
 import { browserApiBase, hubUrl } from '@/lib/api-base';
 import { findGameModule } from '@/features/games/registry';
 import { EmotePicker, type IncomingEmote } from '@/features/emote';
+import { clearActiveRoom } from '@/features/resume';
 import { track } from '@/lib/analytics';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useTranslator } from '@/lib/use-locale';
@@ -276,9 +277,22 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
           setError(t(message as I18nKey));
         }
       }
+      // No session for this room — a remembered landing-card key for it
+      // is stale (the cookie is gone or belongs to another room).
+      clearActiveRoom(expectedRoomCode);
       setAuthStatus('needsJoin');
     }
   }, [expectedRoomCode]);
+
+  // Terminal states have nothing to come back to: forget the landing
+  // card's key for this room (features/resume). Post-match states are
+  // left alone — the card already hides them, and a rematch loops the
+  // same room back into play.
+  useEffect(() => {
+    if (expired !== null || room.status === 'closed' || room.status === 'expired') {
+      clearActiveRoom(room.code);
+    }
+  }, [expired, room.status, room.code]);
 
   useEffect(() => {
     // A room that loads already-expired (refresh / locale switch after
@@ -482,7 +496,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
       setError(t(message as I18nKey));
       throw e;
     }
-  }, []);
+  }, [room.code]);
 
   // ExitRoom is idempotent server-side (already-Closed returns success).
   // If the hub call fails for some other reason — bad state, rate limit —
@@ -496,6 +510,7 @@ export function RoomClient({ initialRoom }: RoomClientProps) {
     setError(null);
     try {
       await hubRef.current?.exitRoom();
+      clearActiveRoom(room.code);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'errors.unknown';
       setError(t(message as I18nKey));

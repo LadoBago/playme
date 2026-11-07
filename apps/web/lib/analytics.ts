@@ -87,6 +87,7 @@ export function initAnalytics(): void {
 export type AnalyticsEvent =
   | { name: 'room_created'; props: { gameId: string; opponent: 'human' | 'bot' } }
   | { name: 'room_joined'; props: { gameId: string } }
+  | { name: 'room_resumed'; props: { gameId: string } }
   | { name: 'match_started'; props: { gameId: string } }
   | { name: 'move_made'; props: { gameId: string } }
   | { name: 'rematch_offered'; props: { gameId: string } }

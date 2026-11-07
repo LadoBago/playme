@@ -40,6 +40,13 @@ export const en = {
   'site.catalog.title': 'Choose a game',
   'site.catalog.botAvailable': 'Bot opponent available',
 
+  // --- Landing "your game is still on" card (features/resume) ---
+  'resume.title': 'Your game is still on',
+  'resume.cta': 'Return to game',
+  'resume.opponent': 'vs {opponent}',
+  'resume.status.waiting': 'waiting for your friend',
+  'resume.status.settingUp': 'placing fleets',
+
   // --- Footer ---
   // `{year}` is interpolated at render with the current year so the
   // notice never goes stale (see app/[locale]/copyright/page.tsx and the

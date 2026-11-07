@@ -4,6 +4,7 @@ import { GAME_CATALOG, createTranslator, localizedHref } from '@playme/shared';
 import { BotBadge } from '@/features/bot/bot-badge';
 import { Wordmark } from '@/features/branding/wordmark';
 import { InstallPrompt } from '@/features/pwa/install-prompt';
+import { ResumeCard } from '@/features/resume';
 import { JsonLd } from '@/features/seo/json-ld';
 import { fetchBotCapableGames } from '@/lib/bot-support';
 import { resolveLocale } from '@/lib/locale';
@@ -65,6 +66,7 @@ export default async function HomePage({ params }: PageProps) {
     <main className="container stack" style={{ gap: '2.5rem' }}>
       <JsonLd data={buildWebSiteSchema(t, locale)} />
       <InstallPrompt />
+      <ResumeCard />
 
       <section
         className="stack"
