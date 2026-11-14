@@ -5,22 +5,18 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- ASP.NET Core / SignalR -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
-    <!-- Transitive pin (CentralPackageTransitivePinningEnabled): AspNetCore.OpenApi
-         pulls Microsoft.OpenApi 2.0.0, flagged by GHSA-v5pm-xwqc-g5wc (circular
-         schema references terminate parsing). 2.7.5 patches it on the 2.x line. -->
-    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <!-- Transitive pin (CentralPackageTransitivePinningEnabled): SignalR pulls
          MessagePack 2.5.187, flagged by GHSA-hv8m-jj95-wg3x (LZ4 decompression
          AccessViolationException) and GHSA-qhrr-8q5h-9q3h (nested arrays blow
          past buffer length limits). 2.5.303 patches both on the 2.x line. -->
     <PackageVersion Include="MessagePack" Version="2.5.303" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15" />
 
     <!-- Redis -->
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
@@ -46,6 +42,6 @@
     <!-- Do NOT bump: FluentAssertions 7.0+ is under a paid commercial (Xceed)
          license; 6.x is the last Apache-2.0 release. See docs/security.md §9. -->
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.15" />
   </ItemGroup>
 </Project>
