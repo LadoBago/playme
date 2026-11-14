@@ -1144,8 +1144,17 @@ textarea {
 .board {
   --ttt-board: #efe3c8;
   --ttt-board-border: #c9b890;
+  /* Density-scaled metrics. The board's outer size is fixed, so cells
+     shrink as the grid grows; gap, corner radius and ring width shrink
+     with them (3×3 → 6px / 8px / 3px, 6×6 → 3px / 4px / 2px, 9×9 → 2px /
+     ~2.7px / 2px) to keep the 3×3 proportions instead of letting the
+     gutters dominate the small cells. */
+  --board-gap: calc(6px * 3 / var(--board-cells, 3));
+  --board-cell-radius: calc(8px * 3 / var(--board-cells, 3));
+  --board-ring: max(2px, calc(3px * 3 / var(--board-cells, 3)));
+  --board-pulse: calc(8px * 3 / var(--board-cells, 3));
   display: grid;
-  gap: 6px;
+  gap: var(--board-gap);
   width: min(360px, 100%);
   margin-inline: auto;
   aspect-ratio: 1;
@@ -1204,7 +1213,7 @@ textarea {
   justify-content: center;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
-  border-radius: 8px;
+  border-radius: var(--board-cell-radius);
   font-weight: 600;
   color: var(--fg);
   cursor: pointer;
@@ -1222,12 +1231,12 @@ textarea {
 
 .board__cell--last {
   animation: lastMovePulse 1.4s ease-out;
-  box-shadow: 0 0 0 3px var(--last-move-ring) inset;
+  box-shadow: 0 0 0 var(--board-ring) var(--last-move-ring) inset;
 }
 
 .board__cell--winning {
   background: var(--win-highlight);
-  box-shadow: 0 0 0 3px var(--win-stroke) inset;
+  box-shadow: 0 0 0 var(--board-ring) var(--win-stroke) inset;
 }
 
 /* Caller-perspective loss: the winning line is the opponent's, so the
@@ -1236,18 +1245,21 @@ textarea {
  * this up when both classes are present. */
 .board__cell--winning-lost {
   background: var(--highlight);
-  box-shadow: 0 0 0 3px var(--lose-stroke) inset;
+  box-shadow: 0 0 0 var(--board-ring) var(--lose-stroke) inset;
 }
 
+/* Shared with the other boards' last-move pulses, which don't define the
+ * density variables — hence the 3px / 8px fallbacks (their original
+ * values). */
 @keyframes lastMovePulse {
   0% {
     box-shadow:
-      0 0 0 3px var(--last-move-ring) inset,
-      0 0 0 8px var(--highlight);
+      0 0 0 var(--board-ring, 3px) var(--last-move-ring) inset,
+      0 0 0 var(--board-pulse, 8px) var(--highlight);
   }
   100% {
     box-shadow:
-      0 0 0 3px var(--last-move-ring) inset,
+      0 0 0 var(--board-ring, 3px) var(--last-move-ring) inset,
       0 0 0 0 transparent;
   }
 }
